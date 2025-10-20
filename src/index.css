@@ -1,3 +1,22 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Electro blue and purple palette */
+:root {
+	--electro-blue: #00eaff;
+	--deep-purple: #7f1fff;
+	--accent: #d66fed;
+	--sidebar-bg: linear-gradient(135deg, #00eaff 0%, #7f1fff 60%, #d66fed 100%);
+}
+
+.sidebar-link {
+	@apply text-white font-semibold py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-300 cursor-pointer text-lg flex items-center gap-2;
+}
+.animate-spin-slow {
+	animation: spin 4s linear infinite;
+}
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}

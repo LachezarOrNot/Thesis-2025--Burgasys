@@ -43,9 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               email: firebaseUser.email!,
               displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
               photoURL: firebaseUser.photoURL || undefined,
-              role: 'user',
-              createdAt: new Date(),
-              updatedAt: new Date()
+              role: 'user'
             });
           }
           
@@ -73,9 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         uid: firebaseUser.uid,
         email: firebaseUser.email!,
         displayName,
-        role,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        role
       });
       
       setUser(userData);

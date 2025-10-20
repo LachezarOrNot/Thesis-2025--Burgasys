@@ -40,15 +40,17 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <section className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white py-20">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6">Discover Amazing Events</h1>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            Discover Amazing Events
+          </h1>
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
             Connect with communities, learn new skills, and create unforgettable experiences through curated events
           </p>
-          
-          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg">
+          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -57,21 +59,21 @@ const Home: React.FC = () => {
                   placeholder="Search events, topics, or locations..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-gray-900 dark:text-white dark:bg-gray-700 rounded-md border-0 focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-3 text-gray-900 dark:text-white dark:bg-gray-700 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <Link 
-                to="/events" 
-                className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
+              <button
+                onClick={loadEvents}
+                className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
               >
-                <Search className="w-5 h-5" />
-                Search Events
-              </Link>
+                Search
+              </button>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Stats Section */}
       <section className="py-12 bg-white dark:bg-gray-800">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -81,7 +83,7 @@ const Home: React.FC = () => {
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                   {stat.value}
                 </div>
-                <div className="text-gray-600 dark:text-gray-400">
+                <div className="text-gray-600 dark:text-gray-400 font-medium">
                   {stat.label}
                 </div>
               </div>
@@ -90,50 +92,54 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-12 container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Featured Events
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Discover upcoming events happening near you
-            </p>
+      {/* Featured Events Section */}
+      <section className="py-12 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-8">
+            <div className="text-center sm:text-left mb-4 sm:mb-0">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Featured Events
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Discover upcoming events happening near you
+              </p>
+            </div>
+            <Link 
+              to="/events"
+              className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              View All Events
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
-          <Link 
-            to="/events"
-            className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-          >
-            View All Events
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
 
-        {loading ? (
-          <LoadingSpinner />
-        ) : featuredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredEvents.map(event => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Calendar className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No events found
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Check back later for new events
-            </p>
-          </div>
-        )}
+          {loading ? (
+            <LoadingSpinner />
+          ) : featuredEvents.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredEvents.map(event => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Calendar className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                No events found
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Check back later for new events
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
+      {/* CTA Section */}
       <section className="py-16 bg-primary-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
             Join thousands of users discovering and creating amazing events
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

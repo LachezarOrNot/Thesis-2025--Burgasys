@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Event } from '../types';
 import { databaseService } from '../services/database';
 import MapPicker from '../components/MapPicker';
 import { Plus, X, Calendar, Clock, Users, Tag } from 'lucide-react';
@@ -27,43 +26,75 @@ const EventCreate: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      alert('You must be logged in to create an event');
+      return;
+    }
+
+    // Validate that organization users have proper role
+    if (['school', 'firm', 'university'].includes(user.role) && !user.affiliations?.length) {
+      alert('Organization account required: Please complete your organization affiliation before creating events.');
+      navigate('/profile');
+      return;
+    }
+
+    // Validate dates
+    const startDate = new Date(formData.start_datetime);
+    const endDate = new Date(formData.end_datetime);
+    
+    if (startDate >= endDate) {
+      alert('End date must be after start date');
+      return;
+    }
 
     setLoading(true);
     try {
+      // Convert empty capacity string to undefined (not 0)
+      const capacityValue = formData.capacity.trim() === '' ? undefined : parseInt(formData.capacity);
+      
+      // Validate capacity if provided
+      if (capacityValue !== undefined && (isNaN(capacityValue) || capacityValue < 1)) {
+        alert('Capacity must be a positive number');
+        return;
+      }
+
       const eventData = {
         name: formData.name,
-        subtitle: formData.subtitle || undefined,
+        subtitle: formData.subtitle || '',
         description: formData.description,
-        images: [],
         location: formData.location,
         lat: formData.lat,
         lng: formData.lng,
-        start_datetime: new Date(formData.start_datetime),
-        end_datetime: new Date(formData.end_datetime),
-        capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
+        start_datetime: startDate, // Convert to Date object
+        end_datetime: endDate, // Convert to Date object
+        capacity: capacityValue,
         tags: formData.tags,
+        images: [],
         organiser_org_id: user.uid,
         createdBy: user.uid,
-        status: 'draft' as const,
-        allow_registration: formData.allow_registration
+        status: 'published' as const,
+        allow_registration: formData.allow_registration,
+        registeredUsers: [],
+        waitlist: []
       };
 
       await databaseService.createEvent(eventData);
+      alert('Event created successfully!');
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
-      alert('Error creating event. Please try again.');
+      alert(`Error creating event: ${error.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
   };
 
   const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !formData.tags.includes(trimmedTag)) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, trimmedTag]
       }));
       setTagInput('');
     }
@@ -85,6 +116,13 @@ const EventCreate: React.FC = () => {
     }));
   };
 
+  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -97,6 +135,7 @@ const EventCreate: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <div className="space-y-6">
+            {/* Event Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Event Name *
@@ -108,9 +147,12 @@ const EventCreate: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Enter a descriptive event name"
+                minLength={3}
+                maxLength={100}
               />
             </div>
 
+            {/* Subtitle */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Subtitle
@@ -121,9 +163,11 @@ const EventCreate: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Brief description (optional)"
+                maxLength={200}
               />
             </div>
 
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Description *
@@ -135,9 +179,12 @@ const EventCreate: React.FC = () => {
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Describe your event in detail. What will attendees learn or experience?"
+                minLength={10}
+                maxLength={2000}
               />
             </div>
 
+            {/* Date & Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -150,6 +197,7 @@ const EventCreate: React.FC = () => {
                   value={formData.start_datetime}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_datetime: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                  min={new Date().toISOString().slice(0, 16)}
                 />
               </div>
 
@@ -164,10 +212,12 @@ const EventCreate: React.FC = () => {
                   value={formData.end_datetime}
                   onChange={(e) => setFormData(prev => ({ ...prev, end_datetime: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                  min={formData.start_datetime || new Date().toISOString().slice(0, 16)}
                 />
               </div>
             </div>
 
+            {/* Location */}
             <MapPicker
               onLocationSelect={handleLocationSelect}
               initialLocation={formData.location}
@@ -175,6 +225,7 @@ const EventCreate: React.FC = () => {
               initialLng={formData.lng}
             />
 
+            {/* Capacity */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Users className="w-4 h-4 inline mr-2" />
@@ -187,9 +238,14 @@ const EventCreate: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                 placeholder="Leave empty for unlimited attendees"
                 min="1"
+                max="10000"
               />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Leave blank for unlimited capacity
+              </p>
             </div>
 
+            {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Tag className="w-4 h-4 inline mr-2" />
@@ -200,14 +256,16 @@ const EventCreate: React.FC = () => {
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  onKeyPress={handleTagInputKeyPress}
                   className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                   placeholder="Add tags to help people find your event..."
+                  maxLength={50}
                 />
                 <button
                   type="button"
                   onClick={addTag}
-                  className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                  disabled={!tagInput.trim()}
+                  className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   Add
@@ -223,22 +281,26 @@ const EventCreate: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
-                      className="ml-2 hover:text-primary-600"
+                      className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </span>
                 ))}
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {formData.tags.length}/10 tags added
+              </p>
             </div>
 
+            {/* Allow Registration */}
             <div className="flex items-center">
               <input
                 type="checkbox"
                 id="allow_registration"
                 checked={formData.allow_registration}
                 onChange={(e) => setFormData(prev => ({ ...prev, allow_registration: e.target.checked }))}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600"
               />
               <label htmlFor="allow_registration" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                 Allow registration for this event
@@ -246,11 +308,13 @@ const EventCreate: React.FC = () => {
             </div>
           </div>
 
+          {/* Form Actions */}
           <div className="flex justify-end space-x-4 mt-8 pt-6 border-t dark:border-gray-600">
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
               className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              disabled={loading}
             >
               Cancel
             </button>

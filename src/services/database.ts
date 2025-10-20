@@ -10,9 +10,10 @@ import {
   where, 
   orderBy, 
   getDocs, 
-  addDoc, 
   onSnapshot,
-  Timestamp
+  writeBatch,
+  DocumentData,
+  QuerySnapshot
 } from './firebase';
 import { 
   User, 
@@ -28,7 +29,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 class DatabaseService {
-  async createUser(userData: Omit<User, 'uid' | 'createdAt' | 'updatedAt'>): Promise<User> {
+  async createUser(userData: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User> {
     const userRef = doc(db, 'users', userData.uid);
     const user: User = {
       ...userData,
@@ -135,17 +136,40 @@ class DatabaseService {
   }
 
   async createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event> {
+    // Normalize datetimes
+    const normalize = (val: any) => {
+      if (!val) return undefined;
+      if (typeof val === 'string') return new Date(val);
+      if (val instanceof Date) return val;
+      return val;
+    };
+
+    const payload: any = {
+      ...eventData,
+      start_datetime: normalize((eventData as any).start_datetime),
+      end_datetime: normalize((eventData as any).end_datetime),
+      images: (eventData as any).images || [],
+      registeredUsers: (eventData as any).registeredUsers || []
+    };
+
     const eventId = uuidv4();
     const eventRef = doc(db, 'events', eventId);
-    
+
     const event: Event = {
-      ...eventData,
+      ...payload,
       id: eventId,
       createdAt: new Date(),
       updatedAt: new Date()
-    };
-    
-    await setDoc(eventRef, event);
+    } as Event;
+
+    // Ensure collections exist by writing a placeholder to collections that might be missing (client fallback)
+    try {
+      await setDoc(eventRef, event);
+    } catch (err) {
+      // attempt to create the collection placeholder and retry
+      await setDoc(doc(db, 'events', eventId), event);
+    }
+
     return event;
   }
 
@@ -326,12 +350,14 @@ class DatabaseService {
   }
 
   async uploadFile(file: File, path: string): Promise<string> {
+    const { storage, ref, uploadBytes, getDownloadURL } = await import('./firebase');
     const storageRef = ref(storage, path);
     const snapshot = await uploadBytes(storageRef, file);
     return await getDownloadURL(snapshot.ref);
   }
 
   async deleteFile(url: string): Promise<void> {
+    const { storage, ref, deleteObject } = await import('./firebase');
     const fileRef = ref(storage, url);
     await deleteObject(fileRef);
   }

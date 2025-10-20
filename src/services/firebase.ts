@@ -22,9 +22,7 @@ import {
   orderBy,
   limit,
   getDocs,
-  addDoc,
   onSnapshot,
-  Timestamp,
   writeBatch,
   DocumentData,
   QuerySnapshot
@@ -83,9 +81,7 @@ export {
   orderBy,
   limit,
   getDocs,
-  addDoc,
   onSnapshot,
-  Timestamp,
   writeBatch,
   
   // Storage
