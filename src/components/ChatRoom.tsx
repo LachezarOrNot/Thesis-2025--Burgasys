@@ -2,7 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatMessage } from '../types';
 import { databaseService } from '../services/database';
-import { Send, Flag, AlertTriangle } from 'lucide-react';
+import { Send, Flag, AlertTriangle, MessageCircle } from 'lucide-react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../services/firebase';
 
 interface ChatRoomProps {
   eventId: string;
@@ -14,19 +16,36 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [subscriptionError, setSubscriptionError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isChatActive = eventStatus === 'published';
 
   useEffect(() => {
-    if (!eventId || !isChatActive) return;
+    if (!eventId || !isChatActive) {
+      console.log('Chat not active - eventId:', eventId, 'status:', eventStatus);
+      return;
+    }
 
-    const unsubscribe = databaseService.subscribeToChatMessages(eventId, (chatMessages) => {
-      setMessages(chatMessages);
-    });
+    console.log('Setting up chat subscription for event:', eventId);
+    setSubscriptionError('');
 
-    return () => unsubscribe();
-  }, [eventId, isChatActive]);
+    try {
+      const unsubscribe = databaseService.subscribeToChatMessages(eventId, (chatMessages) => {
+        console.log('Chat messages updated:', chatMessages);
+        setMessages(chatMessages);
+        setSubscriptionError('');
+      });
+
+      return () => {
+        console.log('Cleaning up chat subscription');
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error('Failed to setup chat subscription:', error);
+      setSubscriptionError('Failed to connect to chat');
+    }
+  }, [eventId, isChatActive, eventStatus]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,6 +58,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
 
     setLoading(true);
     try {
+      console.log('Sending message:', newMessage);
       await databaseService.sendChatMessage({
         senderUid: user.uid,
         senderName: user.displayName || 'Anonymous',
@@ -49,13 +69,33 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
       setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFlagMessage = (messageId: string) => {
-    alert('Message flagged for moderator review');
+  const handleFlagMessage = async (messageId: string) => {
+    try {
+      // Mark message as flagged in the database
+      const messageRef = doc(db, 'chatMessages', messageId);
+      await updateDoc(messageRef, { flagged: true });
+      alert('Message flagged for moderator review');
+    } catch (error) {
+      console.error('Error flagging message:', error);
+      alert('Failed to flag message');
+    }
+  };
+
+  const formatMessageTime = (timestamp: Date) => {
+    try {
+      return new Date(timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Invalid time';
+    }
   };
 
   if (!isChatActive) {
@@ -75,16 +115,43 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md h-[500px] flex flex-col">
       <div className="bg-primary-500 text-white p-4 rounded-t-lg">
-        <h3 className="font-semibold">Event Chat</h3>
-        <p className="text-sm opacity-90">
-          {messages.length} message{messages.length !== 1 ? 's' : ''}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Event Chat</h3>
+            <p className="text-sm opacity-90">
+              {messages.length} message{messages.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          {subscriptionError && (
+            <div className="text-xs bg-red-500 px-2 py-1 rounded">
+              Connection Issue
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Debug info - remove in production */}
+      <div className="bg-yellow-50 dark:bg-yellow-900 px-4 py-2 text-xs text-yellow-800 dark:text-yellow-200">
+        Debug: Event ID: {eventId} | User: {user?.uid} | Messages: {messages.length}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 ? (
+        {subscriptionError ? (
+          <div className="text-center text-red-500 dark:text-red-400 py-8">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+            <p>{subscriptionError}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-sm underline mt-2"
+            >
+              Retry
+            </button>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No messages yet. Be the first to say hello!</p>
+            <p className="text-sm mt-2">Send a message to start the conversation</p>
           </div>
         ) : (
           messages.map((message) => (
@@ -99,25 +166,23 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                   message.senderUid === user?.uid
                     ? 'bg-primary-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                }`}
+                } ${message.flagged ? 'border-2 border-red-300 dark:border-red-600' : ''}`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium opacity-90">
                     {message.senderName}
+                    {message.flagged && ' ⚐'}
                   </span>
-                  <span className="text-xs opacity-75 ml-2">
+                  <span className="text-xs opacity-75 ml-2 capitalize">
                     {message.role}
                   </span>
                 </div>
-                <p className="text-sm">{message.content}</p>
+                <p className="text-sm break-words">{message.content}</p>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-xs opacity-75">
-                    {new Date(message.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {formatMessageTime(message.timestamp)}
                   </span>
-                  {message.senderUid !== user?.uid && (
+                  {message.senderUid !== user?.uid && user?.role !== 'admin' && (
                     <button
                       onClick={() => handleFlagMessage(message.id)}
                       className="text-xs opacity-75 hover:opacity-100 transition-opacity"
@@ -141,21 +206,21 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            disabled={loading}
+            disabled={loading || !!subscriptionError}
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
             maxLength={500}
           />
           <button
             type="submit"
-            disabled={!newMessage.trim() || loading}
-            className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            disabled={!newMessage.trim() || loading || !!subscriptionError}
+            className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
-            Send
+            {loading ? 'Sending...' : 'Send'}
           </button>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-          Messages are visible to all event participants
+          Messages are visible to all event participants • {500 - newMessage.length} characters left
         </p>
       </form>
     </div>

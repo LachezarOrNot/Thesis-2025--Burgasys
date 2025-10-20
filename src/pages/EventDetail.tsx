@@ -6,7 +6,7 @@ import { databaseService } from '../services/database';
 import ChatRoom from '../components/ChatRoom';
 import { MapPin, Calendar, Users, Clock, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const EventDetail: React.FC = () => {
@@ -35,6 +35,29 @@ const EventDetail: React.FC = () => {
     }
   };
 
+  // Safe date formatting with validation
+  const formatDateSafe = (date: any): string => {
+    if (!date) return 'Date not set';
+    
+    try {
+      const dateObj = date instanceof Date ? date : new Date(date);
+      return isValid(dateObj) ? format(dateObj, 'MMMM dd, yyyy') : 'Invalid date';
+    } catch {
+      return 'Date error';
+    }
+  };
+
+  const formatTimeSafe = (date: any): string => {
+    if (!date) return 'Time not set';
+    
+    try {
+      const dateObj = date instanceof Date ? date : new Date(date);
+      return isValid(dateObj) ? format(dateObj, 'HH:mm') : 'Invalid time';
+    } catch {
+      return 'Time error';
+    }
+  };
+
   const handleRegister = async () => {
     if (!event || !user) return;
 
@@ -43,9 +66,10 @@ const EventDetail: React.FC = () => {
       await databaseService.registerForEvent(event.id, user.uid);
       setRegistrationStatus('success');
       loadEvent(); // Reload event to update registration count
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering for event:', error);
       setRegistrationStatus('error');
+      alert(error.message || 'Failed to register for event');
     }
   };
 
@@ -70,7 +94,7 @@ const EventDetail: React.FC = () => {
   const isRegistered = event.registeredUsers?.includes(user?.uid || '');
   const registeredCount = event.registeredUsers?.length || 0;
   const isFull = event.capacity && registeredCount >= event.capacity;
-  const canRegister = event.status === 'published' && event.allow_registration && !isFull && !isRegistered;
+  const canRegister = event.status === 'published' && event.allow_registration && !isFull && !isRegistered && user;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -85,11 +109,15 @@ const EventDetail: React.FC = () => {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-6">
-            {event.images.length > 0 && (
+            {event.images && event.images.length > 0 && (
               <img 
                 src={event.images[0]} 
                 alt={event.name}
                 className="w-full lg:w-1/3 h-64 object-cover rounded-lg"
+                onError={(e) => {
+                  // Hide image if it fails to load
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             )}
             <div className="flex-1">
@@ -110,7 +138,7 @@ const EventDetail: React.FC = () => {
                   event.status === 'finished' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
                   'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                 }`}>
-                  {event.status.replace('_', ' ')}
+                  {event.status ? event.status.replace('_', ' ') : 'unknown'}
                 </span>
               </div>
 
@@ -119,21 +147,21 @@ const EventDetail: React.FC = () => {
                   <Calendar className="w-5 h-5 mr-3" />
                   <div>
                     <p className="font-medium">Date</p>
-                    <p>{format(new Date(event.start_datetime), 'MMMM dd, yyyy')}</p>
+                    <p>{formatDateSafe(event.start_datetime)}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <Clock className="w-5 h-5 mr-3" />
                   <div>
                     <p className="font-medium">Time</p>
-                    <p>{format(new Date(event.start_datetime), 'HH:mm')} - {format(new Date(event.end_datetime), 'HH:mm')}</p>
+                    <p>{formatTimeSafe(event.start_datetime)} - {formatTimeSafe(event.end_datetime)}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <MapPin className="w-5 h-5 mr-3" />
                   <div>
                     <p className="font-medium">Location</p>
-                    <p>{event.location}</p>
+                    <p>{event.location || 'Location not specified'}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
@@ -149,7 +177,7 @@ const EventDetail: React.FC = () => {
                 </div>
               </div>
 
-              {event.tags.length > 0 && (
+              {event.tags && event.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-6">
                   {event.tags.map(tag => (
                     <span 
@@ -159,6 +187,12 @@ const EventDetail: React.FC = () => {
                       {tag}
                     </span>
                   ))}
+                </div>
+              )}
+
+              {!user && (
+                <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg mb-4">
+                  Please sign in to register for this event
                 </div>
               )}
 
@@ -179,6 +213,11 @@ const EventDetail: React.FC = () => {
               {isFull && !isRegistered && (
                 <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg">
                   This event is full. You can join the waitlist.
+                </div>
+              )}
+              {registrationStatus === 'error' && (
+                <div className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg">
+                  Failed to register. Please try again.
                 </div>
               )}
             </div>

@@ -29,6 +29,20 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 class DatabaseService {
+  
+  // Safe date conversion utility
+  private safeDateConvert(date: any): Date {
+    if (!date) return new Date();
+    if (date instanceof Date) return date;
+    if (date.toDate && typeof date.toDate === 'function') return date.toDate();
+    try {
+      const parsed = new Date(date);
+      return isNaN(parsed.getTime()) ? new Date() : parsed;
+    } catch {
+      return new Date();
+    }
+  }
+
   async createUser(userData: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User> {
     const userRef = doc(db, 'users', userData.uid);
     const user: User = {
@@ -42,13 +56,23 @@ class DatabaseService {
   }
 
   async getUser(uid: string): Promise<User | null> {
-    const userRef = doc(db, 'users', uid);
-    const userSnap = await getDoc(userRef);
-    
-    if (userSnap.exists()) {
-      return userSnap.data() as User;
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        return {
+          ...data,
+          createdAt: this.safeDateConvert(data.createdAt),
+          updatedAt: this.safeDateConvert(data.updatedAt)
+        } as User;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      return null;
     }
-    return null;
   }
 
   async updateUser(uid: string, updates: Partial<User>): Promise<void> {
@@ -74,20 +98,42 @@ class DatabaseService {
   }
 
   async getOrganization(orgId: string): Promise<Organization | null> {
-    const orgRef = doc(db, 'organizations', orgId);
-    const orgSnap = await getDoc(orgRef);
-    
-    if (orgSnap.exists()) {
-      return orgSnap.data() as Organization;
+    try {
+      const orgRef = doc(db, 'organizations', orgId);
+      const orgSnap = await getDoc(orgRef);
+      
+      if (orgSnap.exists()) {
+        const data = orgSnap.data();
+        return {
+          ...data,
+          createdAt: this.safeDateConvert(data.createdAt),
+          updatedAt: this.safeDateConvert(data.updatedAt)
+        } as Organization;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting organization:', error);
+      return null;
     }
-    return null;
   }
 
   async getOrganizations(): Promise<Organization[]> {
-    const orgsQuery = query(collection(db, 'organizations'));
-    const orgsSnap = await getDocs(orgsQuery);
-    
-    return orgsSnap.docs.map(doc => doc.data() as Organization);
+    try {
+      const orgsQuery = query(collection(db, 'organizations'));
+      const orgsSnap = await getDocs(orgsQuery);
+      
+      return orgsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          createdAt: this.safeDateConvert(data.createdAt),
+          updatedAt: this.safeDateConvert(data.updatedAt)
+        } as Organization;
+      });
+    } catch (error) {
+      console.error('Error getting organizations:', error);
+      return [];
+    }
   }
 
   async updateOrganization(orgId: string, updates: Partial<Organization>): Promise<void> {
@@ -115,19 +161,30 @@ class DatabaseService {
   }
 
   async getAffiliationRequests(orgId?: string): Promise<AffiliationRequest[]> {
-    let requestsQuery;
-    
-    if (orgId) {
-      requestsQuery = query(
-        collection(db, 'affiliationRequests'),
-        where('orgId', '==', orgId)
-      );
-    } else {
-      requestsQuery = query(collection(db, 'affiliationRequests'));
+    try {
+      let requestsQuery;
+      
+      if (orgId) {
+        requestsQuery = query(
+          collection(db, 'affiliationRequests'),
+          where('orgId', '==', orgId)
+        );
+      } else {
+        requestsQuery = query(collection(db, 'affiliationRequests'));
+      }
+      
+      const requestsSnap = await getDocs(requestsQuery);
+      return requestsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          requestedAt: this.safeDateConvert(data.requestedAt)
+        } as AffiliationRequest;
+      });
+    } catch (error) {
+      console.error('Error getting affiliation requests:', error);
+      return [];
     }
-    
-    const requestsSnap = await getDocs(requestsQuery);
-    return requestsSnap.docs.map(doc => doc.data() as AffiliationRequest);
   }
 
   async updateAffiliationRequest(requestId: string, updates: Partial<AffiliationRequest>): Promise<void> {
@@ -136,51 +193,67 @@ class DatabaseService {
   }
 
   async createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event> {
-    // Normalize datetimes
-    const normalize = (val: any) => {
-      if (!val) return undefined;
-      if (typeof val === 'string') return new Date(val);
-      if (val instanceof Date) return val;
-      return val;
-    };
-
-    const payload: any = {
-      ...eventData,
-      start_datetime: normalize((eventData as any).start_datetime),
-      end_datetime: normalize((eventData as any).end_datetime),
-      images: (eventData as any).images || [],
-      registeredUsers: (eventData as any).registeredUsers || []
-    };
-
-    const eventId = uuidv4();
-    const eventRef = doc(db, 'events', eventId);
-
-    const event: Event = {
-      ...payload,
-      id: eventId,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    } as Event;
-
-    // Ensure collections exist by writing a placeholder to collections that might be missing (client fallback)
     try {
-      await setDoc(eventRef, event);
-    } catch (err) {
-      // attempt to create the collection placeholder and retry
-      await setDoc(doc(db, 'events', eventId), event);
-    }
+      const eventId = uuidv4();
+      const eventRef = doc(db, 'events', eventId);
 
-    return event;
+      // Convert empty capacity to undefined (not null)
+      const capacityValue = eventData.capacity === null || eventData.capacity === undefined 
+        ? undefined 
+        : Number(eventData.capacity);
+
+      // Ensure all required fields with proper defaults
+      const event: Event = {
+        id: eventId,
+        name: eventData.name || '',
+        subtitle: eventData.subtitle || '',
+        description: eventData.description || '',
+        location: eventData.location || '',
+        lat: eventData.lat || 0,
+        lng: eventData.lng || 0,
+        start_datetime: this.safeDateConvert(eventData.start_datetime),
+        end_datetime: this.safeDateConvert(eventData.end_datetime),
+        capacity: capacityValue, // Use undefined for empty values
+        tags: eventData.tags || [],
+        images: eventData.images || [],
+        organiser_org_id: eventData.organiser_org_id || '',
+        createdBy: eventData.createdBy || '',
+        status: eventData.status || 'published',
+        allow_registration: eventData.allow_registration ?? true,
+        registeredUsers: eventData.registeredUsers || [],
+        waitlist: eventData.waitlist || [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await setDoc(eventRef, event);
+      return event;
+    } catch (error) {
+      console.error('Error creating event:', error);
+      throw error;
+    }
   }
 
   async getEvent(eventId: string): Promise<Event | null> {
-    const eventRef = doc(db, 'events', eventId);
-    const eventSnap = await getDoc(eventRef);
-    
-    if (eventSnap.exists()) {
-      return eventSnap.data() as Event;
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      const eventSnap = await getDoc(eventRef);
+      
+      if (eventSnap.exists()) {
+        const data = eventSnap.data();
+        return {
+          ...data,
+          start_datetime: this.safeDateConvert(data.start_datetime),
+          end_datetime: this.safeDateConvert(data.end_datetime),
+          createdAt: this.safeDateConvert(data.createdAt),
+          updatedAt: this.safeDateConvert(data.updatedAt)
+        } as Event;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting event:', error);
+      return null;
     }
-    return null;
   }
 
   async getEvents(filters?: {
@@ -189,107 +262,171 @@ class DatabaseService {
     search?: string;
     tags?: string[];
   }): Promise<Event[]> {
-    let eventsQuery = query(collection(db, 'events'));
-    
-    if (filters?.status) {
-      eventsQuery = query(eventsQuery, where('status', '==', filters.status));
+    try {
+      let eventsQuery = query(collection(db, 'events'));
+      
+      if (filters?.status) {
+        eventsQuery = query(eventsQuery, where('status', '==', filters.status));
+      }
+      
+      if (filters?.organiser_org_id) {
+        eventsQuery = query(eventsQuery, where('organiser_org_id', '==', filters.organiser_org_id));
+      }
+      
+      const eventsSnap = await getDocs(eventsQuery);
+      let events = eventsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          start_datetime: this.safeDateConvert(data.start_datetime),
+          end_datetime: this.safeDateConvert(data.end_datetime),
+          createdAt: this.safeDateConvert(data.createdAt),
+          updatedAt: this.safeDateConvert(data.updatedAt)
+        } as Event;
+      });
+      
+      // Apply client-side filters
+      if (filters?.search) {
+        const searchLower = filters.search.toLowerCase();
+        events = events.filter(event => 
+          event.name?.toLowerCase().includes(searchLower) ||
+          event.description?.toLowerCase().includes(searchLower) ||
+          event.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
+          event.location?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (filters?.tags && filters.tags.length > 0) {
+        events = events.filter(event =>
+          event.tags && filters.tags!.some(tag => event.tags.includes(tag))
+        );
+      }
+      
+      // Safe sorting
+      return events.sort((a, b) => {
+        try {
+          return this.safeDateConvert(a.start_datetime).getTime() - this.safeDateConvert(b.start_datetime).getTime();
+        } catch {
+          return 0;
+        }
+      });
+    } catch (error) {
+      console.error('Error getting events:', error);
+      return [];
     }
-    
-    if (filters?.organiser_org_id) {
-      eventsQuery = query(eventsQuery, where('organiser_org_id', '==', filters.organiser_org_id));
-    }
-    
-    const eventsSnap = await getDocs(eventsQuery);
-    let events = eventsSnap.docs.map(doc => doc.data() as Event);
-    
-    if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      events = events.filter(event => 
-        event.name.toLowerCase().includes(searchLower) ||
-        event.description.toLowerCase().includes(searchLower) ||
-        event.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    if (filters?.tags && filters.tags.length > 0) {
-      events = events.filter(event =>
-        filters.tags!.some(tag => event.tags.includes(tag))
-      );
-    }
-    
-    return events.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime());
   }
 
   async updateEvent(eventId: string, updates: Partial<Event>): Promise<void> {
     const eventRef = doc(db, 'events', eventId);
+    
+    // Handle capacity conversion if it's being updated
+    const processedUpdates = { ...updates };
+    if ('capacity' in processedUpdates) {
+      processedUpdates.capacity = processedUpdates.capacity === null || processedUpdates.capacity === undefined 
+        ? undefined 
+        : Number(processedUpdates.capacity);
+    }
+    
     await updateDoc(eventRef, {
-      ...updates,
+      ...processedUpdates,
       updatedAt: new Date()
     });
   }
 
   async deleteEvent(eventId: string): Promise<void> {
-    const eventRef = doc(db, 'events', eventId);
-    await deleteDoc(eventRef);
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      await deleteDoc(eventRef);
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      throw error;
+    }
   }
 
   async registerForEvent(eventId: string, userUid: string): Promise<EventRegistration> {
-    const registrationId = uuidv4();
-    const registrationRef = doc(db, 'eventRegistrations', registrationId);
-    
-    const event = await this.getEvent(eventId);
-    if (!event) throw new Error('Event not found');
-    
-    const existingRegistration = await this.getUserEventRegistration(eventId, userUid);
-    if (existingRegistration) throw new Error('Already registered for this event');
-    
-    const registrations = await this.getEventRegistrations(eventId);
-    const registeredCount = registrations.filter(r => r.status === 'registered').length;
-    
-    let status: 'registered' | 'waitlisted' = 'registered';
-    if (event.capacity && registeredCount >= event.capacity) {
-      status = 'waitlisted';
+    try {
+      const registrationId = uuidv4();
+      const registrationRef = doc(db, 'eventRegistrations', registrationId);
+      
+      const event = await this.getEvent(eventId);
+      if (!event) throw new Error('Event not found');
+      
+      const existingRegistration = await this.getUserEventRegistration(eventId, userUid);
+      if (existingRegistration) throw new Error('Already registered for this event');
+      
+      const registrations = await this.getEventRegistrations(eventId);
+      const registeredCount = registrations.filter(r => r.status === 'registered').length;
+      
+      let status: 'registered' | 'waitlisted' = 'registered';
+      if (event.capacity && registeredCount >= event.capacity) {
+        status = 'waitlisted';
+      }
+      
+      const registration: EventRegistration = {
+        id: registrationId,
+        eventId,
+        userUid,
+        status,
+        registeredAt: new Date()
+      };
+      
+      await setDoc(registrationRef, registration);
+      
+      // Update event's registered users
+      const eventRef = doc(db, 'events', eventId);
+      await updateDoc(eventRef, {
+        registeredUsers: [...(event.registeredUsers || []), userUid]
+      });
+      
+      return registration;
+    } catch (error) {
+      console.error('Error registering for event:', error);
+      throw error;
     }
-    
-    const registration: EventRegistration = {
-      id: registrationId,
-      eventId,
-      userUid,
-      status,
-      registeredAt: new Date()
-    };
-    
-    await setDoc(registrationRef, registration);
-    
-    const eventRef = doc(db, 'events', eventId);
-    await updateDoc(eventRef, {
-      registeredUsers: [...(event.registeredUsers || []), userUid]
-    });
-    
-    return registration;
   }
 
   async getEventRegistrations(eventId: string): Promise<EventRegistration[]> {
-    const registrationsQuery = query(
-      collection(db, 'eventRegistrations'),
-      where('eventId', '==', eventId)
-    );
-    
-    const registrationsSnap = await getDocs(registrationsQuery);
-    return registrationsSnap.docs.map(doc => doc.data() as EventRegistration);
+    try {
+      const registrationsQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('eventId', '==', eventId)
+      );
+      
+      const registrationsSnap = await getDocs(registrationsQuery);
+      return registrationsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          registeredAt: this.safeDateConvert(data.registeredAt)
+        } as EventRegistration;
+      });
+    } catch (error) {
+      console.error('Error getting event registrations:', error);
+      return [];
+    }
   }
 
   async getUserEventRegistration(eventId: string, userUid: string): Promise<EventRegistration | null> {
-    const registrationQuery = query(
-      collection(db, 'eventRegistrations'),
-      where('eventId', '==', eventId),
-      where('userUid', '==', userUid)
-    );
-    
-    const registrationSnap = await getDocs(registrationQuery);
-    if (registrationSnap.empty) return null;
-    
-    return registrationSnap.docs[0].data() as EventRegistration;
+    try {
+      const registrationQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('eventId', '==', eventId),
+        where('userUid', '==', userUid)
+      );
+      
+      const registrationSnap = await getDocs(registrationQuery);
+      if (registrationSnap.empty) return null;
+      
+      const data = registrationSnap.docs[0].data();
+      return {
+        ...data,
+        registeredAt: this.safeDateConvert(data.registeredAt)
+      } as EventRegistration;
+    } catch (error) {
+      console.error('Error getting user registration:', error);
+      return null;
+    }
   }
 
   async sendChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<ChatMessage> {
@@ -314,7 +451,13 @@ class DatabaseService {
     );
     
     return onSnapshot(messagesQuery, (snapshot) => {
-      const messages = snapshot.docs.map(doc => doc.data() as ChatMessage);
+      const messages = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          timestamp: this.safeDateConvert(data.timestamp)
+        } as ChatMessage;
+      });
       callback(messages);
     });
   }
@@ -334,14 +477,25 @@ class DatabaseService {
   }
 
   async getUserNotifications(userId: string): Promise<Notification[]> {
-    const notificationsQuery = query(
-      collection(db, 'notifications'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
-    
-    const notificationsSnap = await getDocs(notificationsQuery);
-    return notificationsSnap.docs.map(doc => doc.data() as Notification);
+    try {
+      const notificationsQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const notificationsSnap = await getDocs(notificationsQuery);
+      return notificationsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          createdAt: this.safeDateConvert(data.createdAt)
+        } as Notification;
+      });
+    } catch (error) {
+      console.error('Error getting user notifications:', error);
+      return [];
+    }
   }
 
   async markNotificationAsRead(notificationId: string): Promise<void> {
@@ -350,16 +504,26 @@ class DatabaseService {
   }
 
   async uploadFile(file: File, path: string): Promise<string> {
-    const { storage, ref, uploadBytes, getDownloadURL } = await import('./firebase');
-    const storageRef = ref(storage, path);
-    const snapshot = await uploadBytes(storageRef, file);
-    return await getDownloadURL(snapshot.ref);
+    try {
+      const { storage, ref, uploadBytes, getDownloadURL } = await import('./firebase');
+      const storageRef = ref(storage, path);
+      const snapshot = await uploadBytes(storageRef, file);
+      return await getDownloadURL(snapshot.ref);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
   }
 
   async deleteFile(url: string): Promise<void> {
-    const { storage, ref, deleteObject } = await import('./firebase');
-    const fileRef = ref(storage, url);
-    await deleteObject(fileRef);
+    try {
+      const { storage, ref, deleteObject } = await import('./firebase');
+      const fileRef = ref(storage, url);
+      await deleteObject(fileRef);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
   }
 }
 

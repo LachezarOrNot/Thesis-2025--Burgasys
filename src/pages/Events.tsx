@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Calendar } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { isToday, isThisWeek, isThisMonth } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   
@@ -30,75 +32,99 @@ const Events: React.FC = () => {
   const loadEvents = async () => {
     try {
       setLoading(true);
+      setError('');
       const eventsData = await databaseService.getEvents({ 
         status: 'published' 
       });
       setEvents(eventsData);
     } catch (error) {
       console.error('Error loading events:', error);
+      setError('Failed to load events. Please try refreshing the page.');
     } finally {
       setLoading(false);
     }
   };
 
   const applyFilters = () => {
-    let filtered = events.filter(event => 
-      event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      event.location.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = events.filter(event => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        event.name?.toLowerCase().includes(searchLower) ||
+        event.description?.toLowerCase().includes(searchLower) ||
+        event.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
+        event.location?.toLowerCase().includes(searchLower)
+      );
+    });
 
-    // Apply date filter
+    // Apply date filter with error handling
     if (dateFilter !== 'all') {
       filtered = filtered.filter(event => {
-        const eventDate = new Date(event.start_datetime);
-        switch (dateFilter) {
-          case 'today':
-            return isToday(eventDate);
-          case 'week':
-            return isThisWeek(eventDate);
-          case 'month':
-            return isThisMonth(eventDate);
-          default:
-            return true;
+        try {
+          const eventDate = new Date(event.start_datetime);
+          if (isNaN(eventDate.getTime())) return false;
+          
+          switch (dateFilter) {
+            case 'today':
+              return isToday(eventDate);
+            case 'week':
+              return isThisWeek(eventDate);
+            case 'month':
+              return isThisMonth(eventDate);
+            default:
+              return true;
+          }
+        } catch {
+          return false;
         }
       });
     }
 
-    // Apply category filter (using tags)
+    // Apply category filter (using tags) with null safety
     if (categoryFilter !== 'all') {
       filtered = filtered.filter(event => 
-        event.tags.some(tag => tag.toLowerCase().includes(categoryFilter.toLowerCase()))
+        event.tags?.some(tag => tag.toLowerCase().includes(categoryFilter.toLowerCase()))
       );
     }
 
-    // Apply location filter
+    // Apply location filter with better detection
     if (locationFilter !== 'all') {
       filtered = filtered.filter(event => {
+        const location = event.location?.toLowerCase() || '';
         if (locationFilter === 'online') {
-          return event.location.toLowerCase().includes('online') || 
-                 event.location.toLowerCase().includes('virtual') ||
-                 event.location.toLowerCase().includes('zoom');
+          return location.includes('online') || 
+                 location.includes('virtual') ||
+                 location.includes('zoom') ||
+                 location.includes('meet') ||
+                 location.includes('webinar') ||
+                 location.includes('digital');
         } else if (locationFilter === 'in-person') {
-          return !event.location.toLowerCase().includes('online') &&
-                 !event.location.toLowerCase().includes('virtual') &&
-                 !event.location.toLowerCase().includes('zoom');
+          return !location.includes('online') &&
+                 !location.includes('virtual') &&
+                 !location.includes('zoom') &&
+                 !location.includes('meet') &&
+                 !location.includes('webinar') &&
+                 !location.includes('digital');
         }
         return true;
       });
     }
 
-    // Apply sorting
+    // Apply sorting with error handling
     filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'popularity':
-          return (b.registeredUsers?.length || 0) - (a.registeredUsers?.length || 0);
-        case 'date':
-        default:
-          return new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime();
+      try {
+        switch (sortBy) {
+          case 'name':
+            return (a.name || '').localeCompare(b.name || '');
+          case 'popularity':
+            return (b.registeredUsers?.length || 0) - (a.registeredUsers?.length || 0);
+          case 'date':
+          default:
+            const dateA = new Date(a.start_datetime).getTime();
+            const dateB = new Date(b.start_datetime).getTime();
+            return dateA - dateB;
+        }
+      } catch {
+        return 0;
       }
     });
 
@@ -114,6 +140,27 @@ const Events: React.FC = () => {
   };
 
   const hasActiveFilters = searchTerm || dateFilter !== 'all' || categoryFilter !== 'all' || locationFilter !== 'all';
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="container mx-auto px-4">
+          <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">
+              Error Loading Events
+            </h2>
+            <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
+            <button
+              onClick={loadEvents}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -158,15 +205,23 @@ const Events: React.FC = () => {
             <div className="mt-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
-                {hasActiveFilters && (
+                <div className="flex gap-2">
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                    >
+                      <X className="w-4 h-4" />
+                      Clear All
+                    </button>
+                  )}
                   <button
-                    onClick={clearFilters}
-                    className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+                    onClick={() => setShowFilters(false)}
+                    className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                   >
-                    <X className="w-4 h-4" />
-                    Clear All
+                    Hide
                   </button>
-                )}
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -202,6 +257,8 @@ const Events: React.FC = () => {
                     <option value="social">Social</option>
                     <option value="sports">Sports</option>
                     <option value="arts">Arts & Culture</option>
+                    <option value="science">Science</option>
+                    <option value="health">Health & Wellness</option>
                   </select>
                 </div>
                 
@@ -229,9 +286,9 @@ const Events: React.FC = () => {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="date">Date</option>
-                    <option value="name">Name</option>
-                    <option value="popularity">Popularity</option>
+                    <option value="date">Date (Soonest)</option>
+                    <option value="name">Name (A-Z)</option>
+                    <option value="popularity">Most Popular</option>
                   </select>
                 </div>
               </div>
@@ -246,7 +303,7 @@ const Events: React.FC = () => {
                   Search: "{searchTerm}"
                   <button
                     onClick={() => setSearchTerm('')}
-                    className="ml-2 hover:text-primary-600"
+                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -257,7 +314,7 @@ const Events: React.FC = () => {
                   Date: {dateFilter}
                   <button
                     onClick={() => setDateFilter('all')}
-                    className="ml-2 hover:text-primary-600"
+                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -268,7 +325,7 @@ const Events: React.FC = () => {
                   Category: {categoryFilter}
                   <button
                     onClick={() => setCategoryFilter('all')}
-                    className="ml-2 hover:text-primary-600"
+                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -279,7 +336,7 @@ const Events: React.FC = () => {
                   Location: {locationFilter}
                   <button
                     onClick={() => setLocationFilter('all')}
-                    className="ml-2 hover:text-primary-600"
+                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -290,10 +347,19 @@ const Events: React.FC = () => {
         </div>
 
         {/* Results Count */}
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
           <p className="text-gray-600 dark:text-gray-400">
             Showing {filteredEvents.length} of {events.length} event{events.length !== 1 ? 's' : ''}
           </p>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+            >
+              <X className="w-4 h-4" />
+              Clear Filters
+            </button>
+          )}
         </div>
 
         {/* Events Grid */}
@@ -317,14 +383,31 @@ const Events: React.FC = () => {
                 : 'Check back later for new events'
               }
             </p>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              )}
+              {events.length === 0 && (
+                <Link 
+                  to="/events/create"
+                  className="border border-primary-500 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900 px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Create First Event
+                </Link>
+              )}
+              <Link 
+                to="/calendar"
+                className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
               >
-                Clear All Filters
-              </button>
-            )}
+                View Calendar
+              </Link>
+            </div>
           </div>
         )}
       </div>
