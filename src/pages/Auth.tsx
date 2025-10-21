@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building } from 'lucide-react';
@@ -21,10 +20,6 @@ const Auth: React.FC = () => {
   const [error, setError] = useState('');
 
   const { signUp, signIn, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +32,7 @@ const Auth: React.FC = () => {
       } else {
         await signUp(formData.email, formData.password, formData.displayName, formData.role);
       }
-      navigate(from, { replace: true });
+      // Navigation removed - will be handled by RootRedirect in App.tsx
     } catch (error: any) {
       setError(error.message || 'Authentication failed');
     } finally {
@@ -48,7 +43,7 @@ const Auth: React.FC = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      navigate(from, { replace: true });
+      // Navigation removed - will be handled by RootRedirect in App.tsx
     } catch (error: any) {
       setError(error.message || 'Google sign in failed');
     }
@@ -76,7 +71,7 @@ const Auth: React.FC = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
@@ -84,8 +79,8 @@ const Auth: React.FC = () => {
           {!isLogin && (
             <>
               <div>
-                <label htmlFor="displayName" className="sr-only">
-                  Full Name
+                <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Full Name *
                 </label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -97,25 +92,24 @@ const Auth: React.FC = () => {
                     value={formData.displayName}
                     onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
                     className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                    placeholder="Full Name"
+                    placeholder="Enter your full name"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="role" className="sr-only">
-                  Role
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Role *
                 </label>
                 <select
                   id="role"
                   name="role"
                   value={formData.role}
                   onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as UserRole }))}
-                  className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
+                  className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
                 >
                   <option value="user">General User</option>
                   <option value="student">Student</option>
-                  <option value="university">University Student</option>
                   <option value="school">School</option>
                   <option value="firm">Firm/Company</option>
                   <option value="university">University</option>
@@ -125,8 +119,8 @@ const Auth: React.FC = () => {
               {isOrganizationRole && (
                 <>
                   <div>
-                    <label htmlFor="organizationName" className="sr-only">
-                      Organization Name
+                    <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Organization Name *
                     </label>
                     <div className="relative">
                       <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -138,14 +132,14 @@ const Auth: React.FC = () => {
                         value={formData.organizationName}
                         onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                        placeholder="Organization Name"
+                        placeholder="Enter organization name"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="address" className="sr-only">
-                      Address
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Address *
                     </label>
                     <input
                       id="address"
@@ -155,13 +149,13 @@ const Auth: React.FC = () => {
                       value={formData.address}
                       onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                       className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                      placeholder="Organization Address"
+                      placeholder="Enter organization address"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="sr-only">
-                      Phone
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Phone Number *
                     </label>
                     <input
                       id="phone"
@@ -171,7 +165,7 @@ const Auth: React.FC = () => {
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                       className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                      placeholder="Phone Number"
+                      placeholder="Enter phone number"
                     />
                   </div>
                 </>
@@ -180,8 +174,8 @@ const Auth: React.FC = () => {
           )}
 
           <div>
-            <label htmlFor="email" className="sr-only">
-              Email address
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email Address *
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -194,14 +188,14 @@ const Auth: React.FC = () => {
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                placeholder="Email address"
+                placeholder="Enter your email address"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="sr-only">
-              Password
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Password *
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -214,7 +208,8 @@ const Auth: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 className="relative block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                placeholder="Password"
+                placeholder="Enter your password"
+                minLength={6}
               />
               <button
                 type="button"
@@ -224,15 +219,20 @@ const Auth: React.FC = () => {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {!isLogin && (
+              <p className="text-xs text-gray-500 mt-1">
+                Password must be at least 6 characters long
+              </p>
+            )}
           </div>
 
           <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Please wait...' : (isLogin ? 'Sign in' : 'Sign up')}
+              {loading ? 'Please wait...' : (isLogin ? 'Sign in' : 'Create account')}
             </button>
           </div>
 
@@ -250,7 +250,8 @@ const Auth: React.FC = () => {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                disabled={loading}
+                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <img 
                   src="https://www.google.com/favicon.ico" 

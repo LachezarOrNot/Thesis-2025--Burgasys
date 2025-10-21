@@ -84,6 +84,8 @@ export interface ChatMessage {
   role: UserRole;
   content: string;
   timestamp: Date;
+  edited?: boolean;
+  editedAt?: Date;
   flagged?: boolean;
 }
 

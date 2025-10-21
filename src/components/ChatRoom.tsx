@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatMessage } from '../types';
 import { databaseService } from '../services/database';
-import { Send, Flag, AlertTriangle, MessageCircle } from 'lucide-react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { Send, Flag, AlertTriangle, MessageCircle, Edit, Trash2, X, Check } from 'lucide-react';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 interface ChatRoomProps {
@@ -17,6 +17,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState<string>('');
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isChatActive = eventStatus === 'published';
@@ -77,7 +80,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
 
   const handleFlagMessage = async (messageId: string) => {
     try {
-      // Mark message as flagged in the database
       const messageRef = doc(db, 'chatMessages', messageId);
       await updateDoc(messageRef, { flagged: true });
       alert('Message flagged for moderator review');
@@ -85,6 +87,55 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
       console.error('Error flagging message:', error);
       alert('Failed to flag message');
     }
+  };
+
+  const handleEditMessage = (message: ChatMessage) => {
+    setEditingMessageId(message.id);
+    setEditContent(message.content);
+  };
+
+  const handleSaveEdit = async (messageId: string) => {
+    if (!editContent.trim()) {
+      alert('Message cannot be empty');
+      return;
+    }
+
+    try {
+      const messageRef = doc(db, 'chatMessages', messageId);
+      await updateDoc(messageRef, {
+        content: editContent.trim(),
+        edited: true,
+        editedAt: new Date()
+      });
+      setEditingMessageId(null);
+      setEditContent('');
+    } catch (error) {
+      console.error('Error editing message:', error);
+      alert('Failed to edit message');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditContent('');
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteDoc(doc(db, 'chatMessages', messageId));
+      setDeletingMessageId(null);
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Failed to delete message');
+    }
+  };
+
+  const confirmDelete = (messageId: string) => {
+    setDeletingMessageId(messageId);
+  };
+
+  const cancelDelete = () => {
+    setDeletingMessageId(null);
   };
 
   const formatMessageTime = (timestamp: Date) => {
@@ -96,6 +147,22 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     } catch {
       return 'Invalid time';
     }
+  };
+
+  const formatEditTime = (timestamp: Date) => {
+    try {
+      return new Date(timestamp).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch {
+      return 'Invalid time';
+    }
+  };
+
+  const isOwnMessage = (message: ChatMessage) => {
+    return message.senderUid === user?.uid;
   };
 
   if (!isChatActive) {
@@ -177,20 +244,80 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                     {message.role}
                   </span>
                 </div>
-                <p className="text-sm break-words">{message.content}</p>
+
+                {/* Message Content or Edit Input */}
+                {editingMessageId === message.id ? (
+                  <div className="mb-2">
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white dark:bg-gray-800 resize-none"
+                      rows={3}
+                      maxLength={500}
+                      autoFocus
+                    />
+                    <div className="flex justify-end space-x-2 mt-2">
+                      <button
+                        onClick={handleCancelEdit}
+                        className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        title="Cancel edit"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleSaveEdit(message.id)}
+                        className="p-1 text-green-500 hover:text-green-700"
+                        title="Save changes"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm break-words">{message.content}</p>
+                )}
+
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs opacity-75">
-                    {formatMessageTime(message.timestamp)}
-                  </span>
-                  {message.senderUid !== user?.uid && user?.role !== 'admin' && (
-                    <button
-                      onClick={() => handleFlagMessage(message.id)}
-                      className="text-xs opacity-75 hover:opacity-100 transition-opacity"
-                      title="Flag inappropriate message"
-                    >
-                      <Flag className="w-3 h-3" />
-                    </button>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs opacity-75">
+                      {formatMessageTime(message.timestamp)}
+                    </span>
+                    {message.editedAt && (
+                      <span className="text-xs opacity-50" title={`Edited at ${formatEditTime(message.editedAt!)}`}>
+                        (edited)
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-1">
+                    {isOwnMessage(message) && !editingMessageId && (
+                      <>
+                        <button
+                          onClick={() => handleEditMessage(message)}
+                          className="text-xs opacity-75 hover:opacity-100 transition-opacity"
+                          title="Edit message"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => confirmDelete(message.id)}
+                          className="text-xs opacity-75 hover:opacity-100 transition-opacity"
+                          title="Delete message"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
+                    {!isOwnMessage(message) && user?.role !== 'admin' && (
+                      <button
+                        onClick={() => handleFlagMessage(message.id)}
+                        className="text-xs opacity-75 hover:opacity-100 transition-opacity"
+                        title="Flag inappropriate message"
+                      >
+                        <Flag className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -199,6 +326,34 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {deletingMessageId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Delete Message
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this message? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteMessage(deletingMessageId)}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSendMessage} className="p-4 border-t dark:border-gray-600">
         <div className="flex space-x-2">
           <input
@@ -206,13 +361,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
-            disabled={loading || !!subscriptionError}
+            disabled={loading || !!subscriptionError || !!editingMessageId}
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
             maxLength={500}
           />
           <button
             type="submit"
-            disabled={!newMessage.trim() || loading || !!subscriptionError}
+            disabled={!newMessage.trim() || loading || !!subscriptionError || !!editingMessageId}
             className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
@@ -221,6 +376,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
           Messages are visible to all event participants • {500 - newMessage.length} characters left
+          {editingMessageId && ' • Currently editing a message'}
         </p>
       </form>
     </div>

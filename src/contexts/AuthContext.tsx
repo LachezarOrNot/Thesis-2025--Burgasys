@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       setUser(userData);
+      // Navigation removed - will be handled by route protection
     } catch (error) {
       console.error('Sign up error:', error);
       throw error;
@@ -84,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       await firebaseSignIn(auth, email, password);
+      // Navigation removed - will be handled by route protection
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -93,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      // Navigation removed - will be handled by route protection
     } catch (error) {
       console.error('Google sign in error:', error);
       throw error;

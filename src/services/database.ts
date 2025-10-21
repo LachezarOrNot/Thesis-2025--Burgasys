@@ -436,11 +436,31 @@ class DatabaseService {
     const chatMessage: ChatMessage = {
       ...message,
       id: messageId,
-      timestamp: new Date()
+      timestamp: new Date(),
+      edited: false
     };
     
     await setDoc(messageRef, chatMessage);
     return chatMessage;
+  }
+
+  async updateChatMessage(messageId: string, updates: Partial<ChatMessage>): Promise<void> {
+    const messageRef = doc(db, 'chatMessages', messageId);
+    await updateDoc(messageRef, {
+      ...updates,
+      edited: true,
+      editedAt: new Date()
+    });
+  }
+
+  async deleteChatMessage(messageId: string): Promise<void> {
+    try {
+      const messageRef = doc(db, 'chatMessages', messageId);
+      await deleteDoc(messageRef);
+    } catch (error) {
+      console.error('Error deleting chat message:', error);
+      throw error;
+    }
   }
 
   subscribeToChatMessages(eventId: string, callback: (messages: ChatMessage[]) => void) {
@@ -455,7 +475,8 @@ class DatabaseService {
         const data = doc.data();
         return {
           ...data,
-          timestamp: this.safeDateConvert(data.timestamp)
+          timestamp: this.safeDateConvert(data.timestamp),
+          editedAt: data.editedAt ? this.safeDateConvert(data.editedAt) : undefined
         } as ChatMessage;
       });
       callback(messages);
