@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { databaseService } from '../services/database';
-import { EventStatus } from '../types';
+import { Event, EventStatus } from '../types';
 import { 
+  ArrowLeft, 
+  Save, 
   Calendar, 
   MapPin, 
   Users, 
@@ -11,14 +13,18 @@ import {
   Image as ImageIcon,
   Upload,
   X,
-  Plus
+  Plus,
+  AlertCircle 
 } from 'lucide-react';
 
-const EventCreate: React.FC = () => {
+const EventEdit: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [loading, setLoading] = useState(false);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   
   // Form state
@@ -35,66 +41,95 @@ const EventCreate: React.FC = () => {
     tags: [] as string[],
     status: 'published' as EventStatus,
     allow_registration: true,
-    images: [] as string[] // Array to store image URLs
+    images: [] as string[]
   });
   
   const [newTag, setNewTag] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      setError('You must be logged in to create an event');
-      return;
-    }
+  useEffect(() => {
+    loadEvent();
+  }, [id]);
 
+  const loadEvent = async () => {
+    if (!id) return;
+    
     try {
       setLoading(true);
+      const eventData = await databaseService.getEvent(id);
+      
+      if (!eventData) {
+        setError('Event not found');
+        return;
+      }
+
+      // Check permissions
+      if (user?.role !== 'admin' && user?.uid !== eventData.createdBy) {
+        setError('You do not have permission to edit this event');
+        return;
+      }
+
+      setEvent(eventData);
+      
+      // Populate form data
+      setFormData({
+        name: eventData.name || '',
+        subtitle: eventData.subtitle || '',
+        description: eventData.description || '',
+        location: eventData.location || '',
+        lat: eventData.lat || 0,
+        lng: eventData.lng || 0,
+        start_datetime: eventData.start_datetime ? new Date(eventData.start_datetime).toISOString().slice(0, 16) : '',
+        end_datetime: eventData.end_datetime ? new Date(eventData.end_datetime).toISOString().slice(0, 16) : '',
+        capacity: eventData.capacity?.toString() || '',
+        tags: eventData.tags || [],
+        status: eventData.status || 'published',
+        allow_registration: eventData.allow_registration ?? true,
+        images: eventData.images || []
+      });
+      
+    } catch (error) {
+      console.error('Error loading event:', error);
+      setError('Failed to load event');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!event || !id) return;
+
+    try {
+      setSaving(true);
       setError('');
 
-      // Validate required fields
-      if (!formData.name.trim()) {
-        setError('Event name is required');
-        return;
-      }
-
-      if (!formData.start_datetime || !formData.end_datetime) {
-        setError('Start and end datetime are required');
-        return;
-      }
-
-      // Create event data
-      const eventData = {
-        name: formData.name.trim(),
-        subtitle: formData.subtitle.trim(),
-        description: formData.description.trim(),
-        location: formData.location.trim(),
+      const updates = {
+        name: formData.name,
+        subtitle: formData.subtitle,
+        description: formData.description,
+        location: formData.location,
         lat: formData.lat,
         lng: formData.lng,
         start_datetime: new Date(formData.start_datetime),
         end_datetime: new Date(formData.end_datetime),
         capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
         tags: formData.tags,
-        images: formData.images, // Include uploaded images
-        organiser_org_id: '', // You might want to get this from user context
-        createdBy: user.uid,
+        images: formData.images,
         status: formData.status,
-        allow_registration: formData.allow_registration,
-        registeredUsers: [],
-        waitlist: []
+        allow_registration: formData.allow_registration
       };
 
-      await databaseService.createEvent(eventData);
+      await databaseService.updateEvent(id, updates);
       
-      alert('Event created successfully!');
-      navigate('/events');
+      alert('Event updated successfully!');
+      navigate(`/events/${id}`);
       
     } catch (error) {
-      console.error('Error creating event:', error);
-      setError('Failed to create event');
+      console.error('Error updating event:', error);
+      setError('Failed to update event');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -143,11 +178,22 @@ const EventCreate: React.FC = () => {
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+  const handleRemoveImage = async (index: number) => {
+    const imageToRemove = formData.images[index];
+    
+    try {
+      // Delete from Firebase Storage
+      await databaseService.deleteFile(imageToRemove);
+      
+      // Remove from local state
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      alert('Failed to delete image from storage');
+    }
   };
 
   const handleAddTag = () => {
@@ -174,20 +220,83 @@ const EventCreate: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/4 mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-4">
+                <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                <div className="h-32 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              </div>
+              <div className="space-y-4">
+                <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                <div className="h-12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
+            {error}
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 flex items-center gap-2 text-primary-500 hover:text-primary-600"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Create New Event
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Fill in the details below to create your event
-          </p>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Edit Event
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Update your event details
+              </p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleSubmit}
+            disabled={saving || uploadingImages}
+            className="bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
+          >
+            <Save className="w-5 h-5" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5" />
             {error}
           </div>
         )}
@@ -394,12 +503,13 @@ const EventCreate: React.FC = () => {
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>
                     <option value="pending_approval">Pending Approval</option>
+                    <option value="finished">Finished</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Capacity
                   </label>
                   <input
@@ -472,22 +582,6 @@ const EventCreate: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading || uploadingImages}
-              className="w-full bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white py-3 px-4 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Creating Event...
-                </>
-              ) : (
-                'Create Event'
-              )}
-            </button>
           </div>
         </form>
       </div>
@@ -495,4 +589,4 @@ const EventCreate: React.FC = () => {
   );
 };
 
-export default EventCreate;
+export default EventEdit;

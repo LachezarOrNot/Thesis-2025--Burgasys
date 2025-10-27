@@ -19,6 +19,8 @@ const PastEvents = React.lazy(() => import('./pages/PastEvents'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const Organization = React.lazy(() => import('./pages/Organization'));
+const EditEvent = React.lazy(() => import('./pages/EventEdit'));
+
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -92,6 +94,11 @@ function App() {
                     <ProtectedRoute>
                       <EventCreate />
                     </ProtectedRoute>
+                  } />
+                  <Route path="/events/:id/edit" element={
+                    <ProtectedRoute>
+                      <EditEvent />
+                   </ProtectedRoute>
                   } />
                   <Route path="/profile" element={
                     <ProtectedRoute>

@@ -1,14 +1,20 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, MapPin, Users, Clock, Edit, Trash2 } from 'lucide-react';
 import { Event } from '../types';
 import { format, isValid } from 'date-fns';
+import { useAuth } from '../contexts/AuthContext';
+import { databaseService } from '../services/database';
 
 interface EventCardProps {
   event: Event;
+  onEventUpdate?: () => void; // Callback to refresh events after edit/delete
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate(); // Add this line
+
   // Safe date formatting with validation
   const formatDateSafe = (date: any): string => {
     if (!date) return 'Date not set';
@@ -44,18 +50,70 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
   const registeredCount = event.registeredUsers?.length || 0;
   const isFull = event.capacity && registeredCount >= event.capacity;
 
+  // Check if current user can edit/delete this event
+  const canEditDelete = user && (
+    user.role === 'admin' || 
+    user.uid === event.createdBy ||
+    user.uid === event.organiser_org_id // If organiser_org_id is actually a user ID
+  );
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await databaseService.deleteEvent(event.id);
+      alert('Event deleted successfully');
+      onEventUpdate?.(); // Refresh the events list
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert('Failed to delete event');
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/events/${event.id}/edit`);
+  };
+
   return (
-    <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-primary-200 dark:border-primary-700 group">
+    <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-primary-200 dark:border-primary-700 group relative">
+      {/* Admin/Edit Overlay */}
+      {canEditDelete && (
+        <div className="absolute top-3 right-3 z-10 flex space-x-2">
+          <button
+            onClick={handleEdit}
+            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg shadow-lg transition-colors duration-200"
+            title="Edit Event"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleDelete}
+            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg transition-colors duration-200"
+            title="Delete Event"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {event.images && event.images.length > 0 && (
-        <img 
-          src={event.images[0]} 
-          alt={event.name}
-          className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            // Hide image if it fails to load
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
-        />
+        <div className="relative">
+          <img 
+            src={event.images[0]} 
+            alt={event.name}
+            className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              // Hide image if it fails to load
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+          {/* Gradient overlay for better button visibility */}
+          {canEditDelete && (
+            <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent pointer-events-none" />
+          )}
+        </div>
       )}
 
       <div className="p-7">
@@ -137,12 +195,23 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             By {event.organization?.name || 'Unknown Organizer'}
           </span>
 
-          <Link 
-            to={`/events/${event.id}`}
-            className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-2 rounded-xl text-base font-bold shadow-md transition-all duration-200"
-          >
-            View Details
-          </Link>
+          <div className="flex space-x-2">
+            {canEditDelete && (
+              <button
+                onClick={handleEdit}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all duration-200 flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Edit
+              </button>
+            )}
+            <Link 
+              to={`/events/${event.id}`}
+              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-2 rounded-xl text-base font-bold shadow-md transition-all duration-200"
+            >
+              View Details
+            </Link>
+          </div>
         </div>
       </div>
     </div>
