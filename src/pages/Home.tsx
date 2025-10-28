@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Calendar, Users, MapPin, ArrowRight } from 'lucide-react';
+import { Search, Calendar, Users, MapPin, ArrowRight, Sparkles } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
@@ -10,9 +10,11 @@ const Home: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     loadEvents();
+    setIsVisible(true);
   }, []);
 
   const loadEvents = async () => {
@@ -40,47 +42,170 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 dark:bg-purple-900 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-blue-300 dark:bg-blue-900 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-300 dark:bg-pink-900 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <style>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-50px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-fadeInUp {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+        .animate-fadeIn {
+          animation: fadeIn 1s ease-out forwards;
+        }
+        .animate-scaleIn {
+          animation: scaleIn 0.6s ease-out forwards;
+        }
+        .animate-slideInLeft {
+          animation: slideInLeft 0.8s ease-out forwards;
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-500 { animation-delay: 0.5s; }
+        .delay-600 { animation-delay: 0.6s; }
+        .glass-effect {
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-effect {
+          background: rgba(31, 41, 55, 0.8);
+          border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        .gradient-text {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+        .hover-lift {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+      `}</style>
+
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Discover Amazing Events
+      <section className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <div className={`${isVisible ? 'animate-fadeInUp' : 'opacity-0'}`}>
+            <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full mb-6 animate-float">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-sm font-semibold">Discover Your Next Experience</span>
+            </div>
+          </div>
+          
+          <h1 className={`text-5xl md:text-6xl lg:text-7xl font-bold mb-6 ${isVisible ? 'animate-fadeInUp delay-100' : 'opacity-0'}`}>
+            <span className="gradient-text">Discover Amazing</span>
+            <br />
+            <span className="text-gray-900 dark:text-white">Events</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+          
+          <p className={`text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed ${isVisible ? 'animate-fadeInUp delay-200' : 'opacity-0'}`}>
             Connect with communities, learn new skills, and create unforgettable experiences through curated events
           </p>
-          <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg p-2 shadow-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search events, topics, or locations..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-gray-900 dark:text-white dark:bg-gray-700 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
+          
+          <div className={`max-w-2xl mx-auto ${isVisible ? 'animate-scaleIn delay-300' : 'opacity-0'}`}>
+            <div className="glass-effect rounded-2xl p-3 shadow-2xl hover-lift">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search events, topics, or locations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+                  />
+                </div>
+                <button
+                  onClick={loadEvents}
+                  className="bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Search
+                </button>
               </div>
-              <button
-                onClick={loadEvents}
-                className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Search
-              </button>
             </div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-white dark:bg-gray-800">
+      <section className="py-16 relative z-10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <stat.icon className="w-12 h-12 text-primary-500 mx-auto mb-4" />
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              <div 
+                key={index} 
+                className={`glass-effect rounded-2xl p-8 text-center hover-lift ${isVisible ? `animate-fadeInUp delay-${(index + 4) * 100}` : 'opacity-0'}`}
+              >
+                <div className="bg-gradient-to-br from-primary-500 to-purple-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <stat.icon className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                   {stat.value}
                 </div>
                 <div className="text-gray-600 dark:text-gray-400 font-medium">
@@ -93,41 +218,50 @@ const Home: React.FC = () => {
       </section>
 
       {/* Featured Events Section */}
-      <section className="py-12 bg-gray-50 dark:bg-gray-900">
+      <section className="py-16 relative z-10">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-8">
-            <div className="text-center sm:text-left mb-4 sm:mb-0">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <div className={`flex flex-col sm:flex-row items-center justify-between mb-12 ${isVisible ? 'animate-slideInLeft delay-700' : 'opacity-0'}`}>
+            <div className="text-center sm:text-left mb-6 sm:mb-0">
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
                 Featured Events
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-lg text-gray-600 dark:text-gray-400">
                 Discover upcoming events happening near you
               </p>
             </div>
             <Link 
               to="/events"
-              className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="group bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               View All Events
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
           {loading ? (
-            <LoadingSpinner />
+            <div className="flex justify-center py-20">
+              <LoadingSpinner />
+            </div>
           ) : featuredEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredEvents.map(event => (
-                <EventCard key={event.id} event={event} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredEvents.map((event, index) => (
+                <div 
+                  key={event.id}
+                  className={`${isVisible ? `animate-scaleIn delay-${(index % 3 + 8) * 100}` : 'opacity-0'}`}
+                >
+                  <EventCard event={event} />
+                </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Calendar className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="glass-effect rounded-2xl p-16 text-center">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-16 h-16 text-gray-400 dark:text-gray-500" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
                 No events found
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
                 Check back later for new events
               </p>
             </div>
@@ -136,22 +270,27 @@ const Home: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-primary-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+      <section className="py-20 relative z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii4xIi8+PC9nPjwvc3ZnPg==')] opacity-10"></div>
+        
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+            Ready to Get Started?
+          </h2>
+          <p className="text-xl md:text-2xl mb-10 max-w-2xl mx-auto text-white/90">
             Join thousands of users discovering and creating amazing events
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
               to="/auth"
-              className="bg-white text-primary-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="group bg-white text-primary-600 hover:bg-gray-50 px-10 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
             >
               Sign Up Free
             </Link>
             <Link 
               to="/events"
-              className="border-2 border-white text-white hover:bg-white hover:text-primary-600 px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="group border-2 border-white text-white hover:bg-white hover:text-primary-600 px-10 py-4 rounded-xl font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
             >
               Browse Events
             </Link>
