@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string, role: UserRole) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, role: UserRole, organizationInfo?: any) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -38,12 +38,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let userData = await databaseService.getUser(firebaseUser.uid);
           
           if (!userData) {
+            // If user doesn't exist in database, create a basic user account
             userData = await databaseService.createUser({
               uid: firebaseUser.uid,
               email: firebaseUser.email!,
               displayName: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
               photoURL: firebaseUser.photoURL || undefined,
-              role: 'user'
+              role: 'user',
+              approved: true, // Regular users are auto-approved
+              approvalRequested: false
             });
           }
           
@@ -62,43 +65,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string, role: UserRole) => {
+  const signUp = async (email: string, password: string, displayName: string, role: UserRole, organizationInfo?: any) => {
+    setLoading(true);
     try {
       const { user: firebaseUser } = await firebaseCreateUser(auth, email, password);
       await firebaseUpdateProfile(firebaseUser, { displayName });
       
-      const userData = await databaseService.createUser({
+      // Check if this role requires approval
+      const requiresApproval = ['school', 'university', 'firm'].includes(role);
+      
+      const userData = {
         uid: firebaseUser.uid,
         email: firebaseUser.email!,
         displayName,
-        role
-      });
+        role,
+        approved: !requiresApproval, // Auto-approve if no approval required
+        approvalRequested: requiresApproval, // Mark as requested if approval needed
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Create user in database
+      await databaseService.createUser(userData);
+
+      // If role requires approval, create an approval request
+      if (requiresApproval && organizationInfo) {
+        await databaseService.createUserApprovalRequest({
+          userId: firebaseUser.uid,
+          userEmail: firebaseUser.email!,
+          userDisplayName: displayName,
+          requestedRole: role as 'school' | 'firm' | 'university',
+          status: 'pending',
+          organizationInfo: {
+            name: organizationInfo.organizationName,
+            address: organizationInfo.address,
+            phone: organizationInfo.phone,
+            description: organizationInfo.description
+          }
+        });
+      }
       
+      // Set the user state
       setUser(userData);
-      // Navigation removed - will be handled by route protection
+      
     } catch (error) {
       console.error('Sign up error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    setLoading(true);
     try {
       await firebaseSignIn(auth, email, password);
-      // Navigation removed - will be handled by route protection
+      // User state will be updated by onAuthStateChanged
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signInWithGoogle = async () => {
+    setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      // Navigation removed - will be handled by route protection
+      // User state will be updated by onAuthStateChanged
     } catch (error) {
       console.error('Google sign in error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 

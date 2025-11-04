@@ -40,6 +40,11 @@ const Navbar: React.FC = () => {
                   >
                     Events
                   </Link>
+                  {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
+                    <Link to="/organizations/create" className="text-gray-700 dark:text-gray-300 hover:text-primary-500">
+                               Create Organization
+                    </Link>
+                  )}
                   <Link
                     to="/calendar"
                     className="text-gray-600 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium"

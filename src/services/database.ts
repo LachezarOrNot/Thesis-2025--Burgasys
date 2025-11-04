@@ -24,7 +24,9 @@ import {
   ChatMessage, 
   Notification,
   UserRole,
-  EventStatus 
+  EventStatus,
+  EventCreationRequest,
+   UserApprovalRequest 
 } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -82,6 +84,105 @@ class DatabaseService {
       updatedAt: new Date()
     });
   }
+  // User Approval Requests
+async createUserApprovalRequest(request: Omit<UserApprovalRequest, 'id' | 'submittedAt'>): Promise<UserApprovalRequest> {
+  const requestId = uuidv4();
+  const requestRef = doc(db, 'userApprovalRequests', requestId);
+  
+  const approvalRequest: UserApprovalRequest = {
+    ...request,
+    id: requestId,
+    submittedAt: new Date()
+  };
+  
+  await setDoc(requestRef, approvalRequest);
+  return approvalRequest;
+}
+
+async getUserApprovalRequests(status?: 'pending' | 'approved' | 'rejected'): Promise<UserApprovalRequest[]> {
+  try {
+    let requestsQuery;
+    
+    if (status) {
+      requestsQuery = query(
+        collection(db, 'userApprovalRequests'),
+        where('status', '==', status)
+      );
+    } else {
+      requestsQuery = query(collection(db, 'userApprovalRequests'));
+    }
+    
+    const requestsSnap = await getDocs(requestsQuery);
+    return requestsSnap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        submittedAt: this.safeDateConvert(data.submittedAt),
+        reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
+      } as UserApprovalRequest;
+    });
+  } catch (error) {
+    console.error('Error getting user approval requests:', error);
+    return [];
+  }
+}
+
+async updateUserApprovalRequest(requestId: string, updates: Partial<UserApprovalRequest>): Promise<void> {
+  const requestRef = doc(db, 'userApprovalRequests', requestId);
+  
+  if (updates.status === 'approved') {
+    // Get the request to update the user
+    const requestDoc = await getDoc(requestRef);
+    if (requestDoc.exists()) {
+      const request = requestDoc.data() as UserApprovalRequest;
+      
+      // Update user's approved status
+      await this.updateUser(request.userId, {
+        approved: true,
+        approvalRequested: false
+      });
+    }
+  } else if (updates.status === 'rejected') {
+    // Get the request to update the user
+    const requestDoc = await getDoc(requestRef);
+    if (requestDoc.exists()) {
+      const request = requestDoc.data() as UserApprovalRequest;
+      
+      // Update user's approval status
+      await this.updateUser(request.userId, {
+        approved: false,
+        approvalRequested: false
+      });
+    }
+  }
+  
+  await updateDoc(requestRef, {
+    ...updates,
+    reviewedAt: updates.status !== 'pending' ? new Date() : undefined
+  });
+}
+
+async getUserByEmail(email: string): Promise<User | null> {
+  try {
+    const userQuery = query(
+      collection(db, 'users'),
+      where('email', '==', email)
+    );
+    
+    const userSnap = await getDocs(userQuery);
+    if (userSnap.empty) return null;
+    
+    const data = userSnap.docs[0].data();
+    return {
+      ...data,
+      createdAt: this.safeDateConvert(data.createdAt),
+      updatedAt: this.safeDateConvert(data.updatedAt)
+    } as User;
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    return null;
+  }
+}
 
   async createOrganization(orgData: Omit<Organization, 'id' | 'createdAt' | 'updatedAt'>): Promise<Organization> {
     const orgId = uuidv4();
@@ -144,20 +245,60 @@ class DatabaseService {
     });
   }
 
-  async requestAffiliation(userUid: string, orgId: string): Promise<AffiliationRequest> {
+  async requestAffiliation(studentUid: string, orgId: string, studentId?: string): Promise<AffiliationRequest> {
     const requestId = uuidv4();
     const requestRef = doc(db, 'affiliationRequests', requestId);
     
+    // Get student and organization details
+    const [student, organization] = await Promise.all([
+      this.getUser(studentUid),
+      this.getOrganization(orgId)
+    ]);
+    
+    if (!student || student.role !== 'student') {
+      throw new Error('Only students can request affiliation');
+    }
+    
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+    
     const request: AffiliationRequest = {
       id: requestId,
-      userUid,
-      orgId,
+      studentUid: studentUid,
+      studentName: student.displayName,
+      studentEmail: student.email,
+      studentId: studentId,
+      organizationId: orgId,
+      organizationName: organization.name,
       status: 'pending',
       requestedAt: new Date()
     };
     
     await setDoc(requestRef, request);
     return request;
+  }
+
+  async getStudentAffiliationRequests(studentUid: string): Promise<AffiliationRequest[]> {
+    try {
+      const requestsQuery = query(
+        collection(db, 'affiliationRequests'),
+        where('studentUid', '==', studentUid)
+      );
+      
+      const requestsSnap = await getDocs(requestsQuery);
+      return requestsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          requestedAt: this.safeDateConvert(data.requestedAt),
+          reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
+        } as AffiliationRequest;
+      });
+    } catch (error) {
+      console.error('Error getting student affiliation requests:', error);
+      return [];
+    }
   }
 
   async getAffiliationRequests(orgId?: string): Promise<AffiliationRequest[]> {
@@ -167,7 +308,7 @@ class DatabaseService {
       if (orgId) {
         requestsQuery = query(
           collection(db, 'affiliationRequests'),
-          where('orgId', '==', orgId)
+          where('organizationId', '==', orgId)
         );
       } else {
         requestsQuery = query(collection(db, 'affiliationRequests'));
@@ -178,7 +319,8 @@ class DatabaseService {
         const data = doc.data();
         return {
           ...data,
-          requestedAt: this.safeDateConvert(data.requestedAt)
+          requestedAt: this.safeDateConvert(data.requestedAt),
+          reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
         } as AffiliationRequest;
       });
     } catch (error) {
@@ -189,7 +331,128 @@ class DatabaseService {
 
   async updateAffiliationRequest(requestId: string, updates: Partial<AffiliationRequest>): Promise<void> {
     const requestRef = doc(db, 'affiliationRequests', requestId);
-    await updateDoc(requestRef, updates);
+    
+    if (updates.status === 'approved') {
+      // Get the request to update student and organization
+      const requestDoc = await getDoc(requestRef);
+      if (requestDoc.exists()) {
+        const request = requestDoc.data() as AffiliationRequest;
+        
+        // Update student's affiliated organization
+        await this.updateUser(request.studentUid, {
+          affiliatedOrganizationId: request.organizationId
+        });
+        
+        // Add student to organization's affiliated students
+        const org = await this.getOrganization(request.organizationId);
+        if (org) {
+          await this.updateOrganization(request.organizationId, {
+            affiliatedStudents: [...(org.affiliatedStudents || []), request.studentUid]
+          });
+        }
+      }
+    }
+    
+    await updateDoc(requestRef, {
+      ...updates,
+      reviewedAt: updates.status !== 'pending' ? new Date() : undefined
+    });
+  }
+
+  async getUserOrganizations(userId: string): Promise<Organization[]> {
+    try {
+      const orgsQuery = query(
+        collection(db, 'organizations'),
+        where('adminUsers', 'array-contains', userId)
+      );
+      
+      const orgsSnap = await getDocs(orgsQuery);
+      return orgsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          createdAt: this.safeDateConvert(data.createdAt),
+          updatedAt: this.safeDateConvert(data.updatedAt)
+        } as Organization;
+      });
+    } catch (error) {
+      console.error('Error getting user organizations:', error);
+      return [];
+    }
+  }
+
+  async getStudentOrganization(studentUid: string): Promise<Organization | null> {
+    try {
+      const student = await this.getUser(studentUid);
+      if (!student || !student.affiliatedOrganizationId) {
+        return null;
+      }
+      
+      return await this.getOrganization(student.affiliatedOrganizationId);
+    } catch (error) {
+      console.error('Error getting student organization:', error);
+      return null;
+    }
+  }
+
+  async createEventRequest(request: Omit<EventCreationRequest, 'id' | 'submittedAt'>): Promise<EventCreationRequest> {
+    const requestId = uuidv4();
+    const requestRef = doc(db, 'eventCreationRequests', requestId);
+    
+    const eventRequest: EventCreationRequest = {
+      ...request,
+      id: requestId,
+      submittedAt: new Date()
+    };
+    
+    await setDoc(requestRef, eventRequest);
+    return eventRequest;
+  }
+
+  async getEventRequests(status?: 'pending' | 'approved' | 'rejected'): Promise<EventCreationRequest[]> {
+    try {
+      let requestsQuery;
+      
+      if (status) {
+        requestsQuery = query(
+          collection(db, 'eventCreationRequests'),
+          where('status', '==', status)
+        );
+      } else {
+        requestsQuery = query(collection(db, 'eventCreationRequests'));
+      }
+      
+      const requestsSnap = await getDocs(requestsQuery);
+      return requestsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          submittedAt: this.safeDateConvert(data.submittedAt),
+          reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
+        } as EventCreationRequest;
+      });
+    } catch (error) {
+      console.error('Error getting event requests:', error);
+      return [];
+    }
+  }
+
+  async updateEventRequest(requestId: string, updates: Partial<EventCreationRequest>): Promise<void> {
+    const requestRef = doc(db, 'eventCreationRequests', requestId);
+    await updateDoc(requestRef, {
+      ...updates,
+      reviewedAt: updates.status !== 'pending' ? new Date() : undefined
+    });
+  }
+
+  async deleteEventRequest(requestId: string): Promise<void> {
+    try {
+      const requestRef = doc(db, 'eventCreationRequests', requestId);
+      await deleteDoc(requestRef);
+    } catch (error) {
+      console.error('Error deleting event request:', error);
+      throw error;
+    }
   }
 
   async createEvent(eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>): Promise<Event> {

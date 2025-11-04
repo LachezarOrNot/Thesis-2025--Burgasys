@@ -11,6 +11,10 @@ export interface User {
   phoneNumber?: string;
   affiliations?: string[];
   bio?: string;
+  studentId?: string;
+  affiliatedOrganizationId?: string;
+  approved?: boolean; // New field for organization accounts
+  approvalRequested?: boolean; // New field to track if approval was requested
 }
 
 export interface Organization {
@@ -26,17 +30,38 @@ export interface Organization {
   createdAt: Date;
   updatedAt: Date;
   logoURL?: string;
+  adminUsers: string[]; // Organizers who manage this organization
+  affiliatedStudents: string[]; // Student UIDs who are affiliated
 }
 
 export interface AffiliationRequest {
   id: string;
-  userUid: string;
-  orgId: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  studentUid: string; // Only students can request affiliation
+  studentName: string;
+  studentEmail: string;
+  studentId?: string;
+  organizationId: string;
+  organizationName: string;
+  status: 'pending' | 'approved' | 'rejected';
   requestedAt: Date;
-  acceptedBy?: string;
-  user?: User;
-  organization?: Organization;
+  reviewedAt?: Date;
+  reviewedBy?: string;
+  reason?: string;
+}
+
+export interface EventCreationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  organizationId?: string;
+  organizationName?: string;
+  eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: Date;
+  reviewedAt?: Date;
+  reviewedBy?: string;
+  reason?: string;
 }
 
 export type EventStatus = 'draft' | 'pending_approval' | 'published' | 'finished' | 'archived';
@@ -98,4 +123,23 @@ export interface Notification {
   read: boolean;
   createdAt: Date;
   actionUrl?: string;
+}
+
+export interface UserApprovalRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userDisplayName: string;
+  requestedRole: 'school' | 'firm' | 'university';
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: Date;
+  reviewedAt?: Date;
+  reviewedBy?: string;
+  reason?: string;
+  organizationInfo?: {
+    name?: string;
+    address?: string;
+    phone?: string;
+    description?: string;
+  };
 }

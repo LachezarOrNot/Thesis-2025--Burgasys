@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
-import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building, MapPin, Phone } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,13 +11,14 @@ const Auth: React.FC = () => {
     displayName: '',
     role: 'user' as UserRole,
     organizationName: '',
-    organizationType: 'school' as 'school' | 'firm' | 'university',
     address: '',
-    phone: ''
+    phone: '',
+    description: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const { signUp, signIn, signInWithGoogle } = useAuth();
 
@@ -25,14 +26,33 @@ const Auth: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       if (isLogin) {
         await signIn(formData.email, formData.password);
       } else {
-        await signUp(formData.email, formData.password, formData.displayName, formData.role);
+        const requiresApproval = ['school', 'university', 'firm'].includes(formData.role);
+        
+        let organizationInfo = undefined;
+        if (requiresApproval) {
+          organizationInfo = {
+            organizationName: formData.organizationName,
+            address: formData.address,
+            phone: formData.phone,
+            description: formData.description
+          };
+        }
+
+        await signUp(formData.email, formData.password, formData.displayName, formData.role, organizationInfo);
+        
+        // Show appropriate success message
+        if (requiresApproval) {
+          setSuccessMessage('Your account has been created and is pending admin approval. You will receive an email once your account is approved.');
+        } else {
+          setSuccessMessage('Account created successfully! You can now access all features.');
+        }
       }
-      // Navigation removed - will be handled by RootRedirect in App.tsx
     } catch (error: any) {
       setError(error.message || 'Authentication failed');
     } finally {
@@ -41,15 +61,35 @@ const Auth: React.FC = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    
     try {
       await signInWithGoogle();
-      // Navigation removed - will be handled by RootRedirect in App.tsx
     } catch (error: any) {
       setError(error.message || 'Google sign in failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   const isOrganizationRole = ['school', 'firm', 'university'].includes(formData.role);
+
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      password: '',
+      displayName: '',
+      role: 'user',
+      organizationName: '',
+      address: '',
+      phone: '',
+      description: ''
+    });
+    setError('');
+    setSuccessMessage('');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -61,7 +101,10 @@ const Auth: React.FC = () => {
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                resetForm();
+              }}
               className="font-medium text-primary-600 hover:text-primary-500"
             >
               {isLogin ? 'Sign up' : 'Sign in'}
@@ -73,6 +116,12 @@ const Auth: React.FC = () => {
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg text-sm">
+              {successMessage}
             </div>
           )}
 
@@ -117,7 +166,12 @@ const Auth: React.FC = () => {
               </div>
 
               {isOrganizationRole && (
-                <>
+                <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                    <Building className="w-4 h-4" />
+                    Organization Information
+                  </h3>
+                  
                   <div>
                     <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Organization Name *
@@ -141,34 +195,61 @@ const Auth: React.FC = () => {
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Address *
                     </label>
-                    <input
-                      id="address"
-                      name="address"
-                      type="text"
-                      required
-                      value={formData.address}
-                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                      placeholder="Enter organization address"
-                    />
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        id="address"
+                        name="address"
+                        type="text"
+                        required
+                        value={formData.address}
+                        onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                        className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
+                        placeholder="Enter organization address"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Phone Number *
                     </label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                      placeholder="Enter phone number"
+                      placeholder="Brief description of your organization"
                     />
                   </div>
-                </>
+
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      <strong>Note:</strong> Organization accounts require admin approval. You will be notified once your account is approved.
+                    </p>
+                  </div>
+                </div>
               )}
             </>
           )}
