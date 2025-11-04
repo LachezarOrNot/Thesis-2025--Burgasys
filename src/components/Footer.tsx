@@ -1,89 +1,159 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, Mail, MapPin } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  Calendar,
+  CalendarDays,
+  LogIn,
+  Mail,
+  MapPin,
+  Sparkles,
+  Instagram,
+  Twitter,
+  Linkedin,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-800 text-white py-12">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
+    <footer className="relative overflow-hidden bg-black text-gray-300 py-14">
+      {/* Animated gradient background */}
+      <motion.div
+        animate={{
+          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+          opacity: [0.2, 0.35, 0.2],
+        }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute inset-0 bg-gradient-to-r from-blue-700 via-purple-600 to-indigo-700 bg-[length:300%_300%] blur-[120px]"
+      />
+
+      <div className="relative container mx-auto px-6">
+        {/* Main horizontal layout */}
+        <div className="flex flex-col md:flex-row items-start justify-between gap-12 md:gap-24">
+          {/* 1️⃣ Brand Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="flex-1 max-w-sm"
+          >
             <div className="flex items-center space-x-2 mb-4">
-              <Calendar className="h-8 w-8 text-primary-400" />
-              <span className="text-2xl font-bold">EventHub</span>
+              <Sparkles className="h-7 w-7 text-purple-400 animate-pulse" />
+              <span className="text-2xl font-bold text-white">EventHub</span>
             </div>
-            <p className="text-gray-400 mb-4 max-w-md">
-              Connect with communities, discover amazing events, and create unforgettable experiences. 
-              Join thousands of users in our growing event ecosystem.
+
+            <p className="text-gray-400 mb-5 leading-relaxed">
+              Discover incredible experiences, connect with amazing people, and
+              create memories that matter — powered by communities worldwide.
             </p>
-            <div className="flex items-center space-x-4 text-gray-400">
+
+            <div className="flex items-center gap-6 text-sm text-gray-400">
               <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4" />
-                <span>Global Community</span>
+                <MapPin className="h-4 w-4 text-blue-400" />
+                <span>Global</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4" />
+                <Mail className="h-4 w-4 text-purple-400" />
                 <span>support@eventhub.com</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
+          {/* 2️⃣ Explore Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex-1"
+          >
+            <h3 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">
+              Explore
+            </h3>
+            <ul className="space-y-3 text-sm">
               <li>
-                <Link to="/events" className="text-gray-400 hover:text-white transition-colors">
-                  Browse Events
+                <Link
+                  to="/events"
+                  className="group flex items-center space-x-2 hover:text-blue-400 transition-all duration-300"
+                >
+                  <CalendarDays className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                  <span>Upcoming Events</span>
                 </Link>
               </li>
               <li>
-                <Link to="/calendar" className="text-gray-400 hover:text-white transition-colors">
-                  Event Calendar
+                <Link
+                  to="/calendar"
+                  className="group flex items-center space-x-2 hover:text-purple-400 transition-all duration-300"
+                >
+                  <Calendar className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                  <span>Event Calendar</span>
                 </Link>
               </li>
               <li>
-                <Link to="/past-events" className="text-gray-400 hover:text-white transition-colors">
-                  Past Events
-                </Link>
-              </li>
-              <li>
-                <Link to="/auth" className="text-gray-400 hover:text-white transition-colors">
-                  Sign In
+                <Link
+                  to="/auth"
+                  className="group flex items-center space-x-2 hover:text-indigo-400 transition-all duration-300"
+                >
+                  <LogIn className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                  <span>Sign In</span>
                 </Link>
               </li>
             </ul>
-          </div>
+          </motion.div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-            </ul>
-          </div>
+          {/* 3️⃣ Connect Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+            className="flex-1 md:text-right"
+          >
+            <h3 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">
+              Connect
+            </h3>
+            <div className="flex md:justify-end justify-center items-center space-x-5 mb-6">
+              <a
+                href="#"
+                className="hover:text-blue-400 hover:scale-110 transition-all duration-300"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="#"
+                className="hover:text-purple-400 hover:scale-110 transition-all duration-300"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="#"
+                className="hover:text-indigo-400 hover:scale-110 transition-all duration-300"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+            </div>
+
+            <p className="text-gray-500 text-sm leading-relaxed md:max-w-xs md:ml-auto">
+              Stay connected with the latest updates, event tips, and community
+              stories.
+            </p>
+          </motion.div>
         </div>
 
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 EventHub. All rights reserved.</p>
-        </div>
+        {/* Footer bottom */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="mt-14 border-t border-gray-800 pt-6 text-center text-sm text-gray-500"
+        >
+          <p>
+            © {new Date().getFullYear()}{" "}
+            <span className="text-white font-semibold">EventHub</span> · Built
+            with integrity for the community.
+          </p>
+        </motion.div>
       </div>
     </footer>
   );
