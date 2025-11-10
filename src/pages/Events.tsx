@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Search, SlidersHorizontal, X, Calendar } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Calendar, MapPin, Users, Clock, Sparkles } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
@@ -143,16 +143,19 @@ const Events: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-        <div className="container mx-auto px-4">
-          <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-primary-900 py-8">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="bg-red-50 dark:bg-red-900/80 backdrop-blur-lg border border-red-200 dark:border-red-700 rounded-2xl p-8 text-center transform hover:scale-105 transition-all duration-300">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-10 h-10 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-3">
               Error Loading Events
             </h2>
-            <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
+            <p className="text-red-700 dark:text-red-300 mb-6 text-lg">{error}</p>
             <button
               onClick={loadEvents}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               Try Again
             </button>
@@ -163,198 +166,291 @@ const Events: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="container mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Discover Events
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Find and join amazing events happening around you
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-primary-900 py-8">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header */}
+        <div className="text-center mb-12 animate-fade-in">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-5xl font-black text-gray-900 dark:text-white tracking-tight bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+              Discover Events
+            </h1>
+          </div>
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            Find and join amazing events happening around you. Explore, connect, and create unforgettable experiences.
           </p>
         </div>
 
-        {/* Search and Filter Bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search events, topics, or locations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-              />
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10 animate-fade-in-up">
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Total Events</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{events.length}</p>
+              </div>
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              </div>
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-              Filters
-              {hasActiveFilters && (
-                <span className="bg-white text-primary-500 rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                  !
-                </span>
-              )}
-            </button>
           </div>
 
-          {showFilters && (
-            <div className="mt-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
-                <div className="flex gap-2">
-                  {hasActiveFilters && (
-                    <button
-                      onClick={clearFilters}
-                      className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
-                    >
-                      <X className="w-4 h-4" />
-                      Clear All
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowFilters(false)}
-                    className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                  >
-                    Hide
-                  </button>
-                </div>
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">This Week</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                  {events.filter(event => {
+                    try {
+                      return isThisWeek(new Date(event.start_datetime));
+                    } catch {
+                      return false;
+                    }
+                  }).length}
+                </p>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Date
-                  </label>
-                  <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="all">Any date</option>
-                    <option value="today">Today</option>
-                    <option value="week">This week</option>
-                    <option value="month">This month</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="all">All categories</option>
-                    <option value="technology">Technology</option>
-                    <option value="business">Business</option>
-                    <option value="education">Education</option>
-                    <option value="social">Social</option>
-                    <option value="sports">Sports</option>
-                    <option value="arts">Arts & Culture</option>
-                    <option value="science">Science</option>
-                    <option value="health">Health & Wellness</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Location
-                  </label>
-                  <select
-                    value={locationFilter}
-                    onChange={(e) => setLocationFilter(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="all">Any location</option>
-                    <option value="online">Online</option>
-                    <option value="in-person">In-person</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Sort By
-                  </label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="date">Date (Soonest)</option>
-                    <option value="name">Name (A-Z)</option>
-                    <option value="popularity">Most Popular</option>
-                  </select>
-                </div>
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Active Filters Summary */}
-          {hasActiveFilters && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {searchTerm && (
-                <span className="inline-flex items-center px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm">
-                  Search: "{searchTerm}"
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {dateFilter !== 'all' && (
-                <span className="inline-flex items-center px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm">
-                  Date: {dateFilter}
-                  <button
-                    onClick={() => setDateFilter('all')}
-                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {categoryFilter !== 'all' && (
-                <span className="inline-flex items-center px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm">
-                  Category: {categoryFilter}
-                  <button
-                    onClick={() => setCategoryFilter('all')}
-                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {locationFilter !== 'all' && (
-                <span className="inline-flex items-center px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm">
-                  Location: {locationFilter}
-                  <button
-                    onClick={() => setLocationFilter('all')}
-                    className="ml-2 hover:text-primary-600 dark:hover:text-primary-300"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Online</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                  {events.filter(event => 
+                    event.location?.toLowerCase().includes('online') || 
+                    event.location?.toLowerCase().includes('virtual')
+                  ).length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              </div>
             </div>
-          )}
+          </div>
+
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">In Person</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                  {events.filter(event => 
+                    !event.location?.toLowerCase().includes('online') && 
+                    !event.location?.toLowerCase().includes('virtual')
+                  ).length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+                <MapPin className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Results Count */}
-        <div className="mb-6 flex justify-between items-center">
-          <p className="text-gray-600 dark:text-gray-400">
-            Showing {filteredEvents.length} of {events.length} event{events.length !== 1 ? 's' : ''}
-          </p>
+        {/* Search and Filter Section */}
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 mb-10 overflow-hidden animate-fade-in-up">
+          <div className="p-8">
+            {/* Search Bar */}
+            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
+              <div className="flex-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search events, topics, locations, or categories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 dark:text-white transition-all duration-300"
+                />
+              </div>
+              
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-3"
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                Filters
+                {hasActiveFilters && (
+                  <span className="bg-white text-primary-500 rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
+                    !
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-600 animate-slide-down">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                    <SlidersHorizontal className="w-5 h-5 text-primary-500" />
+                    Filter Events
+                  </h3>
+                  <div className="flex gap-3">
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="text-primary-500 hover:text-primary-600 font-semibold flex items-center gap-2 transition-colors duration-200"
+                      >
+                        <X className="w-4 h-4" />
+                        Clear All
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium transition-colors duration-200"
+                    >
+                      Hide Filters
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      📅 Date
+                    </label>
+                    <select
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value)}
+                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    >
+                      <option value="all">Any date</option>
+                      <option value="today">Today</option>
+                      <option value="week">This week</option>
+                      <option value="month">This month</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      🏷️ Category
+                    </label>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    >
+                      <option value="all">All categories</option>
+                      <option value="technology">Technology</option>
+                      <option value="business">Business</option>
+                      <option value="education">Education</option>
+                      <option value="social">Social</option>
+                      <option value="sports">Sports</option>
+                      <option value="arts">Arts & Culture</option>
+                      <option value="science">Science</option>
+                      <option value="health">Health & Wellness</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      📍 Location
+                    </label>
+                    <select
+                      value={locationFilter}
+                      onChange={(e) => setLocationFilter(e.target.value)}
+                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    >
+                      <option value="all">Any location</option>
+                      <option value="online">Online</option>
+                      <option value="in-person">In-person</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      🔄 Sort By
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                    >
+                      <option value="date">Date (Soonest)</option>
+                      <option value="name">Name (A-Z)</option>
+                      <option value="popularity">Most Popular</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Active Filters Summary */}
+            {hasActiveFilters && (
+              <div className="mt-6 animate-fade-in">
+                <div className="flex flex-wrap gap-3">
+                  {searchTerm && (
+                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
+                      🔍 "{searchTerm}"
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {dateFilter !== 'all' && (
+                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
+                      📅 {dateFilter}
+                      <button
+                        onClick={() => setDateFilter('all')}
+                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {categoryFilter !== 'all' && (
+                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
+                      🏷️ {categoryFilter}
+                      <button
+                        onClick={() => setCategoryFilter('all')}
+                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {locationFilter !== 'all' && (
+                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
+                      📍 {locationFilter}
+                      <button
+                        onClick={() => setLocationFilter('all')}
+                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Results Header */}
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              {hasActiveFilters ? 'Filtered Events' : 'All Events'}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Showing <span className="font-semibold text-primary-600 dark:text-primary-400">{filteredEvents.length}</span> of{' '}
+              <span className="font-semibold">{events.length}</span> event{events.length !== 1 ? 's' : ''}
+            </p>
+          </div>
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="text-sm text-primary-500 hover:text-primary-600 flex items-center gap-1"
+              className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
             >
               <X className="w-4 h-4" />
               Clear Filters
@@ -364,30 +460,40 @@ const Events: React.FC = () => {
 
         {/* Events Grid */}
         {loading ? (
-          <LoadingSpinner />
+          <div className="flex justify-center items-center py-20">
+            <LoadingSpinner />
+          </div>
         ) : filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map(event => (
-              <EventCard key={event.id} event={event} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredEvents.map((event, index) => (
+              <div 
+                key={event.id}
+                className="animate-fade-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <EventCard event={event} />
+              </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <Search className="w-24 h-24 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No events found
+          <div className="text-center py-20 animate-fade-in">
+            <div className="w-32 h-32 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Search className="w-16 h-16 text-primary-500" />
+            </div>
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              No Events Found
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
               {hasActiveFilters 
-                ? 'Try adjusting your filters or search terms' 
-                : 'Check back later for new events'
+                ? 'No events match your current filters. Try adjusting your search criteria.' 
+                : 'No events available at the moment. Check back later for new events!'
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   Clear All Filters
                 </button>
@@ -395,15 +501,15 @@ const Events: React.FC = () => {
               {events.length === 0 && (
                 <Link 
                   to="/events/create"
-                  className="border border-primary-500 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900 px-6 py-3 rounded-lg font-medium transition-colors inline-flex items-center gap-2"
+                  className="border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white dark:hover:bg-primary-600 px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
                 >
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-5 h-5" />
                   Create First Event
                 </Link>
               )}
               <Link 
                 to="/calendar"
-                className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
               >
                 View Calendar
               </Link>

@@ -4,7 +4,6 @@ import { Calendar, LogOut, Moon, Sun, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import RoleBadge from './RoleBadge';
-import LanguageSwitcher from './LanguageSwitcher';
 
 
 const Navbar: React.FC = () => {

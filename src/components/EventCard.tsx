@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Users, Clock, Edit, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Edit, Trash2, Eye, Sparkles } from 'lucide-react';
 import { Event } from '../types';
 import { format, isValid } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,17 +8,17 @@ import { databaseService } from '../services/database';
 
 interface EventCardProps {
   event: Event;
-  onEventUpdate?: () => void; // Callback to refresh events after edit/delete
+  onEventUpdate?: () => void;
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   const { user } = useAuth();
-  const navigate = useNavigate(); // Add this line
+  const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  // Safe date formatting with validation
   const formatDateSafe = (date: any): string => {
     if (!date) return 'Date not set';
-    
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
       return isValid(dateObj) ? format(dateObj, 'MMM dd, yyyy') : 'Invalid date';
@@ -29,7 +29,6 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
 
   const formatTimeSafe = (date: any): string => {
     if (!date) return 'Time not set';
-    
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
       return isValid(dateObj) ? format(dateObj, 'HH:mm') : 'Invalid time';
@@ -38,23 +37,13 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
     }
   };
 
-  const isUpcoming = () => {
-    try {
-      const startDate = event.start_datetime instanceof Date ? event.start_datetime : new Date(event.start_datetime);
-      return isValid(startDate) && startDate > new Date();
-    } catch {
-      return false;
-    }
-  };
-
   const registeredCount = event.registeredUsers?.length || 0;
   const isFull = event.capacity && registeredCount >= event.capacity;
 
-  // Check if current user can edit/delete this event
   const canEditDelete = user && (
     user.role === 'admin' || 
     user.uid === event.createdBy ||
-    user.uid === event.organiser_org_id // If organiser_org_id is actually a user ID
+    user.uid === event.organiser_org_id
   );
 
   const handleDelete = async () => {
@@ -64,8 +53,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
 
     try {
       await databaseService.deleteEvent(event.id);
-      alert('Event deleted successfully');
-      onEventUpdate?.(); // Refresh the events list
+      onEventUpdate?.();
     } catch (error) {
       console.error('Error deleting event:', error);
       alert('Failed to delete event');
@@ -77,129 +65,136 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   };
 
   return (
-    <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-primary-200 dark:border-primary-700 group relative">
-      {/* Admin/Edit Overlay */}
-      {canEditDelete && (
-        <div className="absolute top-3 right-3 z-10 flex space-x-2">
-          <button
-            onClick={handleEdit}
-            className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg shadow-lg transition-colors duration-200"
-            title="Edit Event"
-          >
-            <Edit className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleDelete}
-            className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg shadow-lg transition-colors duration-200"
-            title="Delete Event"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {event.images && event.images.length > 0 && (
-        <div className="relative">
+    <div className="group bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-primary-200 dark:hover:border-primary-600">
+      {/* Image Section with Overlays */}
+      {event.images && event.images.length > 0 && !imageError && (
+        <div className="relative h-52 overflow-hidden">
           <img 
             src={event.images[0]} 
             alt={event.name}
-            className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              // Hide image if it fails to load
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
           />
-          {/* Gradient overlay for better button visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+          
+          {/* Status Badge */}
+          <div className="absolute top-4 left-4">
+            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
+              event.status === 'published' ? 'bg-green-500/90 text-white' :
+              event.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
+              event.status === 'finished' ? 'bg-gray-500/90 text-white' :
+              'bg-blue-500/90 text-white'
+            }`}>
+              {event.status ? event.status.replace('_', ' ') : 'unknown'}
+            </span>
+          </div>
+
+          {/* Admin Actions */}
           {canEditDelete && (
-            <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent pointer-events-none" />
+            <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <button
+                onClick={handleEdit}
+                className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                title="Edit Event"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400"
+                title="Delete Event"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Capacity Indicator */}
+          {event.capacity && (
+            <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                <Users className="w-4 h-4" />
+                <span>{registeredCount}/{event.capacity}</span>
+                {isFull && (
+                  <span className="bg-red-500 px-2 py-0.5 rounded text-xs font-bold">FULL</span>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      <div className="p-7">
-        <div className="flex items-start justify-between mb-4">
-          <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2 group-hover:text-primary-500 transition-colors duration-200">
+      {/* Content Section */}
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">
             {event.name || 'Unnamed Event'}
           </h3>
-          <span className={`px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-md ${
-            event.status === 'published' ? 'bg-green-200 text-green-900 dark:bg-green-900 dark:text-green-200' :
-            event.status === 'pending_approval' ? 'bg-yellow-200 text-yellow-900 dark:bg-yellow-900 dark:text-yellow-200' :
-            event.status === 'finished' ? 'bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-200' :
-            'bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200'
-          }`}>
-            {event.status ? event.status.replace('_', ' ') : 'unknown'}
-          </span>
+          {event.subtitle && (
+            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">
+              {event.subtitle}
+            </p>
+          )}
         </div>
 
-        {event.subtitle && (
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-5 line-clamp-2 font-medium">
-            {event.subtitle}
-          </p>
-        )}
-
-        <div className="space-y-3 mb-5">
-          <div className="flex items-center text-gray-600 dark:text-gray-400">
-            <Calendar className="w-5 h-5 mr-2 flex-shrink-0" />
-            <span className="text-base font-semibold">
-              {formatDateSafe(event.start_datetime)}
-            </span>
+        {/* Event Details */}
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center text-gray-700 dark:text-gray-300">
+            <Calendar className="w-4 h-4 mr-3 text-primary-500 flex-shrink-0" />
+            <span className="font-medium">{formatDateSafe(event.start_datetime)}</span>
           </div>
 
           {event.start_datetime && event.end_datetime && (
-            <div className="flex items-center text-gray-600 dark:text-gray-400">
-              <Clock className="w-5 h-5 mr-2 flex-shrink-0" />
-              <span className="text-base font-semibold">
+            <div className="flex items-center text-gray-700 dark:text-gray-300">
+              <Clock className="w-4 h-4 mr-3 text-primary-500 flex-shrink-0" />
+              <span className="font-medium">
                 {formatTimeSafe(event.start_datetime)} - {formatTimeSafe(event.end_datetime)}
               </span>
             </div>
           )}
 
           {event.location && (
-            <div className="flex items-center text-gray-600 dark:text-gray-400">
-              <MapPin className="w-5 h-5 mr-2 flex-shrink-0" />
-              <span className="text-base font-semibold line-clamp-1">{event.location}</span>
-            </div>
-          )}
-
-          {event.capacity && (
-            <div className="flex items-center text-gray-600 dark:text-gray-400">
-              <Users className="w-5 h-5 mr-2 flex-shrink-0" />
-              <span className="text-base font-semibold">
-                {registeredCount} / {event.capacity} registered
-                {isFull && ' • Full'}
-              </span>
+            <div className="flex items-center text-gray-700 dark:text-gray-300">
+              <MapPin className="w-4 h-4 mr-3 text-primary-500 flex-shrink-0" />
+              <span className="font-medium line-clamp-1">{event.location}</span>
             </div>
           )}
         </div>
 
+        {/* Tags */}
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-5">
             {event.tags.slice(0, 3).map(tag => (
               <span 
                 key={tag}
-                className="px-3 py-1 bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-primary-200 rounded-xl text-xs font-bold shadow-sm"
+                className="px-3 py-1.5 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-semibold transition-colors duration-300 hover:bg-primary-200 dark:hover:bg-primary-800/60"
               >
                 {tag}
               </span>
             ))}
             {event.tags.length > 3 && (
-              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl text-xs font-bold shadow-sm">
+              <span className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-semibold">
                 +{event.tags.length - 3}
               </span>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <span className="text-base text-gray-500 dark:text-gray-400 font-semibold">
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
             By {event.organization?.name || 'Unknown Organizer'}
-          </span>
+          </div>
 
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2">
             {canEditDelete && (
               <button
                 onClick={handleEdit}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition-all duration-200 flex items-center gap-2"
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md hover:shadow-lg"
               >
                 <Edit className="w-4 h-4" />
                 Edit
@@ -207,9 +202,11 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
             )}
             <Link 
               to={`/events/${event.id}`}
-              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-2 rounded-xl text-base font-bold shadow-md transition-all duration-200"
+              className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md hover:shadow-lg group/link"
             >
+              <Eye className="w-4 h-4" />
               View Details
+              <Sparkles className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity duration-300" />
             </Link>
           </div>
         </div>

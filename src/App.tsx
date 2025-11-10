@@ -6,7 +6,6 @@ import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
-import './i18n';
 
 // Pages with lazy loading and error handling
 const Home = React.lazy(() => import('./pages/Home'));

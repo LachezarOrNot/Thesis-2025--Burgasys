@@ -35,7 +35,7 @@ const EventCreate: React.FC = () => {
     tags: [] as string[],
     status: 'published' as EventStatus,
     allow_registration: true,
-    images: [] as string[] // Array to store image URLs
+    images: [] as string[] // Array to store Base64 image strings
   });
   
   const [newTag, setNewTag] = useState('');
@@ -76,7 +76,7 @@ const EventCreate: React.FC = () => {
         end_datetime: new Date(formData.end_datetime),
         capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
         tags: formData.tags,
-        images: formData.images, // Include uploaded images
+        images: formData.images, // Include Base64 images
         organiser_org_id: '', // You might want to get this from user context
         createdBy: user.uid,
         status: formData.status,
@@ -98,6 +98,55 @@ const EventCreate: React.FC = () => {
     }
   };
 
+  // Convert file to Base64 string
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // Optimize image by reducing quality and size
+  const optimizeImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions (max width 800px)
+        const maxWidth = 800;
+        const scale = Math.min(maxWidth / img.width, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        
+        // Draw and compress with 80% quality
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to optimize image'));
+          }
+        }, 'image/jpeg', 0.8);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -114,23 +163,30 @@ const EventCreate: React.FC = () => {
           continue;
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image size must be less than 5MB');
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+          alert('Image size must be less than 2MB');
           continue;
         }
 
-        // Create unique file path
-        const filePath = `events/${Date.now()}-${file.name}`;
-        
-        // Upload to Firebase Storage
-        const imageUrl = await databaseService.uploadFile(file, filePath);
-        
-        // Add to images array
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, imageUrl]
-        }));
+        try {
+          // Optimize image first
+          const optimizedBlob = await optimizeImage(file);
+          const optimizedFile = new File([optimizedBlob], file.name, { type: 'image/jpeg' });
+
+          // Convert to Base64
+          const base64String = await fileToBase64(optimizedFile);
+          
+          // Add to images array
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, base64String]
+          }));
+        } catch (error) {
+          console.error('Error processing image:', error);
+          alert('Failed to process image');
+          continue;
+        }
       }
       
     } catch (error) {
@@ -272,7 +328,7 @@ const EventCreate: React.FC = () => {
                         Click to upload images
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        PNG, JPG, GIF up to 5MB
+                        PNG, JPG up to 2MB (will be optimized)
                       </p>
                     </div>
                   </label>
@@ -283,7 +339,7 @@ const EventCreate: React.FC = () => {
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      Uploading images...
+                      Processing images...
                     </p>
                   </div>
                 )}
@@ -291,12 +347,16 @@ const EventCreate: React.FC = () => {
                 {/* Image Preview */}
                 {formData.images.length > 0 && (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {formData.images.map((imageUrl, index) => (
+                    {formData.images.map((base64String, index) => (
                       <div key={index} className="relative group">
                         <img
-                          src={imageUrl}
+                          src={base64String}
                           alt={`Event image ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg"
+                          onError={(e) => {
+                            console.error('Image failed to load:', e);
+                            // You can set a placeholder image here if needed
+                          }}
                         />
                         <button
                           type="button"
@@ -309,6 +369,14 @@ const EventCreate: React.FC = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Storage Info */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    <strong>Note:</strong> Images are stored as Base64 strings in the database to avoid storage costs. 
+                    {formData.images.length > 0 && ` Current images: ${formData.images.length}`}
+                  </p>
+                </div>
               </div>
             </div>
 
