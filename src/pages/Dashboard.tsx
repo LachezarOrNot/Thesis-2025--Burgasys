@@ -47,6 +47,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Check if user can create events
+  const canCreateEvents = user && ['admin', 'school', 'university', 'firm'].includes(user.role);
+
   const upcomingEvents = userEvents.filter(event => 
     new Date(event.start_datetime) > new Date()
   );
@@ -149,19 +152,22 @@ const Dashboard: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link 
-              to="/events/create"
-              className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white p-6 rounded-2xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-4"
-            >
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Plus className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-left">
-                <div className="text-lg font-bold">Create Event</div>
-                <div className="text-sm opacity-90">Start a new event</div>
-              </div>
-            </Link>
+          <div className={`grid gap-4 ${canCreateEvents ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
+            {/* Create Event Button - Only show for authorized roles */}
+            {canCreateEvents && (
+              <Link 
+                to="/events/create"
+                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white p-6 rounded-2xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-4"
+              >
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-lg font-bold">Create Event</div>
+                  <div className="text-sm opacity-90">Start a new event</div>
+                </div>
+              </Link>
+            )}
             
             <Link 
               to="/events"
@@ -214,18 +220,23 @@ const Dashboard: React.FC = () => {
                 <Calendar className="w-12 h-12 text-primary-500" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                No Events Created Yet
+                {canCreateEvents ? 'No Events Created Yet' : 'No Events'}
               </h3>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                You haven't created any events yet
+                {canCreateEvents 
+                  ? "You haven't created any events yet"
+                  : "You haven't created any events"
+                }
               </p>
-              <Link 
-                to="/events/create"
-                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 inline-flex items-center gap-3"
-              >
-                <Plus className="w-5 h-5" />
-                Create Your First Event
-              </Link>
+              {canCreateEvents && (
+                <Link 
+                  to="/events/create"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 inline-flex items-center gap-3"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Your First Event
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

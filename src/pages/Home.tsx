@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Calendar, Users, MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import Spline from '@splinetool/react-spline';
 import EventCard from '../components/EventCard';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
@@ -148,50 +149,80 @@ const Home: React.FC = () => {
         }
       `}</style>
 
-      {/* Hero Section */}
-      <section className="relative py-20 lg:py-28 overflow-hidden">
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className={`${isVisible ? 'animate-fadeInUp' : 'opacity-0'}`}>
-            <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full mb-6 animate-float">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-semibold">Discover Your Next Experience</span>
-            </div>
+{/* Hero Section */}
+<section className="relative py-20 lg:py-28 overflow-hidden">
+  <div className="container mx-auto px-4 text-center relative z-10">
+    {/* Top Tag */}
+    <div className={`${isVisible ? 'animate-fadeInUp' : 'opacity-0'}`}>
+      <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-full mb-6 animate-float">
+        <Sparkles className="w-4 h-4" />
+        <span className="text-sm font-semibold pointer-events-none">Discover Your Next Experience</span>
+      </div>
+    </div>
+
+    {/* 🫧 MOVING BUBBLES — Spline Overlay (transparent, no background) */}
+    <div className="absolute inset-0 flex justify-center items-center z-20">
+      <Spline
+        scene="https://prod.spline.design/L-6RUNqXSj3zz7Gu/scene.splinecode"
+        style={{
+          width: '200%',
+          height: '200%',
+          zIndex: 90,
+        }}
+      />
+    </div>
+
+    {/* Hero Title */}
+    <h1
+      className={`relative text-5xl md:text-6xl lg:text-7xl font-bold mb-6 z-30 pointer-events-none ${
+        isVisible ? 'animate-fadeInUp delay-100' : 'opacity-0'
+      }`}
+    >
+      <span className="gradient-text pointer-events-none">Discover Amazing</span>
+      <br />
+      <span className="text-gray-900 dark:text-white pointer-events-none">Events</span>
+    </h1>
+
+    {/* Hero Description */}
+    <p
+      className={`relative text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed z-30 pointer-events-none ${
+        isVisible ? 'animate-fadeInUp delay-200' : 'opacity-0 pointer-events-none'
+      }`}
+    >
+      Connect with communities, learn new skills, and create unforgettable experiences through curated events
+    </p>
+
+    {/* Search Bar */}
+    <div
+      className={`max-w-2xl mx-auto relative z-30 ${
+        isVisible ? 'animate-scaleIn delay-300' : 'opacity-0'
+      }`}
+    >
+      <div className="glass-effect rounded-2xl p-3 shadow-2xl hover-lift">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search events, topics, or locations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+            />
           </div>
-          
-          <h1 className={`text-5xl md:text-6xl lg:text-7xl font-bold mb-6 ${isVisible ? 'animate-fadeInUp delay-100' : 'opacity-0'}`}>
-            <span className="gradient-text">Discover Amazing</span>
-            <br />
-            <span className="text-gray-900 dark:text-white">Events</span>
-          </h1>
-          
-          <p className={`text-lg md:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed ${isVisible ? 'animate-fadeInUp delay-200' : 'opacity-0'}`}>
-            Connect with communities, learn new skills, and create unforgettable experiences through curated events
-          </p>
-          
-          <div className={`max-w-2xl mx-auto ${isVisible ? 'animate-scaleIn delay-300' : 'opacity-0'}`}>
-            <div className="glass-effect rounded-2xl p-3 shadow-2xl hover-lift">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Search events, topics, or locations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                  />
-                </div>
-                <button
-                  onClick={loadEvents}
-                  className="bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  Search
-                </button>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={loadEvents}
+            className="bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+          >
+            Search
+          </button>
         </div>
-      </section>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 
       {/* Stats Section */}
       <section className="py-16 relative z-10">

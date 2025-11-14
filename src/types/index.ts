@@ -15,6 +15,10 @@ export interface User {
   affiliatedOrganizationId?: string;
   approved?: boolean; // New field for organization accounts
   approvalRequested?: boolean; // New field to track if approval was requested
+   scheduledForDeletion?: boolean;
+  deletionScheduledAt?: Date | null;
+  deletionDate?: Date | null;
+  isActive?: boolean;
 }
 
 export interface Organization {

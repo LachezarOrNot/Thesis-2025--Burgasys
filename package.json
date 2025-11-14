@@ -11,6 +11,8 @@
     "deploy": "firebase deploy"
   },
   "dependencies": {
+    "@splinetool/react-spline": "^4.1.0",
+    "@splinetool/runtime": "^1.10.99",
     "date-fns": "^2.30.0",
     "firebase": "^10.14.1",
     "framer-motion": "^12.23.24",

@@ -57,6 +57,8 @@ class DatabaseService {
     return user;
   }
 
+  
+
   async getUser(uid: string): Promise<User | null> {
     try {
       const userRef = doc(db, 'users', uid);
@@ -809,6 +811,206 @@ async getUserByEmail(email: string): Promise<User | null> {
       throw error;
     }
   }
+  // Add these methods to your DatabaseService class
+
+async scheduleUserDeletion(userId: string, deletionDate: Date): Promise<void> {
+  try {
+    const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
+    
+    const scheduledDeletion = {
+      userId,
+      deletionDate,
+      scheduledAt: new Date(),
+      status: 'scheduled'
+    };
+    
+    await setDoc(scheduledDeletionRef, scheduledDeletion);
+    
+    console.log(`User ${userId} scheduled for deletion on ${deletionDate}`);
+  } catch (error) {
+    console.error('Error scheduling user deletion:', error);
+    throw new Error('Failed to schedule user deletion');
+  }
+}
+
+async cancelScheduledDeletion(userId: string): Promise<void> {
+  try {
+    const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
+    await deleteDoc(scheduledDeletionRef);
+    
+    console.log(`Cancelled scheduled deletion for user: ${userId}`);
+  } catch (error) {
+    console.error('Error cancelling scheduled deletion:', error);
+    throw new Error('Failed to cancel scheduled deletion');
+  }
+}
+
+async getScheduledDeletions(): Promise<Array<{userId: string, deletionDate: Date}>> {
+  try {
+    const now = new Date();
+    const deletionsQuery = query(
+      collection(db, 'scheduledDeletions'),
+      where('deletionDate', '<=', now),
+      where('status', '==', 'scheduled')
+    );
+    
+    const deletionsSnap = await getDocs(deletionsQuery);
+    return deletionsSnap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        userId: data.userId,
+        deletionDate: this.safeDateConvert(data.deletionDate)
+      };
+    });
+  } catch (error) {
+    console.error('Error getting scheduled deletions:', error);
+    return [];
+  }
+}
+
+async markDeletionAsProcessed(userId: string): Promise<void> {
+  try {
+    const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
+    await updateDoc(scheduledDeletionRef, {
+      status: 'processed',
+      processedAt: new Date()
+    });
+  } catch (error) {
+    console.error('Error marking deletion as processed:', error);
+    throw error;
+  }
+}
+
+// Enhanced deleteUserData method to handle soft delete cleanup
+async deleteUserData(userId: string): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', userId);
+    
+    // First, get user data to check if it's a soft delete scenario
+    const userDoc = await getDoc(userRef);
+    const userData = userDoc.exists() ? userDoc.data() : null;
+    
+    // Delete user document
+    await deleteDoc(userRef);
+    
+    // Delete user's event registrations
+    const registrationsQuery = query(
+      collection(db, 'eventRegistrations'),
+      where('userUid', '==', userId)
+    );
+    const registrationsSnap = await getDocs(registrationsQuery);
+    const deleteRegistrations = registrationsSnap.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deleteRegistrations);
+    
+    // Delete user's affiliation requests
+    const affiliationQuery = query(
+      collection(db, 'affiliationRequests'),
+      where('userUid', '==', userId)
+    );
+    const affiliationSnap = await getDocs(affiliationQuery);
+    const deleteAffiliations = affiliationSnap.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deleteAffiliations);
+    
+    // Delete user's notifications
+    const notificationsQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId)
+    );
+    const notificationsSnap = await getDocs(notificationsQuery);
+    const deleteNotifications = notificationsSnap.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deleteNotifications);
+    
+    // Delete user's chat messages
+    const chatMessagesQuery = query(
+      collection(db, 'chatMessages'),
+      where('userId', '==', userId)
+    );
+    const chatMessagesSnap = await getDocs(chatMessagesQuery);
+    const deleteChatMessages = chatMessagesSnap.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deleteChatMessages);
+    
+    // Remove user from event registeredUsers arrays
+    const eventsQuery = query(
+      collection(db, 'events'),
+      where('registeredUsers', 'array-contains', userId)
+    );
+    const eventsSnap = await getDocs(eventsQuery);
+    
+    const updateEvents = eventsSnap.docs.map(async (doc) => {
+      const event = doc.data() as Event;
+      const updatedRegisteredUsers = event.registeredUsers?.filter(uid => uid !== userId) || [];
+      await updateDoc(doc.ref, { registeredUsers: updatedRegisteredUsers });
+    });
+    
+    await Promise.all(updateEvents);
+    
+    // Remove user from organization admin users
+    const orgsQuery = query(
+      collection(db, 'organizations'),
+      where('adminUsers', 'array-contains', userId)
+    );
+    const orgsSnap = await getDocs(orgsQuery);
+    
+    const updateOrgs = orgsSnap.docs.map(async (doc) => {
+      const org = doc.data() as Organization;
+      const updatedAdminUsers = org.adminUsers?.filter(uid => uid !== userId) || [];
+      await updateDoc(doc.ref, { adminUsers: updatedAdminUsers });
+    });
+    
+    await Promise.all(updateOrgs);
+    
+    // Remove user from organization affiliated students
+    const orgsWithStudentsQuery = query(
+      collection(db, 'organizations'),
+      where('affiliatedStudents', 'array-contains', userId)
+    );
+    const orgsWithStudentsSnap = await getDocs(orgsWithStudentsQuery);
+    
+    const updateOrgsStudents = orgsWithStudentsSnap.docs.map(async (doc) => {
+      const org = doc.data() as Organization;
+      const updatedAffiliatedStudents = org.affiliatedStudents?.filter(uid => uid !== userId) || [];
+      await updateDoc(doc.ref, { affiliatedStudents: updatedAffiliatedStudents });
+    });
+    
+    await Promise.all(updateOrgsStudents);
+    
+    // Delete any scheduled deletion record
+    await this.cancelScheduledDeletion(userId);
+    
+    console.log(`Successfully cleaned up data for user: ${userId}`);
+    
+  } catch (error) {
+    console.error('Error deleting user data:', error);
+    throw new Error('Failed to delete user data');
+  }
+}
+
+// Add this method to process scheduled deletions (to be called by a scheduled function/cloud function)
+async processScheduledDeletions(): Promise<void> {
+  try {
+    const deletionsToProcess = await this.getScheduledDeletions();
+    
+    for (const deletion of deletionsToProcess) {
+      try {
+        console.log(`Processing deletion for user: ${deletion.userId}`);
+        
+        // Delete user data from Firestore
+        await this.deleteUserData(deletion.userId);
+        
+        // Mark deletion as processed
+        await this.markDeletionAsProcessed(deletion.userId);
+        
+        console.log(`Successfully processed deletion for user: ${deletion.userId}`);
+      } catch (error) {
+        console.error(`Error processing deletion for user ${deletion.userId}:`, error);
+        // Continue with other deletions even if one fails
+      }
+    }
+  } catch (error) {
+    console.error('Error processing scheduled deletions:', error);
+    throw error;
+  }
+}
 }
 
 export const databaseService = new DatabaseService();

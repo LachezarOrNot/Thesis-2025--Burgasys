@@ -42,7 +42,7 @@ const Footer: React.FC = () => {
           >
             <div className="flex items-center space-x-2 mb-4">
               <Sparkles className="h-7 w-7 text-purple-400 animate-pulse" />
-              <span className="text-2xl font-bold text-white">EventHub</span>
+              <span className="text-2xl font-bold text-white">Burgasys</span>
             </div>
 
             <p className="text-gray-400 mb-5 leading-relaxed">
@@ -150,7 +150,7 @@ const Footer: React.FC = () => {
         >
           <p>
             © {new Date().getFullYear()}{" "}
-            <span className="text-white font-semibold">EventHub</span> · Built
+            <span className="text-white font-semibold">Burgasys</span> · Built
             with integrity for the community.
           </p>
         </motion.div>

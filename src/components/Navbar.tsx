@@ -50,11 +50,11 @@ const Navbar: React.FC = () => {
           >
             <img 
               src="/logo.svg" 
-              alt="EventHub Logo" 
+              alt="Burgasys Logo" 
               className="h-10 w-10 transition-transform group-hover:rotate-12"
             />
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-600 bg-clip-text text-transparent">
-              EventHub
+              Burgasys
             </span>
           </Link>
 
