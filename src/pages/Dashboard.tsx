@@ -317,7 +317,7 @@ const Dashboard: React.FC = () => {
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-3 line-clamp-2">
-                    Event #{registration.eventId}
+                    Event #{registration.eventName}
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-2">

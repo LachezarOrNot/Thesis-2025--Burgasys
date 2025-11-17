@@ -160,10 +160,9 @@ const Home: React.FC = () => {
       </div>
     </div>
 
-    {/* 🫧 MOVING BUBBLES — Spline Overlay (transparent, no background) */}
     <div className="absolute inset-0 flex justify-center items-center z-20">
       <Spline
-        scene="https://prod.spline.design/L-6RUNqXSj3zz7Gu/scene.splinecode"
+        scene="https://prod.spline.design/ICLl4udbkAVJcMpB/scene.splinecode"
         style={{
           width: '200%',
           height: '200%',

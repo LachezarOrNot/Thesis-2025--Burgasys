@@ -1,3 +1,4 @@
+// src/types.ts
 export type UserRole = 'admin' | 'school' | 'firm' | 'user' | 'student' | 'university';
 
 export interface User {
@@ -13,9 +14,9 @@ export interface User {
   bio?: string;
   studentId?: string;
   affiliatedOrganizationId?: string;
-  approved?: boolean; // New field for organization accounts
-  approvalRequested?: boolean; // New field to track if approval was requested
-   scheduledForDeletion?: boolean;
+  approved?: boolean;
+  approvalRequested?: boolean;
+  scheduledForDeletion?: boolean;
   deletionScheduledAt?: Date | null;
   deletionDate?: Date | null;
   isActive?: boolean;
@@ -34,13 +35,13 @@ export interface Organization {
   createdAt: Date;
   updatedAt: Date;
   logoURL?: string;
-  adminUsers: string[]; // Organizers who manage this organization
-  affiliatedStudents: string[]; // Student UIDs who are affiliated
+  adminUsers: string[];
+  affiliatedStudents: string[];
 }
 
 export interface AffiliationRequest {
   id: string;
-  studentUid: string; // Only students can request affiliation
+  studentUid: string;
   studentName: string;
   studentEmail: string;
   studentId?: string;
@@ -58,7 +59,7 @@ export interface EventCreationRequest {
   userId: string;
   userName: string;
   userEmail: string;
-  organizationId?: string;
+  organizationId?: string;       // note: use this to tie to organization
   organizationName?: string;
   eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt'>;
   status: 'pending' | 'approved' | 'rejected';
@@ -68,7 +69,7 @@ export interface EventCreationRequest {
   reason?: string;
 }
 
-export type EventStatus = 'draft' | 'pending_approval' | 'published' | 'finished' | 'archived';
+export type EventStatus = 'draft' | 'pending_approval' | 'published' | 'finished' | 'rejected';
 
 export interface Event {
   id: string;
@@ -83,7 +84,7 @@ export interface Event {
   end_datetime: Date;
   capacity?: number;
   tags: string[];
-  organiser_org_id: string;
+  organiser_org_id: string; // keep this property on Event (organiser id)
   createdBy: string;
   status: EventStatus;
   allow_registration: boolean;
@@ -102,6 +103,7 @@ export interface EventRegistration {
   userUid: string;
   registeredAt: Date;
   status: 'registered' | 'waitlisted';
+  eventName: string;
   user?: User;
 }
 

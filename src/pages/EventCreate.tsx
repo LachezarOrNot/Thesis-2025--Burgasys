@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { databaseService } from '../services/database';
-import { EventStatus } from '../types';
+import { EventStatus, EventCreationRequest } from '../types';
 import { 
   Calendar, 
   MapPin, 
@@ -11,7 +11,9 @@ import {
   Image as ImageIcon,
   Upload,
   X,
-  Plus
+  Plus,
+  Shield,
+  AlertTriangle
 } from 'lucide-react';
 
 const EventCreate: React.FC = () => {
@@ -41,6 +43,48 @@ const EventCreate: React.FC = () => {
   const [newTag, setNewTag] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
 
+  // Check user permissions
+  const isAdmin = user?.role === 'admin';
+  const canRequestEvents = user && ['school', 'university', 'firm'].includes(user.role);
+  const hasAccess = isAdmin || canRequestEvents;
+
+  // Get organization information safely
+  const getOrganizationInfo = () => {
+    if (!user) return { id: '', name: '' };
+    
+    // For admin creating events directly, they might not have an affiliated organization
+    if (isAdmin) {
+      return { id: '', name: 'Administrator' };
+    }
+    
+    // For organization users, get their affiliated organization
+    const orgId = user.affiliatedOrganizationId || '';
+    const orgName = 'Your Organization'; // This should come from organization data
+    
+    return { id: orgId, name: orgName };
+  };
+
+  // Helper function to convert undefined to null for Firestore
+  const prepareDataForFirestore = (obj: any): any => {
+    if (obj === undefined) return null;
+    if (obj === null) return null;
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => prepareDataForFirestore(item));
+    }
+    
+    if (obj && typeof obj === 'object' && !(obj instanceof Date)) {
+      const cleaned: any = {};
+      Object.keys(obj).forEach(key => {
+        const value = prepareDataForFirestore(obj[key]);
+        cleaned[key] = value;
+      });
+      return cleaned;
+    }
+    
+    return obj;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -64,35 +108,85 @@ const EventCreate: React.FC = () => {
         return;
       }
 
-      // Create event data
+      // Validate dates
+      const startDate = new Date(formData.start_datetime);
+      const endDate = new Date(formData.end_datetime);
+      
+      if (startDate >= endDate) {
+        setError('End date must be after start date');
+        return;
+      }
+
+      // Get organization information
+      const organizationInfo = getOrganizationInfo();
+      
+      // For non-admin users, ensure they have an organization
+      if (!isAdmin && !organizationInfo.id) {
+        setError('You must be affiliated with an organization to request events');
+        return;
+      }
+
+      // Create event data - handle capacity properly for Firestore
+      const capacityValue = formData.capacity ? parseInt(formData.capacity) : null;
+
       const eventData = {
         name: formData.name.trim(),
-        subtitle: formData.subtitle.trim(),
+        subtitle: formData.subtitle.trim() || null,
         description: formData.description.trim(),
         location: formData.location.trim(),
         lat: formData.lat,
         lng: formData.lng,
-        start_datetime: new Date(formData.start_datetime),
-        end_datetime: new Date(formData.end_datetime),
-        capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
+        start_datetime: startDate,
+        end_datetime: endDate,
+        capacity: capacityValue,
         tags: formData.tags,
-        images: formData.images, // Include Base64 images
-        organiser_org_id: '', // You might want to get this from user context
+        images: formData.images,
+        organiser_org_id: organizationInfo.id,
         createdBy: user.uid,
-        status: formData.status,
+        status: isAdmin ? formData.status : 'pending_approval',
         allow_registration: formData.allow_registration,
         registeredUsers: [],
         waitlist: []
       };
 
-      await databaseService.createEvent(eventData);
-      
-      alert('Event created successfully!');
-      navigate('/events');
+      console.log('Creating event with data:', eventData);
+
+      if (isAdmin) {
+        // Prepare the event data for Firestore
+        const preparedEventData = prepareDataForFirestore(eventData);
+        await databaseService.createEvent(preparedEventData);
+        alert('Event created successfully!');
+        navigate('/events');
+      } else if (canRequestEvents) {
+        // Prepare the event data for Firestore
+        const preparedEventData = prepareDataForFirestore(eventData);
+        
+        // Event request for school/university/firm
+        const eventRequestData: Omit<EventCreationRequest, 'id' | 'submittedAt'> = {
+          userId: user.uid,
+          userEmail: user.email || '',
+          userName: user.displayName || 'Unknown User',
+          organizationId: organizationInfo.id,
+          organizationName: organizationInfo.name,
+          eventData: preparedEventData,
+          status: 'pending',
+          reviewedAt: undefined, // Use undefined instead of null for optional fields
+          reviewedBy: undefined,
+          reason: undefined
+        };
+
+        console.log('Submitting event request:', eventRequestData);
+        
+        // Prepare the entire request data for Firestore
+        const preparedRequestData = prepareDataForFirestore(eventRequestData);
+        await databaseService.createEventRequest(preparedRequestData);
+        alert('Event request submitted successfully! It will be reviewed by an administrator.');
+        navigate('/events');
+      }
       
     } catch (error) {
       console.error('Error creating event:', error);
-      setError('Failed to create event');
+      setError('Failed to create event. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -195,7 +289,9 @@ const EventCreate: React.FC = () => {
     } finally {
       setUploadingImages(false);
       // Clear the file input
-      e.target.value = '';
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -230,16 +326,69 @@ const EventCreate: React.FC = () => {
     }
   };
 
+  // Redirect unauthorized users
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+
+  // Check if user has permission to access this page
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Access Denied
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            You don't have permission to access this page.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show organization info for non-admin users
+  const organizationInfo = getOrganizationInfo();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Create New Event
+            {isAdmin ? 'Create New Event' : 'Request New Event'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Fill in the details below to create your event
+            {isAdmin 
+              ? 'Fill in the details below to create your event'
+              : 'Fill in the details below to request an event. Your request will be reviewed by an administrator.'
+            }
           </p>
+
+          {/* Organization info for non-admin users */}
+          {!isAdmin && organizationInfo.id && (
+            <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 max-w-2xl mx-auto">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-blue-500" />
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>Organization:</strong> This event will be associated with {organizationInfo.name}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Info banner for non-admin users */}
+          {!isAdmin && (
+            <div className="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 max-w-2xl mx-auto">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  <strong>Note:</strong> Your event will be submitted for administrator approval before being published.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -443,57 +592,59 @@ const EventCreate: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Settings */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Settings
-              </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as EventStatus }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                    <option value="pending_approval">Pending Approval</option>
-                  </select>
-                </div>
+            {/* Settings - Only show for admin */}
+            {isAdmin && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Settings
+                </h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as EventStatus }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="published">Published</option>
+                      <option value="draft">Draft</option>
+                      <option value="pending_approval">Pending Approval</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Capacity
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.capacity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="No limit if empty"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Capacity
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.capacity}
+                      onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="No limit if empty"
+                    />
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="allow_registration"
-                    checked={formData.allow_registration}
-                    onChange={(e) => setFormData(prev => ({ ...prev, allow_registration: e.target.checked }))}
-                    className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                  />
-                  <label htmlFor="allow_registration" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Allow registration
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="allow_registration"
+                      checked={formData.allow_registration}
+                      onChange={(e) => setFormData(prev => ({ ...prev, allow_registration: e.target.checked }))}
+                      className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                    />
+                    <label htmlFor="allow_registration" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Allow registration
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Tags */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
@@ -550,12 +701,29 @@ const EventCreate: React.FC = () => {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Creating Event...
+                  {isAdmin ? 'Creating Event...' : 'Submitting Request...'}
                 </>
               ) : (
-                'Create Event'
+                isAdmin ? 'Create Event' : 'Request Event'
               )}
             </button>
+
+            {/* Info for non-admin users */}
+            {!isAdmin && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                      Event Request
+                    </p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                      Your event will be submitted for review. An administrator will approve or reject your request.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </div>

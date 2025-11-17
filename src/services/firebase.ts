@@ -1,7 +1,8 @@
+// src/services/firebase.ts
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
+import {
+  getAuth,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -9,12 +10,12 @@ import {
   updateProfile,
   User as FirebaseUser
 } from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  getDoc, 
-  setDoc, 
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -27,12 +28,12 @@ import {
   DocumentData,
   QuerySnapshot
 } from 'firebase/firestore';
-import { 
-  getStorage, 
-  ref, 
-  uploadBytes, 
+import {
+  getStorage,
+  ref,
+  uploadBytes,
   getDownloadURL,
-  deleteObject 
+  deleteObject
 } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -68,7 +69,7 @@ export {
   signOut,
   sendPasswordResetEmail,
   updateProfile,
-  
+
   // Firestore
   collection,
   doc,
@@ -83,7 +84,7 @@ export {
   getDocs,
   onSnapshot,
   writeBatch,
-  
+
   // Storage
   ref,
   uploadBytes,

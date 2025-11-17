@@ -41,10 +41,52 @@ const Admin: React.FC = () => {
     }
   };
 
+  // Helper function to convert undefined to null for Firestore
+  const prepareDataForFirestore = (obj: any): any => {
+    if (obj === undefined) return null;
+    if (obj === null) return null;
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => prepareDataForFirestore(item));
+    }
+    
+    if (obj && typeof obj === 'object' && !(obj instanceof Date)) {
+      const cleaned: any = {};
+      Object.keys(obj).forEach(key => {
+        const value = prepareDataForFirestore(obj[key]);
+        cleaned[key] = value;
+      });
+      return cleaned;
+    }
+    
+    return obj;
+  };
+
   const handleVerifyOrganization = async (orgId: string, verified: boolean) => {
     try {
+      // First, get the organization to find out who created it
+      const organization = organizations.find(org => org.id === orgId);
+      if (!organization) return;
+
+      // Update organization verification status
       await databaseService.updateOrganization(orgId, { verified });
-      loadData();
+
+      // If organization is being verified (approved), update the user's affiliatedOrganizationId
+      if (verified && organization.createdBy) {
+        try {
+          // Update the user's profile to link them to this organization
+          await databaseService.updateUser(organization.createdBy, {
+            affiliatedOrganizationId: orgId
+          });
+          console.log(`User ${organization.createdBy} linked to organization ${orgId}`);
+        } catch (userError) {
+          console.error('Error updating user organization affiliation:', userError);
+          // Don't fail the entire operation if user update fails
+        }
+      }
+
+      // Reload data to reflect changes
+      await loadData();
     } catch (error) {
       console.error('Error updating organization:', error);
     }
@@ -52,7 +94,7 @@ const Admin: React.FC = () => {
 
   const handleApproveEvent = async (eventId: string) => {
     try {
-      await databaseService.updateEventRequest(eventId, { status: 'approved' });
+      await databaseService.updateEvent(eventId, { status: 'published' });
       loadData();
     } catch (error) {
       console.error('Error approving event:', error);
@@ -61,7 +103,7 @@ const Admin: React.FC = () => {
 
   const handleRejectEvent = async (eventId: string) => {
     try {
-      await databaseService.updateEventRequest(eventId, { status: 'rejected' });
+      await databaseService.updateEvent(eventId, { status: 'rejected' });
       loadData();
     } catch (error) {
       console.error('Error rejecting event:', error);
@@ -73,11 +115,25 @@ const Admin: React.FC = () => {
       const request = eventRequests.find(r => r.id === requestId);
       if (!request) return;
 
-      await databaseService.createEvent(request.eventData);
-      await databaseService.updateEventRequest(requestId, {
-        status: 'approved',
-        reviewedBy: user?.uid
+      // Create the actual event from the request - ensure no undefined values
+      const eventData = prepareDataForFirestore({
+        ...request.eventData,
+        status: 'published' as const,
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
+
+      console.log('Creating approved event with data:', eventData);
+      await databaseService.createEvent(eventData);
+      
+      // Update the request status
+      const updateData = prepareDataForFirestore({
+        status: 'approved',
+        reviewedBy: user?.uid,
+        reviewedAt: new Date()
+      });
+
+      await databaseService.updateEventRequest(requestId, updateData);
 
       await loadData();
       setSelectedRequest(null);
@@ -93,11 +149,14 @@ const Admin: React.FC = () => {
     }
 
     try {
-      await databaseService.updateEventRequest(requestId, {
+      const updateData = prepareDataForFirestore({
         status: 'rejected',
         reviewedBy: user?.uid,
+        reviewedAt: new Date(),
         reason: rejectReason
       });
+
+      await databaseService.updateEventRequest(requestId, updateData);
 
       await loadData();
       setSelectedRequest(null);
@@ -109,10 +168,13 @@ const Admin: React.FC = () => {
 
   const handleApproveUser = async (requestId: string) => {
     try {
-      await databaseService.updateUserApprovalRequest(requestId, {
+      const updateData = prepareDataForFirestore({
         status: 'approved',
-        reviewedBy: user?.uid
+        reviewedBy: user?.uid,
+        reviewedAt: new Date()
       });
+
+      await databaseService.updateUserApprovalRequest(requestId, updateData);
       await loadData();
       setSelectedUserApproval(null);
     } catch (error) {
@@ -127,11 +189,14 @@ const Admin: React.FC = () => {
     }
 
     try {
-      await databaseService.updateUserApprovalRequest(requestId, {
+      const updateData = prepareDataForFirestore({
         status: 'rejected',
         reviewedBy: user?.uid,
+        reviewedAt: new Date(),
         reason: userRejectReason
       });
+
+      await databaseService.updateUserApprovalRequest(requestId, updateData);
       await loadData();
       setSelectedUserApproval(null);
       setUserRejectReason('');
@@ -449,6 +514,9 @@ const Admin: React.FC = () => {
                                   Organization: <span className="font-semibold">{request.organizationName}</span>
                                 </p>
                               )}
+                              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                Submitted: {new Date(request.submittedAt).toLocaleDateString()}
+                              </p>
                             </div>
                             <button
                               onClick={() => setSelectedRequest(request)}
@@ -556,6 +624,30 @@ const Admin: React.FC = () => {
                         </label>
                         <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.location}</p>
                       </div>
+
+                      {selectedRequest.eventData.capacity && (
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
+                            Capacity
+                          </label>
+                          <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.capacity} attendees</p>
+                        </div>
+                      )}
+
+                      {selectedRequest.eventData.tags && selectedRequest.eventData.tags.length > 0 && (
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
+                            Tags
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedRequest.eventData.tags.map((tag, index) => (
+                              <span key={index} className="px-3 py-1 bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300 rounded-full text-sm">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Rejection Reason Input */}
                       <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-800">

@@ -80,6 +80,11 @@ function App() {
                       <PastEvents />
                     </ProtectedRoute>
                   } />
+                  <Route path="/organizations" element={
+                    <ProtectedRoute>
+                      <Organization />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/org/:id" element={
                     <ProtectedRoute>
                       <Organization />

@@ -45,6 +45,47 @@ class DatabaseService {
     }
   }
 
+  // Helper function to remove undefined values for Firestore by converting them to null
+  private prepareDataForFirestore(data: any): any {
+    if (data === undefined) return null;
+    if (data === null) return null;
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.prepareDataForFirestore(item));
+    }
+    
+    if (data && typeof data === 'object' && !(data instanceof Date)) {
+      const cleaned: any = {};
+      Object.keys(data).forEach(key => {
+        const value = this.prepareDataForFirestore(data[key]);
+        cleaned[key] = value;
+      });
+      return cleaned;
+    }
+    
+    return data;
+  }
+
+  // Helper function to convert Firestore data back to our TypeScript types
+  private convertFromFirestore(data: any): any {
+    if (data === null) return undefined;
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.convertFromFirestore(item));
+    }
+    
+    if (data && typeof data === 'object' && !(data instanceof Date)) {
+      const converted: any = {};
+      Object.keys(data).forEach(key => {
+        const value = this.convertFromFirestore(data[key]);
+        converted[key] = value;
+      });
+      return converted;
+    }
+    
+    return data;
+  }
+
   async createUser(userData: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User> {
     const userRef = doc(db, 'users', userData.uid);
     const user: User = {
@@ -53,11 +94,10 @@ class DatabaseService {
       updatedAt: new Date()
     };
     
-    await setDoc(userRef, user);
+    const preparedUser = this.prepareDataForFirestore(user);
+    await setDoc(userRef, preparedUser);
     return user;
   }
-
-  
 
   async getUser(uid: string): Promise<User | null> {
     try {
@@ -66,10 +106,11 @@ class DatabaseService {
       
       if (userSnap.exists()) {
         const data = userSnap.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          createdAt: this.safeDateConvert(data.createdAt),
-          updatedAt: this.safeDateConvert(data.updatedAt)
+          ...convertedData,
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as User;
       }
       return null;
@@ -81,110 +122,117 @@ class DatabaseService {
 
   async updateUser(uid: string, updates: Partial<User>): Promise<void> {
     const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, {
+    const preparedUpdates = this.prepareDataForFirestore({
       ...updates,
       updatedAt: new Date()
     });
+    await updateDoc(userRef, preparedUpdates);
   }
+
   // User Approval Requests
-async createUserApprovalRequest(request: Omit<UserApprovalRequest, 'id' | 'submittedAt'>): Promise<UserApprovalRequest> {
-  const requestId = uuidv4();
-  const requestRef = doc(db, 'userApprovalRequests', requestId);
-  
-  const approvalRequest: UserApprovalRequest = {
-    ...request,
-    id: requestId,
-    submittedAt: new Date()
-  };
-  
-  await setDoc(requestRef, approvalRequest);
-  return approvalRequest;
-}
-
-async getUserApprovalRequests(status?: 'pending' | 'approved' | 'rejected'): Promise<UserApprovalRequest[]> {
-  try {
-    let requestsQuery;
+  async createUserApprovalRequest(request: Omit<UserApprovalRequest, 'id' | 'submittedAt'>): Promise<UserApprovalRequest> {
+    const requestId = uuidv4();
+    const requestRef = doc(db, 'userApprovalRequests', requestId);
     
-    if (status) {
-      requestsQuery = query(
-        collection(db, 'userApprovalRequests'),
-        where('status', '==', status)
-      );
-    } else {
-      requestsQuery = query(collection(db, 'userApprovalRequests'));
+    const approvalRequest: UserApprovalRequest = {
+      ...request,
+      id: requestId,
+      submittedAt: new Date()
+    };
+    
+    const preparedRequest = this.prepareDataForFirestore(approvalRequest);
+    await setDoc(requestRef, preparedRequest);
+    return approvalRequest;
+  }
+
+  async getUserApprovalRequests(status?: 'pending' | 'approved' | 'rejected'): Promise<UserApprovalRequest[]> {
+    try {
+      let requestsQuery;
+      
+      if (status) {
+        requestsQuery = query(
+          collection(db, 'userApprovalRequests'),
+          where('status', '==', status)
+        );
+      } else {
+        requestsQuery = query(collection(db, 'userApprovalRequests'));
+      }
+      
+      const requestsSnap = await getDocs(requestsQuery);
+      return requestsSnap.docs.map(doc => {
+        const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
+        return {
+          ...convertedData,
+          submittedAt: this.safeDateConvert(convertedData.submittedAt),
+          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
+        } as UserApprovalRequest;
+      });
+    } catch (error) {
+      console.error('Error getting user approval requests:', error);
+      return [];
+    }
+  }
+
+  async updateUserApprovalRequest(requestId: string, updates: Partial<UserApprovalRequest>): Promise<void> {
+    const requestRef = doc(db, 'userApprovalRequests', requestId);
+    
+    if (updates.status === 'approved') {
+      // Get the request to update the user
+      const requestDoc = await getDoc(requestRef);
+      if (requestDoc.exists()) {
+        const request = requestDoc.data() as UserApprovalRequest;
+        
+        // Update user's approved status
+        await this.updateUser(request.userId, {
+          approved: true,
+          approvalRequested: false
+        });
+      }
+    } else if (updates.status === 'rejected') {
+      // Get the request to update the user
+      const requestDoc = await getDoc(requestRef);
+      if (requestDoc.exists()) {
+        const request = requestDoc.data() as UserApprovalRequest;
+        
+        // Update user's approval status
+        await this.updateUser(request.userId, {
+          approved: false,
+          approvalRequested: false
+        });
+      }
     }
     
-    const requestsSnap = await getDocs(requestsQuery);
-    return requestsSnap.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        submittedAt: this.safeDateConvert(data.submittedAt),
-        reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
-      } as UserApprovalRequest;
+    const preparedUpdates = this.prepareDataForFirestore({
+      ...updates,
+      reviewedAt: updates.status !== 'pending' ? new Date() : undefined
     });
-  } catch (error) {
-    console.error('Error getting user approval requests:', error);
-    return [];
+    
+    await updateDoc(requestRef, preparedUpdates);
   }
-}
 
-async updateUserApprovalRequest(requestId: string, updates: Partial<UserApprovalRequest>): Promise<void> {
-  const requestRef = doc(db, 'userApprovalRequests', requestId);
-  
-  if (updates.status === 'approved') {
-    // Get the request to update the user
-    const requestDoc = await getDoc(requestRef);
-    if (requestDoc.exists()) {
-      const request = requestDoc.data() as UserApprovalRequest;
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const userQuery = query(
+        collection(db, 'users'),
+        where('email', '==', email)
+      );
       
-      // Update user's approved status
-      await this.updateUser(request.userId, {
-        approved: true,
-        approvalRequested: false
-      });
-    }
-  } else if (updates.status === 'rejected') {
-    // Get the request to update the user
-    const requestDoc = await getDoc(requestRef);
-    if (requestDoc.exists()) {
-      const request = requestDoc.data() as UserApprovalRequest;
+      const userSnap = await getDocs(userQuery);
+      if (userSnap.empty) return null;
       
-      // Update user's approval status
-      await this.updateUser(request.userId, {
-        approved: false,
-        approvalRequested: false
-      });
+      const data = userSnap.docs[0].data();
+      const convertedData = this.convertFromFirestore(data);
+      return {
+        ...convertedData,
+        createdAt: this.safeDateConvert(convertedData.createdAt),
+        updatedAt: this.safeDateConvert(convertedData.updatedAt)
+      } as User;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
     }
   }
-  
-  await updateDoc(requestRef, {
-    ...updates,
-    reviewedAt: updates.status !== 'pending' ? new Date() : undefined
-  });
-}
-
-async getUserByEmail(email: string): Promise<User | null> {
-  try {
-    const userQuery = query(
-      collection(db, 'users'),
-      where('email', '==', email)
-    );
-    
-    const userSnap = await getDocs(userQuery);
-    if (userSnap.empty) return null;
-    
-    const data = userSnap.docs[0].data();
-    return {
-      ...data,
-      createdAt: this.safeDateConvert(data.createdAt),
-      updatedAt: this.safeDateConvert(data.updatedAt)
-    } as User;
-  } catch (error) {
-    console.error('Error getting user by email:', error);
-    return null;
-  }
-}
 
   async createOrganization(orgData: Omit<Organization, 'id' | 'createdAt' | 'updatedAt'>): Promise<Organization> {
     const orgId = uuidv4();
@@ -196,7 +244,8 @@ async getUserByEmail(email: string): Promise<User | null> {
       updatedAt: new Date()
     };
     
-    await setDoc(orgRef, organization);
+    const preparedOrg = this.prepareDataForFirestore(organization);
+    await setDoc(orgRef, preparedOrg);
     return organization;
   }
 
@@ -207,10 +256,11 @@ async getUserByEmail(email: string): Promise<User | null> {
       
       if (orgSnap.exists()) {
         const data = orgSnap.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          createdAt: this.safeDateConvert(data.createdAt),
-          updatedAt: this.safeDateConvert(data.updatedAt)
+          ...convertedData,
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as Organization;
       }
       return null;
@@ -227,10 +277,11 @@ async getUserByEmail(email: string): Promise<User | null> {
       
       return orgsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          createdAt: this.safeDateConvert(data.createdAt),
-          updatedAt: this.safeDateConvert(data.updatedAt)
+          ...convertedData,
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as Organization;
       });
     } catch (error) {
@@ -241,10 +292,11 @@ async getUserByEmail(email: string): Promise<User | null> {
 
   async updateOrganization(orgId: string, updates: Partial<Organization>): Promise<void> {
     const orgRef = doc(db, 'organizations', orgId);
-    await updateDoc(orgRef, {
+    const preparedUpdates = this.prepareDataForFirestore({
       ...updates,
       updatedAt: new Date()
     });
+    await updateDoc(orgRef, preparedUpdates);
   }
 
   async requestAffiliation(studentUid: string, orgId: string, studentId?: string): Promise<AffiliationRequest> {
@@ -277,7 +329,8 @@ async getUserByEmail(email: string): Promise<User | null> {
       requestedAt: new Date()
     };
     
-    await setDoc(requestRef, request);
+    const preparedRequest = this.prepareDataForFirestore(request);
+    await setDoc(requestRef, preparedRequest);
     return request;
   }
 
@@ -291,10 +344,11 @@ async getUserByEmail(email: string): Promise<User | null> {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          requestedAt: this.safeDateConvert(data.requestedAt),
-          reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
+          ...convertedData,
+          requestedAt: this.safeDateConvert(convertedData.requestedAt),
+          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
         } as AffiliationRequest;
       });
     } catch (error) {
@@ -319,10 +373,11 @@ async getUserByEmail(email: string): Promise<User | null> {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          requestedAt: this.safeDateConvert(data.requestedAt),
-          reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
+          ...convertedData,
+          requestedAt: this.safeDateConvert(convertedData.requestedAt),
+          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
         } as AffiliationRequest;
       });
     } catch (error) {
@@ -355,10 +410,12 @@ async getUserByEmail(email: string): Promise<User | null> {
       }
     }
     
-    await updateDoc(requestRef, {
+    const preparedUpdates = this.prepareDataForFirestore({
       ...updates,
       reviewedAt: updates.status !== 'pending' ? new Date() : undefined
     });
+    
+    await updateDoc(requestRef, preparedUpdates);
   }
 
   async getUserOrganizations(userId: string): Promise<Organization[]> {
@@ -371,10 +428,11 @@ async getUserByEmail(email: string): Promise<User | null> {
       const orgsSnap = await getDocs(orgsQuery);
       return orgsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          createdAt: this.safeDateConvert(data.createdAt),
-          updatedAt: this.safeDateConvert(data.updatedAt)
+          ...convertedData,
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as Organization;
       });
     } catch (error) {
@@ -407,7 +465,8 @@ async getUserByEmail(email: string): Promise<User | null> {
       submittedAt: new Date()
     };
     
-    await setDoc(requestRef, eventRequest);
+    const preparedRequest = this.prepareDataForFirestore(eventRequest);
+    await setDoc(requestRef, preparedRequest);
     return eventRequest;
   }
 
@@ -427,10 +486,11 @@ async getUserByEmail(email: string): Promise<User | null> {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          submittedAt: this.safeDateConvert(data.submittedAt),
-          reviewedAt: data.reviewedAt ? this.safeDateConvert(data.reviewedAt) : undefined
+          ...convertedData,
+          submittedAt: this.safeDateConvert(convertedData.submittedAt),
+          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
         } as EventCreationRequest;
       });
     } catch (error) {
@@ -441,10 +501,11 @@ async getUserByEmail(email: string): Promise<User | null> {
 
   async updateEventRequest(requestId: string, updates: Partial<EventCreationRequest>): Promise<void> {
     const requestRef = doc(db, 'eventCreationRequests', requestId);
-    await updateDoc(requestRef, {
+    const preparedUpdates = this.prepareDataForFirestore({
       ...updates,
       reviewedAt: updates.status !== 'pending' ? new Date() : undefined
     });
+    await updateDoc(requestRef, preparedUpdates);
   }
 
   async deleteEventRequest(requestId: string): Promise<void> {
@@ -462,23 +523,20 @@ async getUserByEmail(email: string): Promise<User | null> {
       const eventId = uuidv4();
       const eventRef = doc(db, 'events', eventId);
 
-      // Convert empty capacity to undefined (not null)
-      const capacityValue = eventData.capacity === null || eventData.capacity === undefined 
-        ? undefined 
-        : Number(eventData.capacity);
-
-      // Ensure all required fields with proper defaults
+      // Use the correct TypeScript types (undefined for optional fields)
       const event: Event = {
         id: eventId,
         name: eventData.name || '',
-        subtitle: eventData.subtitle || '',
+        subtitle: eventData.subtitle || undefined,
         description: eventData.description || '',
         location: eventData.location || '',
         lat: eventData.lat || 0,
         lng: eventData.lng || 0,
         start_datetime: this.safeDateConvert(eventData.start_datetime),
         end_datetime: this.safeDateConvert(eventData.end_datetime),
-        capacity: capacityValue, // Use undefined for empty values
+        capacity: eventData.capacity === undefined || eventData.capacity === null 
+          ? undefined 
+          : Number(eventData.capacity),
         tags: eventData.tags || [],
         images: eventData.images || [],
         organiser_org_id: eventData.organiser_org_id || '',
@@ -491,7 +549,11 @@ async getUserByEmail(email: string): Promise<User | null> {
         updatedAt: new Date()
       };
 
-      await setDoc(eventRef, event);
+      // Prepare the event data for Firestore (convert undefined to null)
+      const preparedEvent = this.prepareDataForFirestore(event);
+      console.log('Creating event with prepared data:', preparedEvent);
+      
+      await setDoc(eventRef, preparedEvent);
       return event;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -506,12 +568,13 @@ async getUserByEmail(email: string): Promise<User | null> {
       
       if (eventSnap.exists()) {
         const data = eventSnap.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          start_datetime: this.safeDateConvert(data.start_datetime),
-          end_datetime: this.safeDateConvert(data.end_datetime),
-          createdAt: this.safeDateConvert(data.createdAt),
-          updatedAt: this.safeDateConvert(data.updatedAt)
+          ...convertedData,
+          start_datetime: this.safeDateConvert(convertedData.start_datetime),
+          end_datetime: this.safeDateConvert(convertedData.end_datetime),
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as Event;
       }
       return null;
@@ -541,13 +604,14 @@ async getUserByEmail(email: string): Promise<User | null> {
       const eventsSnap = await getDocs(eventsQuery);
       let events = eventsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
+          ...convertedData,
           id: doc.id,
-          start_datetime: this.safeDateConvert(data.start_datetime),
-          end_datetime: this.safeDateConvert(data.end_datetime),
-          createdAt: this.safeDateConvert(data.createdAt),
-          updatedAt: this.safeDateConvert(data.updatedAt)
+          start_datetime: this.safeDateConvert(convertedData.start_datetime),
+          end_datetime: this.safeDateConvert(convertedData.end_datetime),
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as Event;
       });
       
@@ -588,15 +652,22 @@ async getUserByEmail(email: string): Promise<User | null> {
     // Handle capacity conversion if it's being updated
     const processedUpdates = { ...updates };
     if ('capacity' in processedUpdates) {
-      processedUpdates.capacity = processedUpdates.capacity === null || processedUpdates.capacity === undefined 
+      processedUpdates.capacity = processedUpdates.capacity === undefined || processedUpdates.capacity === null 
         ? undefined 
         : Number(processedUpdates.capacity);
     }
     
-    await updateDoc(eventRef, {
+    // Handle subtitle conversion if it's being updated
+    if ('subtitle' in processedUpdates) {
+      processedUpdates.subtitle = processedUpdates.subtitle || undefined;
+    }
+    
+    const preparedUpdates = this.prepareDataForFirestore({
       ...processedUpdates,
       updatedAt: new Date()
     });
+    
+    await updateDoc(eventRef, preparedUpdates);
   }
 
   async deleteEvent(eventId: string): Promise<void> {
@@ -632,11 +703,13 @@ async getUserByEmail(email: string): Promise<User | null> {
         id: registrationId,
         eventId,
         userUid,
+        eventName: event.name,
         status,
         registeredAt: new Date()
       };
       
-      await setDoc(registrationRef, registration);
+      const preparedRegistration = this.prepareDataForFirestore(registration);
+      await setDoc(registrationRef, preparedRegistration);
       
       // Update event's registered users
       const eventRef = doc(db, 'events', eventId);
@@ -661,9 +734,10 @@ async getUserByEmail(email: string): Promise<User | null> {
       const registrationsSnap = await getDocs(registrationsQuery);
       return registrationsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          registeredAt: this.safeDateConvert(data.registeredAt)
+          ...convertedData,
+          registeredAt: this.safeDateConvert(convertedData.registeredAt)
         } as EventRegistration;
       });
     } catch (error) {
@@ -684,9 +758,10 @@ async getUserByEmail(email: string): Promise<User | null> {
       if (registrationSnap.empty) return null;
       
       const data = registrationSnap.docs[0].data();
+      const convertedData = this.convertFromFirestore(data);
       return {
-        ...data,
-        registeredAt: this.safeDateConvert(data.registeredAt)
+        ...convertedData,
+        registeredAt: this.safeDateConvert(convertedData.registeredAt)
       } as EventRegistration;
     } catch (error) {
       console.error('Error getting user registration:', error);
@@ -705,17 +780,19 @@ async getUserByEmail(email: string): Promise<User | null> {
       edited: false
     };
     
-    await setDoc(messageRef, chatMessage);
+    const preparedMessage = this.prepareDataForFirestore(chatMessage);
+    await setDoc(messageRef, preparedMessage);
     return chatMessage;
   }
 
   async updateChatMessage(messageId: string, updates: Partial<ChatMessage>): Promise<void> {
     const messageRef = doc(db, 'chatMessages', messageId);
-    await updateDoc(messageRef, {
+    const preparedUpdates = this.prepareDataForFirestore({
       ...updates,
       edited: true,
       editedAt: new Date()
     });
+    await updateDoc(messageRef, preparedUpdates);
   }
 
   async deleteChatMessage(messageId: string): Promise<void> {
@@ -738,10 +815,11 @@ async getUserByEmail(email: string): Promise<User | null> {
     return onSnapshot(messagesQuery, (snapshot) => {
       const messages = snapshot.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          timestamp: this.safeDateConvert(data.timestamp),
-          editedAt: data.editedAt ? this.safeDateConvert(data.editedAt) : undefined
+          ...convertedData,
+          timestamp: this.safeDateConvert(convertedData.timestamp),
+          editedAt: convertedData.editedAt ? this.safeDateConvert(convertedData.editedAt) : undefined
         } as ChatMessage;
       });
       callback(messages);
@@ -758,7 +836,8 @@ async getUserByEmail(email: string): Promise<User | null> {
       createdAt: new Date()
     };
     
-    await setDoc(notificationRef, newNotification);
+    const preparedNotification = this.prepareDataForFirestore(newNotification);
+    await setDoc(notificationRef, preparedNotification);
     return newNotification;
   }
 
@@ -773,9 +852,10 @@ async getUserByEmail(email: string): Promise<User | null> {
       const notificationsSnap = await getDocs(notificationsQuery);
       return notificationsSnap.docs.map(doc => {
         const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
         return {
-          ...data,
-          createdAt: this.safeDateConvert(data.createdAt)
+          ...convertedData,
+          createdAt: this.safeDateConvert(convertedData.createdAt)
         } as Notification;
       });
     } catch (error) {
@@ -811,206 +891,209 @@ async getUserByEmail(email: string): Promise<User | null> {
       throw error;
     }
   }
+
   // Add these methods to your DatabaseService class
 
-async scheduleUserDeletion(userId: string, deletionDate: Date): Promise<void> {
-  try {
-    const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
-    
-    const scheduledDeletion = {
-      userId,
-      deletionDate,
-      scheduledAt: new Date(),
-      status: 'scheduled'
-    };
-    
-    await setDoc(scheduledDeletionRef, scheduledDeletion);
-    
-    console.log(`User ${userId} scheduled for deletion on ${deletionDate}`);
-  } catch (error) {
-    console.error('Error scheduling user deletion:', error);
-    throw new Error('Failed to schedule user deletion');
-  }
-}
-
-async cancelScheduledDeletion(userId: string): Promise<void> {
-  try {
-    const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
-    await deleteDoc(scheduledDeletionRef);
-    
-    console.log(`Cancelled scheduled deletion for user: ${userId}`);
-  } catch (error) {
-    console.error('Error cancelling scheduled deletion:', error);
-    throw new Error('Failed to cancel scheduled deletion');
-  }
-}
-
-async getScheduledDeletions(): Promise<Array<{userId: string, deletionDate: Date}>> {
-  try {
-    const now = new Date();
-    const deletionsQuery = query(
-      collection(db, 'scheduledDeletions'),
-      where('deletionDate', '<=', now),
-      where('status', '==', 'scheduled')
-    );
-    
-    const deletionsSnap = await getDocs(deletionsQuery);
-    return deletionsSnap.docs.map(doc => {
-      const data = doc.data();
-      return {
-        userId: data.userId,
-        deletionDate: this.safeDateConvert(data.deletionDate)
+  async scheduleUserDeletion(userId: string, deletionDate: Date): Promise<void> {
+    try {
+      const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
+      
+      const scheduledDeletion = {
+        userId,
+        deletionDate,
+        scheduledAt: new Date(),
+        status: 'scheduled'
       };
-    });
-  } catch (error) {
-    console.error('Error getting scheduled deletions:', error);
-    return [];
-  }
-}
-
-async markDeletionAsProcessed(userId: string): Promise<void> {
-  try {
-    const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
-    await updateDoc(scheduledDeletionRef, {
-      status: 'processed',
-      processedAt: new Date()
-    });
-  } catch (error) {
-    console.error('Error marking deletion as processed:', error);
-    throw error;
-  }
-}
-
-// Enhanced deleteUserData method to handle soft delete cleanup
-async deleteUserData(userId: string): Promise<void> {
-  try {
-    const userRef = doc(db, 'users', userId);
-    
-    // First, get user data to check if it's a soft delete scenario
-    const userDoc = await getDoc(userRef);
-    const userData = userDoc.exists() ? userDoc.data() : null;
-    
-    // Delete user document
-    await deleteDoc(userRef);
-    
-    // Delete user's event registrations
-    const registrationsQuery = query(
-      collection(db, 'eventRegistrations'),
-      where('userUid', '==', userId)
-    );
-    const registrationsSnap = await getDocs(registrationsQuery);
-    const deleteRegistrations = registrationsSnap.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deleteRegistrations);
-    
-    // Delete user's affiliation requests
-    const affiliationQuery = query(
-      collection(db, 'affiliationRequests'),
-      where('userUid', '==', userId)
-    );
-    const affiliationSnap = await getDocs(affiliationQuery);
-    const deleteAffiliations = affiliationSnap.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deleteAffiliations);
-    
-    // Delete user's notifications
-    const notificationsQuery = query(
-      collection(db, 'notifications'),
-      where('userId', '==', userId)
-    );
-    const notificationsSnap = await getDocs(notificationsQuery);
-    const deleteNotifications = notificationsSnap.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deleteNotifications);
-    
-    // Delete user's chat messages
-    const chatMessagesQuery = query(
-      collection(db, 'chatMessages'),
-      where('userId', '==', userId)
-    );
-    const chatMessagesSnap = await getDocs(chatMessagesQuery);
-    const deleteChatMessages = chatMessagesSnap.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deleteChatMessages);
-    
-    // Remove user from event registeredUsers arrays
-    const eventsQuery = query(
-      collection(db, 'events'),
-      where('registeredUsers', 'array-contains', userId)
-    );
-    const eventsSnap = await getDocs(eventsQuery);
-    
-    const updateEvents = eventsSnap.docs.map(async (doc) => {
-      const event = doc.data() as Event;
-      const updatedRegisteredUsers = event.registeredUsers?.filter(uid => uid !== userId) || [];
-      await updateDoc(doc.ref, { registeredUsers: updatedRegisteredUsers });
-    });
-    
-    await Promise.all(updateEvents);
-    
-    // Remove user from organization admin users
-    const orgsQuery = query(
-      collection(db, 'organizations'),
-      where('adminUsers', 'array-contains', userId)
-    );
-    const orgsSnap = await getDocs(orgsQuery);
-    
-    const updateOrgs = orgsSnap.docs.map(async (doc) => {
-      const org = doc.data() as Organization;
-      const updatedAdminUsers = org.adminUsers?.filter(uid => uid !== userId) || [];
-      await updateDoc(doc.ref, { adminUsers: updatedAdminUsers });
-    });
-    
-    await Promise.all(updateOrgs);
-    
-    // Remove user from organization affiliated students
-    const orgsWithStudentsQuery = query(
-      collection(db, 'organizations'),
-      where('affiliatedStudents', 'array-contains', userId)
-    );
-    const orgsWithStudentsSnap = await getDocs(orgsWithStudentsQuery);
-    
-    const updateOrgsStudents = orgsWithStudentsSnap.docs.map(async (doc) => {
-      const org = doc.data() as Organization;
-      const updatedAffiliatedStudents = org.affiliatedStudents?.filter(uid => uid !== userId) || [];
-      await updateDoc(doc.ref, { affiliatedStudents: updatedAffiliatedStudents });
-    });
-    
-    await Promise.all(updateOrgsStudents);
-    
-    // Delete any scheduled deletion record
-    await this.cancelScheduledDeletion(userId);
-    
-    console.log(`Successfully cleaned up data for user: ${userId}`);
-    
-  } catch (error) {
-    console.error('Error deleting user data:', error);
-    throw new Error('Failed to delete user data');
-  }
-}
-
-// Add this method to process scheduled deletions (to be called by a scheduled function/cloud function)
-async processScheduledDeletions(): Promise<void> {
-  try {
-    const deletionsToProcess = await this.getScheduledDeletions();
-    
-    for (const deletion of deletionsToProcess) {
-      try {
-        console.log(`Processing deletion for user: ${deletion.userId}`);
-        
-        // Delete user data from Firestore
-        await this.deleteUserData(deletion.userId);
-        
-        // Mark deletion as processed
-        await this.markDeletionAsProcessed(deletion.userId);
-        
-        console.log(`Successfully processed deletion for user: ${deletion.userId}`);
-      } catch (error) {
-        console.error(`Error processing deletion for user ${deletion.userId}:`, error);
-        // Continue with other deletions even if one fails
-      }
+      
+      const preparedDeletion = this.prepareDataForFirestore(scheduledDeletion);
+      await setDoc(scheduledDeletionRef, preparedDeletion);
+      
+      console.log(`User ${userId} scheduled for deletion on ${deletionDate}`);
+    } catch (error) {
+      console.error('Error scheduling user deletion:', error);
+      throw new Error('Failed to schedule user deletion');
     }
-  } catch (error) {
-    console.error('Error processing scheduled deletions:', error);
-    throw error;
   }
-}
+
+  async cancelScheduledDeletion(userId: string): Promise<void> {
+    try {
+      const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
+      await deleteDoc(scheduledDeletionRef);
+      
+      console.log(`Cancelled scheduled deletion for user: ${userId}`);
+    } catch (error) {
+      console.error('Error cancelling scheduled deletion:', error);
+      throw new Error('Failed to cancel scheduled deletion');
+    }
+  }
+
+  async getScheduledDeletions(): Promise<Array<{userId: string, deletionDate: Date}>> {
+    try {
+      const now = new Date();
+      const deletionsQuery = query(
+        collection(db, 'scheduledDeletions'),
+        where('deletionDate', '<=', now),
+        where('status', '==', 'scheduled')
+      );
+      
+      const deletionsSnap = await getDocs(deletionsQuery);
+      return deletionsSnap.docs.map(doc => {
+        const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
+        return {
+          userId: convertedData.userId,
+          deletionDate: this.safeDateConvert(convertedData.deletionDate)
+        };
+      });
+    } catch (error) {
+      console.error('Error getting scheduled deletions:', error);
+      return [];
+    }
+  }
+
+  async markDeletionAsProcessed(userId: string): Promise<void> {
+    try {
+      const scheduledDeletionRef = doc(db, 'scheduledDeletions', userId);
+      await updateDoc(scheduledDeletionRef, {
+        status: 'processed',
+        processedAt: new Date()
+      });
+    } catch (error) {
+      console.error('Error marking deletion as processed:', error);
+      throw error;
+    }
+  }
+
+  // Enhanced deleteUserData method to handle soft delete cleanup
+  async deleteUserData(userId: string): Promise<void> {
+    try {
+      const userRef = doc(db, 'users', userId);
+      
+      // First, get user data to check if it's a soft delete scenario
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
+      
+      // Delete user document
+      await deleteDoc(userRef);
+      
+      // Delete user's event registrations
+      const registrationsQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('userUid', '==', userId)
+      );
+      const registrationsSnap = await getDocs(registrationsQuery);
+      const deleteRegistrations = registrationsSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteRegistrations);
+      
+      // Delete user's affiliation requests
+      const affiliationQuery = query(
+        collection(db, 'affiliationRequests'),
+        where('userUid', '==', userId)
+      );
+      const affiliationSnap = await getDocs(affiliationQuery);
+      const deleteAffiliations = affiliationSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteAffiliations);
+      
+      // Delete user's notifications
+      const notificationsQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId)
+      );
+      const notificationsSnap = await getDocs(notificationsQuery);
+      const deleteNotifications = notificationsSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteNotifications);
+      
+      // Delete user's chat messages
+      const chatMessagesQuery = query(
+        collection(db, 'chatMessages'),
+        where('userId', '==', userId)
+      );
+      const chatMessagesSnap = await getDocs(chatMessagesQuery);
+      const deleteChatMessages = chatMessagesSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deleteChatMessages);
+      
+      // Remove user from event registeredUsers arrays
+      const eventsQuery = query(
+        collection(db, 'events'),
+        where('registeredUsers', 'array-contains', userId)
+      );
+      const eventsSnap = await getDocs(eventsQuery);
+      
+      const updateEvents = eventsSnap.docs.map(async (doc) => {
+        const event = doc.data() as Event;
+        const updatedRegisteredUsers = event.registeredUsers?.filter(uid => uid !== userId) || [];
+        await updateDoc(doc.ref, { registeredUsers: updatedRegisteredUsers });
+      });
+      
+      await Promise.all(updateEvents);
+      
+      // Remove user from organization admin users
+      const orgsQuery = query(
+        collection(db, 'organizations'),
+        where('adminUsers', 'array-contains', userId)
+      );
+      const orgsSnap = await getDocs(orgsQuery);
+      
+      const updateOrgs = orgsSnap.docs.map(async (doc) => {
+        const org = doc.data() as Organization;
+        const updatedAdminUsers = org.adminUsers?.filter(uid => uid !== userId) || [];
+        await updateDoc(doc.ref, { adminUsers: updatedAdminUsers });
+      });
+      
+      await Promise.all(updateOrgs);
+      
+      // Remove user from organization affiliated students
+      const orgsWithStudentsQuery = query(
+        collection(db, 'organizations'),
+        where('affiliatedStudents', 'array-contains', userId)
+      );
+      const orgsWithStudentsSnap = await getDocs(orgsWithStudentsQuery);
+      
+      const updateOrgsStudents = orgsWithStudentsSnap.docs.map(async (doc) => {
+        const org = doc.data() as Organization;
+        const updatedAffiliatedStudents = org.affiliatedStudents?.filter(uid => uid !== userId) || [];
+        await updateDoc(doc.ref, { affiliatedStudents: updatedAffiliatedStudents });
+      });
+      
+      await Promise.all(updateOrgsStudents);
+      
+      // Delete any scheduled deletion record
+      await this.cancelScheduledDeletion(userId);
+      
+      console.log(`Successfully cleaned up data for user: ${userId}`);
+      
+    } catch (error) {
+      console.error('Error deleting user data:', error);
+      throw new Error('Failed to delete user data');
+    }
+  }
+
+  // Add this method to process scheduled deletions (to be called by a scheduled function/cloud function)
+  async processScheduledDeletions(): Promise<void> {
+    try {
+      const deletionsToProcess = await this.getScheduledDeletions();
+      
+      for (const deletion of deletionsToProcess) {
+        try {
+          console.log(`Processing deletion for user: ${deletion.userId}`);
+          
+          // Delete user data from Firestore
+          await this.deleteUserData(deletion.userId);
+          
+          // Mark deletion as processed
+          await this.markDeletionAsProcessed(deletion.userId);
+          
+          console.log(`Successfully processed deletion for user: ${deletion.userId}`);
+        } catch (error) {
+          console.error(`Error processing deletion for user ${deletion.userId}:`, error);
+          // Continue with other deletions even if one fails
+        }
+      }
+    } catch (error) {
+      console.error('Error processing scheduled deletions:', error);
+      throw error;
+    }
+  }
 }
 
 export const databaseService = new DatabaseService();
