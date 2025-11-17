@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, SlidersHorizontal, X, Calendar, MapPin, Users, Clock, Sparkles } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { Event } from '../types';
@@ -8,6 +9,7 @@ import { isToday, isThisWeek, isThisMonth } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 const Events: React.FC = () => {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ const Events: React.FC = () => {
       setEvents(eventsData);
     } catch (error) {
       console.error('Error loading events:', error);
-      setError('Failed to load events. Please try refreshing the page.');
+      setError(t('events.errorLoading'));
     } finally {
       setLoading(false);
     }
@@ -150,14 +152,14 @@ const Events: React.FC = () => {
               <X className="w-10 h-10 text-red-500" />
             </div>
             <h2 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-3">
-              Error Loading Events
+              {t('events.errorLoading')}
             </h2>
             <p className="text-red-700 dark:text-red-300 mb-6 text-lg">{error}</p>
             <button
               onClick={loadEvents}
               className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
             >
-              Try Again
+              {t('events.tryAgain')}
             </button>
           </div>
         </div>
@@ -175,11 +177,11 @@ const Events: React.FC = () => {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-5xl font-black text-gray-900 dark:text-white tracking-tight bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-              Discover Events
+              {t('events.title')}
             </h1>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Find and join amazing events happening around you. Explore, connect, and create unforgettable experiences.
+            {t('events.subtitle')}
           </p>
         </div>
 
@@ -188,7 +190,9 @@ const Events: React.FC = () => {
           <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Total Events</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  {t('events.totalEvents')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{events.length}</p>
               </div>
               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
@@ -200,7 +204,9 @@ const Events: React.FC = () => {
           <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">This Week</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  {t('events.thisWeekStats')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {events.filter(event => {
                     try {
@@ -220,7 +226,9 @@ const Events: React.FC = () => {
           <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Online</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  {t('events.onlineStats')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {events.filter(event => 
                     event.location?.toLowerCase().includes('online') || 
@@ -237,7 +245,9 @@ const Events: React.FC = () => {
           <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">In Person</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  {t('events.inPersonStats')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {events.filter(event => 
                     !event.location?.toLowerCase().includes('online') && 
@@ -263,7 +273,7 @@ const Events: React.FC = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="Search events, topics, locations, or categories..."
+                  placeholder={t('events.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 dark:text-white transition-all duration-300"
@@ -275,7 +285,7 @@ const Events: React.FC = () => {
                 className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-3"
               >
                 <SlidersHorizontal className="w-5 h-5" />
-                Filters
+                {t('events.filters')}
                 {hasActiveFilters && (
                   <span className="bg-white text-primary-500 rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
                     !
@@ -290,7 +300,7 @@ const Events: React.FC = () => {
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                     <SlidersHorizontal className="w-5 h-5 text-primary-500" />
-                    Filter Events
+                    {t('events.filterEvents')}
                   </h3>
                   <div className="flex gap-3">
                     {hasActiveFilters && (
@@ -299,14 +309,14 @@ const Events: React.FC = () => {
                         className="text-primary-500 hover:text-primary-600 font-semibold flex items-center gap-2 transition-colors duration-200"
                       >
                         <X className="w-4 h-4" />
-                        Clear All
+                        {t('events.clearAll')}
                       </button>
                     )}
                     <button
                       onClick={() => setShowFilters(false)}
                       className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium transition-colors duration-200"
                     >
-                      Hide Filters
+                      {t('events.hideFilters')}
                     </button>
                   </div>
                 </div>
@@ -314,68 +324,68 @@ const Events: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      📅 Date
+                      📅 {t('events.date')}
                     </label>
                     <select
                       value={dateFilter}
                       onChange={(e) => setDateFilter(e.target.value)}
                       className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                     >
-                      <option value="all">Any date</option>
-                      <option value="today">Today</option>
-                      <option value="week">This week</option>
-                      <option value="month">This month</option>
+                      <option value="all">{t('events.anyDate')}</option>
+                      <option value="today">{t('events.today')}</option>
+                      <option value="week">{t('events.thisWeek')}</option>
+                      <option value="month">{t('events.thisMonth')}</option>
                     </select>
                   </div>
                   
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      🏷️ Category
+                      🏷️ {t('events.category')}
                     </label>
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
                       className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                     >
-                      <option value="all">All categories</option>
-                      <option value="technology">Technology</option>
-                      <option value="business">Business</option>
-                      <option value="education">Education</option>
-                      <option value="social">Social</option>
-                      <option value="sports">Sports</option>
-                      <option value="arts">Arts & Culture</option>
-                      <option value="science">Science</option>
-                      <option value="health">Health & Wellness</option>
+                      <option value="all">{t('events.allCategories')}</option>
+                      <option value="technology">{t('events.technology')}</option>
+                      <option value="business">{t('events.business')}</option>
+                      <option value="education">{t('events.education')}</option>
+                      <option value="social">{t('events.social')}</option>
+                      <option value="sports">{t('events.sports')}</option>
+                      <option value="arts">{t('events.arts')}</option>
+                      <option value="science">{t('events.science')}</option>
+                      <option value="health">{t('events.health')}</option>
                     </select>
                   </div>
                   
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      📍 Location
+                      📍 {t('events.location')}
                     </label>
                     <select
                       value={locationFilter}
                       onChange={(e) => setLocationFilter(e.target.value)}
                       className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                     >
-                      <option value="all">Any location</option>
-                      <option value="online">Online</option>
-                      <option value="in-person">In-person</option>
+                      <option value="all">{t('events.anyLocation')}</option>
+                      <option value="online">{t('events.online')}</option>
+                      <option value="in-person">{t('events.inPerson')}</option>
                     </select>
                   </div>
 
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      🔄 Sort By
+                      🔄 {t('events.sortBy')}
                     </label>
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                       className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                     >
-                      <option value="date">Date (Soonest)</option>
-                      <option value="name">Name (A-Z)</option>
-                      <option value="popularity">Most Popular</option>
+                      <option value="date">{t('events.dateSoonest')}</option>
+                      <option value="name">{t('events.nameAZ')}</option>
+                      <option value="popularity">{t('events.mostPopular')}</option>
                     </select>
                   </div>
                 </div>
@@ -399,7 +409,7 @@ const Events: React.FC = () => {
                   )}
                   {dateFilter !== 'all' && (
                     <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      📅 {dateFilter}
+                      📅 {t(`events.${dateFilter}`)}
                       <button
                         onClick={() => setDateFilter('all')}
                         className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
@@ -410,7 +420,7 @@ const Events: React.FC = () => {
                   )}
                   {categoryFilter !== 'all' && (
                     <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      🏷️ {categoryFilter}
+                      🏷️ {t(`events.${categoryFilter}`)}
                       <button
                         onClick={() => setCategoryFilter('all')}
                         className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
@@ -421,7 +431,7 @@ const Events: React.FC = () => {
                   )}
                   {locationFilter !== 'all' && (
                     <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      📍 {locationFilter}
+                      📍 {t(`events.${locationFilter === 'in-person' ? 'inPerson' : locationFilter}`)}
                       <button
                         onClick={() => setLocationFilter('all')}
                         className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
@@ -440,11 +450,11 @@ const Events: React.FC = () => {
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-fade-in">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {hasActiveFilters ? 'Filtered Events' : 'All Events'}
+              {hasActiveFilters ? t('events.filteredEvents') : t('events.allEvents')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Showing <span className="font-semibold text-primary-600 dark:text-primary-400">{filteredEvents.length}</span> of{' '}
-              <span className="font-semibold">{events.length}</span> event{events.length !== 1 ? 's' : ''}
+              {t('events.showing')} <span className="font-semibold text-primary-600 dark:text-primary-400">{filteredEvents.length}</span> {t('events.of')}{' '}
+              <span className="font-semibold">{events.length}</span> {t('events.events')}
             </p>
           </div>
           {hasActiveFilters && (
@@ -453,7 +463,7 @@ const Events: React.FC = () => {
               className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
             >
               <X className="w-4 h-4" />
-              Clear Filters
+              {t('events.clearAllFilters')}
             </button>
           )}
         </div>
@@ -481,12 +491,12 @@ const Events: React.FC = () => {
               <Search className="w-16 h-16 text-primary-500" />
             </div>
             <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              No Events Found
+              {t('events.noEventsFound')}
             </h3>
             <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
               {hasActiveFilters 
-                ? 'No events match your current filters. Try adjusting your search criteria.' 
-                : 'No events available at the moment. Check back later for new events!'
+                ? t('events.noEventsMatch') 
+                : t('events.noEventsAvailable')
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -495,7 +505,7 @@ const Events: React.FC = () => {
                   onClick={clearFilters}
                   className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
-                  Clear All Filters
+                  {t('events.clearAllFilters')}
                 </button>
               )}
               {events.length === 0 && (
@@ -504,14 +514,14 @@ const Events: React.FC = () => {
                   className="border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white dark:hover:bg-primary-600 px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 flex items-center gap-3"
                 >
                   <Calendar className="w-5 h-5" />
-                  Create First Event
+                  {t('events.createFirstEvent')}
                 </Link>
               )}
               <Link 
                 to="/calendar"
                 className="border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
               >
-                View Calendar
+                {t('events.viewCalendar')}
               </Link>
             </div>
           </div>

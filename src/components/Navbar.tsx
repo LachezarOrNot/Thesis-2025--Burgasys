@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Moon, Sun, User, ChevronDown, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import RoleBadge from './RoleBadge';
 
 const Navbar: React.FC = () => {
@@ -155,6 +156,8 @@ const Navbar: React.FC = () => {
                 <Moon className="h-5 w-5 transition-transform hover:-rotate-12 duration-300" />
               )}
             </button>
+
+            <LanguageSwitcher />
 
             {user ? (
               <div className="hidden md:flex items-center gap-4">
