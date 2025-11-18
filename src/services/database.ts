@@ -119,6 +119,26 @@ class DatabaseService {
       return null;
     }
   }
+  // Add this to your DatabaseService class
+async getAllUsers(): Promise<User[]> {
+  try {
+    const usersQuery = query(collection(db, 'users'));
+    const usersSnap = await getDocs(usersQuery);
+    
+    return usersSnap.docs.map(doc => {
+      const data = doc.data();
+      const convertedData = this.convertFromFirestore(data);
+      return {
+        ...convertedData,
+        createdAt: this.safeDateConvert(convertedData.createdAt),
+        updatedAt: this.safeDateConvert(convertedData.updatedAt)
+      } as User;
+    });
+  } catch (error) {
+    console.error('Error getting all users:', error);
+    return [];
+  }
+}
 
   async updateUser(uid: string, updates: Partial<User>): Promise<void> {
     const userRef = doc(db, 'users', uid);
