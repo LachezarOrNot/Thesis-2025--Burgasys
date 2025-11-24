@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building, MapPin, Phone } from 'lucide-react';
+import { databaseService } from '../services/database';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -35,20 +36,55 @@ const Auth: React.FC = () => {
         const requiresApproval = ['school', 'university', 'firm'].includes(formData.role);
         
         let organizationInfo = undefined;
-        if (requiresApproval) {
-          organizationInfo = {
-            organizationName: formData.organizationName,
-            address: formData.address,
-            phone: formData.phone,
-            description: formData.description
-          };
+        let organizationId = undefined;
+
+        // If it's an organization role, create the organization first
+        if (requiresApproval && formData.organizationName) {
+          try {
+            // Create the organization
+            const organization = await databaseService.createOrganization({
+              name: formData.organizationName,
+              type: formData.role as 'school' | 'firm' | 'university',
+              address: formData.address,
+              phone: formData.phone,
+              email: formData.email,
+              description: formData.description,
+              verified: false, // Will be verified after admin approval
+              createdBy: 'pending', // Will be updated after user creation
+              adminUsers: [], // Will be updated after user creation
+              affiliatedStudents: []
+            });
+
+            organizationId = organization.id;
+            organizationInfo = {
+              name: formData.organizationName,
+              address: formData.address,
+              phone: formData.phone,
+              description: formData.description,
+              organizationId: organization.id
+            };
+
+          } catch (orgError) {
+            console.error('Error creating organization:', orgError);
+            throw new Error('Failed to create organization. Please try again.');
+          }
         }
 
-        await signUp(formData.email, formData.password, formData.displayName, formData.role, organizationInfo);
-        
+        // Sign up the user
+        await signUp(
+          formData.email, 
+          formData.password, 
+          formData.displayName, 
+          formData.role, 
+          organizationInfo
+        );
+
+        // If organization was created, we need to update it with the user's UID
+        // This will be handled in the AuthContext after user creation
+
         // Show appropriate success message
         if (requiresApproval) {
-          setSuccessMessage('Your account has been created and is pending admin approval. You will receive an email once your account is approved.');
+          setSuccessMessage('Your account and organization have been created and are pending admin approval. You will receive an email once your account is approved.');
         } else {
           setSuccessMessage('Account created successfully! You can now access all features.');
         }
@@ -182,7 +218,7 @@ const Auth: React.FC = () => {
                         id="organizationName"
                         name="organizationName"
                         type="text"
-                        required
+                        required={isOrganizationRole}
                         value={formData.organizationName}
                         onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
@@ -201,7 +237,7 @@ const Auth: React.FC = () => {
                         id="address"
                         name="address"
                         type="text"
-                        required
+                        required={isOrganizationRole}
                         value={formData.address}
                         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
@@ -220,7 +256,7 @@ const Auth: React.FC = () => {
                         id="phone"
                         name="phone"
                         type="tel"
-                        required
+                        required={isOrganizationRole}
                         value={formData.phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
@@ -246,7 +282,9 @@ const Auth: React.FC = () => {
 
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                      <strong>Note:</strong> Organization accounts require admin approval. You will be notified once your account is approved.
+                      <strong>Note:</strong> Your organization account requires admin approval. 
+                      Once approved, you will automatically become the admin of your organization 
+                      and can start creating events.
                     </p>
                   </div>
                 </div>

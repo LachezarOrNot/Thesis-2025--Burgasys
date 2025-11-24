@@ -17,7 +17,6 @@ const Organization: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [viewMode, setViewMode] = useState<'single' | 'all'>('single');
-  const [affiliatedUsers, setAffiliatedUsers] = useState<User[]>([]);
 
   const isAdmin = user?.role === 'admin';
 
@@ -28,11 +27,13 @@ const Organization: React.FC = () => {
     } else if (isAdmin) {
       setViewMode('all');
       loadAllOrganizations();
+    } else if (user?.affiliatedOrganizationId) {
+      navigate(`/organizations/${user.affiliatedOrganizationId}`, { replace: true });
     } else {
-      setError('No organization ID provided');
+      setError('No organization ID provided and you are not affiliated with any organization');
       setLoading(false);
     }
-  }, [id, isAdmin]);
+  }, [id, isAdmin, user, navigate]);
 
   const loadOrganizationData = async (orgId: string) => {
     try {
@@ -40,46 +41,32 @@ const Organization: React.FC = () => {
       setError('');
       
       const orgData = await databaseService.getOrganization(orgId);
-      setOrganization(orgData);
-
+      
       if (!orgData) {
         setError('Organization not found');
+        setLoading(false);
         return;
       }
 
-      // Load events where this organization is the organizer
+      const canViewOrganization = isAdmin || user?.affiliatedOrganizationId === orgId;
+
+      if (!canViewOrganization) {
+        setError('You do not have permission to view this organization');
+        setLoading(false);
+        return;
+      }
+
+      setOrganization(orgData);
+
       const events = await databaseService.getEvents({ organiser_org_id: orgId });
       setOrganizationEvents(events);
 
-      // Load affiliated users (students and company users)
-      await loadAffiliatedUsers(orgId);
-
     } catch (error) {
-      console.error('Error loading organization data:', error);
       setError('Failed to load organization data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const loadAffiliatedUsers = async (orgId: string) => {
-    try {
-      // Since we don't have a direct method to get users by affiliatedOrganizationId,
-      // we'll implement a workaround by getting all users and filtering
-      const allUsers = await getAllUsers();
-      const affiliated = allUsers.filter(user => 
-        user.affiliatedOrganizationId === orgId
-      );
-      setAffiliatedUsers(affiliated);
-    } catch (error) {
-      console.error('Error loading affiliated users:', error);
-    }
-  };
-
-  // Helper to get all users - we'll implement this using the existing database service methods
-  const getAllUsers = async (): Promise<User[]> => {
-  return await databaseService.getAllUsers();
-};
 
   const loadAllOrganizations = async () => {
     try {
@@ -87,10 +74,17 @@ const Organization: React.FC = () => {
       setError('');
       
       const organizations = await databaseService.getOrganizations();
-      setAllOrganizations(organizations);
+      
+      let filteredOrganizations = organizations;
+      if (!isAdmin && user?.affiliatedOrganizationId) {
+        filteredOrganizations = organizations.filter(org => 
+          org.id === user.affiliatedOrganizationId
+        );
+      }
+      
+      setAllOrganizations(filteredOrganizations);
 
     } catch (error) {
-      console.error('Error loading all organizations:', error);
       setError('Failed to load organizations. Please try again.');
     } finally {
       setLoading(false);
@@ -107,26 +101,13 @@ const Organization: React.FC = () => {
     }
   };
 
-  // Safe date conversion utility (copied from database service since it's private)
-  const safeDateConvert = (date: any): Date => {
-    if (!date) return new Date();
-    if (date instanceof Date) return date;
-    if (date.toDate && typeof date.toDate === 'function') return date.toDate();
-    try {
-      const parsed = new Date(date);
-      return isNaN(parsed.getTime()) ? new Date() : parsed;
-    } catch {
-      return new Date();
-    }
-  };
-
   // Admin view - All organizations
   if (viewMode === 'all' && isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-primary-900 py-8">
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 mb-10 animate-fade-in">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 mb-10">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center">
@@ -205,7 +186,10 @@ const Organization: React.FC = () => {
                 No Organizations Found
               </h3>
               <p className="text-lg text-gray-600 dark:text-gray-400">
-                There are no organizations in the system yet.
+                {isAdmin 
+                  ? 'There are no organizations in the system yet.'
+                  : 'You are not affiliated with any organization yet.'
+                }
               </p>
             </div>
           ) : (
@@ -213,8 +197,7 @@ const Organization: React.FC = () => {
               {allOrganizations.map((org, index) => (
                 <div 
                   key={org.id} 
-                  className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300 animate-fade-in-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 hover:scale-105 transition-all duration-300"
                 >
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
@@ -268,7 +251,7 @@ const Organization: React.FC = () => {
                     </span>
                     <Link 
                       to={`/organizations/${org.id}`}
-                      className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+                      className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2"
                     >
                       <Eye className="w-4 h-4" />
                       View
@@ -310,18 +293,34 @@ const Organization: React.FC = () => {
               {error || "The organization you're looking for doesn't exist or has been removed."}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
-                to="/organizations"
-                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
-              >
-                Browse Organizations
-              </Link>
-              <Link 
-                to="/events"
+              {isAdmin ? (
+                <Link 
+                  to="/organizations"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+                >
+                  Browse All Organizations
+                </Link>
+              ) : user?.affiliatedOrganizationId ? (
+                <Link 
+                  to={`/organizations/${user.affiliatedOrganizationId}`}
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+                >
+                  Go to My Organization
+                </Link>
+              ) : (
+                <Link 
+                  to="/events"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+                >
+                  Browse Events
+                </Link>
+              )}
+              <button
+                onClick={() => window.location.reload()}
                 className="border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
               >
-                Browse Events
-              </Link>
+                Try Again
+              </button>
             </div>
           </div>
         </div>
@@ -345,8 +344,7 @@ const Organization: React.FC = () => {
     }
   });
 
-  const companyUsers = affiliatedUsers.filter(user => user.role === 'firm');
-  const studentUsers = affiliatedUsers.filter(user => user.role === 'student');
+  const isUserAffiliated = user?.affiliatedOrganizationId === organization.id;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-primary-900 py-8">
@@ -356,7 +354,7 @@ const Organization: React.FC = () => {
           <div className="mb-6">
             <Link 
               to="/organizations"
-              className="inline-flex items-center gap-3 text-primary-500 hover:text-primary-600 font-semibold transition-all duration-300 transform hover:translate-x-1"
+              className="inline-flex items-center gap-3 text-primary-500 hover:text-primary-600 font-semibold transition-all duration-300 hover:translate-x-1"
             >
               <ArrowLeft className="w-5 h-5" />
               Back to All Organizations
@@ -365,7 +363,7 @@ const Organization: React.FC = () => {
         )}
 
         {/* Organization Header */}
-        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 mb-10 animate-fade-in">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 mb-10">
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Organization Info */}
             <div className="flex-1">
@@ -387,9 +385,20 @@ const Organization: React.FC = () => {
                         Verified
                       </span>
                     )}
+                    {!organization.verified && (
+                      <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 rounded-full text-sm font-semibold flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Pending Verification
+                      </span>
+                    )}
                     {isAdmin && (
                       <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-sm font-medium font-mono">
-                        ID: {organization.id?.substring(0, 8)}...
+                        ID: {organization.id}
+                      </span>
+                    )}
+                    {isUserAffiliated && (
+                      <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-sm font-semibold">
+                        My Organization
                       </span>
                     )}
                   </div>
@@ -463,38 +472,12 @@ const Organization: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Affiliated Users Stats */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-                      {affiliatedUsers.length}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Members</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                        {companyUsers.length}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">Companies</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                        {studentUsers.length}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">Students</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Organization Events */}
-        <div className="animate-fade-in-up mb-10">
+        <div className="mb-10">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <TrendingUp className="w-8 h-8 text-primary-500" />
@@ -516,10 +499,10 @@ const Organization: React.FC = () => {
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
                 This organization hasn't created any events yet.
               </p>
-              {user?.affiliatedOrganizationId === organization.id && (
+              {isUserAffiliated && (
                 <Link
                   to="/events/create"
-                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 inline-block"
+                  className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105 inline-block"
                 >
                   Create First Event
                 </Link>
@@ -530,8 +513,7 @@ const Organization: React.FC = () => {
               {organizationEvents.map((event, index) => (
                 <div 
                   key={event.id} 
-                  className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300 animate-fade-in-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 hover:scale-105 transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 flex-1">
@@ -578,72 +560,6 @@ const Organization: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Affiliated Users Section - Only show if we have users */}
-        {isAdmin && affiliatedUsers.length > 0 && (
-          <div className="animate-fade-in-up">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-8">
-              <Users className="w-8 h-8 text-primary-500" />
-              Affiliated Members ({affiliatedUsers.length})
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {affiliatedUsers.map((user, index) => (
-                <div 
-                  key={user.uid} 
-                  className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-lg border border-primary-100 dark:border-primary-700 p-6 transform hover:scale-105 transition-all duration-300 animate-fade-in-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    {user.photoURL ? (
-                      <img 
-                        src={user.photoURL} 
-                        alt={user.displayName}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {user.displayName?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 dark:text-white text-lg truncate">
-                        {user.displayName}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          user.role === 'firm' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-                          user.role === 'student' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' :
-                          'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                        }`}>
-                          {user.role}
-                        </span>
-                        {user.approved && (
-                          <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-full text-xs font-semibold">
-                            Approved
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      <span className="truncate">{user.email}</span>
-                    </div>
-                    {user.phoneNumber && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4" />
-                        <span>{user.phoneNumber}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

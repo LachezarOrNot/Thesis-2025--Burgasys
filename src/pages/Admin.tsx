@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Organization, Event, EventCreationRequest, UserApprovalRequest } from '../types';
+import { Organization, Event, EventCreationRequest, UserApprovalRequest, User as UserType } from '../types';
 import { databaseService } from '../services/database';
-import { Check, X, Building, Calendar, Users, Clock, Eye, Mail, User, ChevronRight, AlertCircle } from 'lucide-react';
+import { Check, X, Building, Calendar, Users, Clock, Eye, Mail, User as UserIcon, ChevronRight, AlertCircle, PieChart } from 'lucide-react';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const Admin: React.FC = () => {
   const { user } = useAuth();
@@ -41,51 +42,48 @@ const Admin: React.FC = () => {
     }
   };
 
-  // Helper function to convert undefined to null for Firestore
-  const prepareDataForFirestore = (obj: any): any => {
-    if (obj === undefined) return null;
-    if (obj === null) return null;
-    
-    if (Array.isArray(obj)) {
-      return obj.map(item => prepareDataForFirestore(item));
-    }
-    
-    if (obj && typeof obj === 'object' && !(obj instanceof Date)) {
-      const cleaned: any = {};
-      Object.keys(obj).forEach(key => {
-        const value = prepareDataForFirestore(obj[key]);
-        cleaned[key] = value;
-      });
-      return cleaned;
-    }
-    
-    return obj;
-  };
+  // Chart data calculations
+  const organizationChartData = [
+    { name: 'Verified', value: organizations.filter(org => org.verified).length, color: '#10b981' },
+    { name: 'Pending', value: organizations.filter(org => !org.verified).length, color: '#f59e0b' }
+  ];
+
+  const eventsChartData = [
+    { name: 'Published', value: events.filter(event => event.status === 'published').length, color: '#3b82f6' },
+    { name: 'Pending', value: events.filter(event => event.status === 'pending_approval').length, color: '#f59e0b' },
+    { name: 'Rejected', value: events.filter(event => event.status === 'rejected').length, color: '#ef4444' }
+  ];
+
+  const eventRequestsChartData = [
+    { name: 'Pending', value: eventRequests.length, color: '#f59e0b' },
+    { name: 'Approved', value: 0, color: '#10b981' },
+    { name: 'Rejected', value: 0, color: '#ef4444' }
+  ];
+
+  const userApprovalsChartData = [
+    { name: 'Pending', value: userApprovals.length, color: '#f59e0b' },
+    { name: 'Approved', value: 0, color: '#10b981' },
+    { name: 'Rejected', value: 0, color: '#ef4444' }
+  ];
 
   const handleVerifyOrganization = async (orgId: string, verified: boolean) => {
     try {
-      // First, get the organization to find out who created it
       const organization = organizations.find(org => org.id === orgId);
       if (!organization) return;
 
-      // Update organization verification status
       await databaseService.updateOrganization(orgId, { verified });
 
-      // If organization is being verified (approved), update the user's affiliatedOrganizationId
       if (verified && organization.createdBy) {
         try {
-          // Update the user's profile to link them to this organization
           await databaseService.updateUser(organization.createdBy, {
             affiliatedOrganizationId: orgId
           });
           console.log(`User ${organization.createdBy} linked to organization ${orgId}`);
         } catch (userError) {
           console.error('Error updating user organization affiliation:', userError);
-          // Don't fail the entire operation if user update fails
         }
       }
 
-      // Reload data to reflect changes
       await loadData();
     } catch (error) {
       console.error('Error updating organization:', error);
@@ -115,25 +113,23 @@ const Admin: React.FC = () => {
       const request = eventRequests.find(r => r.id === requestId);
       if (!request) return;
 
-      // Create the actual event from the request - ensure no undefined values
-      const eventData = prepareDataForFirestore({
+      // Create the event directly from the request data
+      const eventData = {
         ...request.eventData,
         status: 'published' as const,
         createdAt: new Date(),
         updatedAt: new Date()
-      });
+      };
 
       console.log('Creating approved event with data:', eventData);
       await databaseService.createEvent(eventData);
       
       // Update the request status
-      const updateData = prepareDataForFirestore({
+      await databaseService.updateEventRequest(requestId, {
         status: 'approved',
         reviewedBy: user?.uid,
         reviewedAt: new Date()
       });
-
-      await databaseService.updateEventRequest(requestId, updateData);
 
       await loadData();
       setSelectedRequest(null);
@@ -149,14 +145,12 @@ const Admin: React.FC = () => {
     }
 
     try {
-      const updateData = prepareDataForFirestore({
+      await databaseService.updateEventRequest(requestId, {
         status: 'rejected',
         reviewedBy: user?.uid,
         reviewedAt: new Date(),
         reason: rejectReason
       });
-
-      await databaseService.updateEventRequest(requestId, updateData);
 
       await loadData();
       setSelectedRequest(null);
@@ -168,13 +162,79 @@ const Admin: React.FC = () => {
 
   const handleApproveUser = async (requestId: string) => {
     try {
-      const updateData = prepareDataForFirestore({
+      const request = userApprovals.find(r => r.id === requestId);
+      if (!request) return;
+
+      console.log('Approving user request:', request);
+
+      // First, approve the user and set their role
+      await databaseService.updateUser(request.userId, {
+        approved: true,
+        approvalRequested: false,
+        role: request.requestedRole
+      });
+
+      // For firm/school/university users, create and link an organization
+      if (['firm', 'school', 'university'].includes(request.requestedRole)) {
+        try {
+          // Check if organization already exists for this user
+          const userOrganizations = await databaseService.getOrganizations();
+          let userOrg = userOrganizations.find(org => 
+            org.createdBy === request.userId || 
+            org.adminUsers.includes(request.userId)
+          );
+
+          if (!userOrg) {
+            console.log('Creating new organization for approved user');
+            
+            // Create organization name from user display name or email
+            const orgName = request.organizationInfo?.name || 
+                          `${request.userDisplayName}'s ${request.requestedRole}`;
+            
+            // Create the organization
+            userOrg = await databaseService.createOrganization({
+              name: orgName,
+              type: request.requestedRole as 'school' | 'firm' | 'university',
+              address: request.organizationInfo?.address || '',
+              phone: request.organizationInfo?.phone || '',
+              email: request.userEmail,
+              description: request.organizationInfo?.description || 
+                         `Organization for ${request.userDisplayName}`,
+              verified: true,
+              createdBy: request.userId,
+              adminUsers: [request.userId],
+              affiliatedStudents: []
+            });
+
+            console.log(`Created new organization: ${userOrg.name} with ID: ${userOrg.id}`);
+          } else {
+            console.log('Found existing organization for user:', userOrg.name);
+            // Verify the existing organization
+            await databaseService.updateOrganization(userOrg.id, {
+              verified: true
+            });
+          }
+
+          // Link user to organization
+          await databaseService.updateUser(request.userId, {
+            affiliatedOrganizationId: userOrg.id
+          });
+
+          console.log(`User ${request.userId} linked to organization ${userOrg.id}`);
+
+        } catch (orgError) {
+          console.error('Error handling organization for approved user:', orgError);
+          // Don't fail the whole approval if organization handling fails
+        }
+      }
+
+      // Update the approval request
+      await databaseService.updateUserApprovalRequest(requestId, {
         status: 'approved',
         reviewedBy: user?.uid,
         reviewedAt: new Date()
       });
-
-      await databaseService.updateUserApprovalRequest(requestId, updateData);
+      
       await loadData();
       setSelectedUserApproval(null);
     } catch (error) {
@@ -189,14 +249,23 @@ const Admin: React.FC = () => {
     }
 
     try {
-      const updateData = prepareDataForFirestore({
+      const request = userApprovals.find(r => r.id === requestId);
+      if (!request) return;
+
+      // Update user to mark as rejected
+      await databaseService.updateUser(request.userId, {
+        approved: false,
+        approvalRequested: false
+      });
+
+      // Update the approval request
+      await databaseService.updateUserApprovalRequest(requestId, {
         status: 'rejected',
         reviewedBy: user?.uid,
         reviewedAt: new Date(),
         reason: userRejectReason
       });
-
-      await databaseService.updateUserApprovalRequest(requestId, updateData);
+      
       await loadData();
       setSelectedUserApproval(null);
       setUserRejectReason('');
@@ -207,6 +276,20 @@ const Admin: React.FC = () => {
 
   const pendingOrganizations = organizations.filter(org => !org.verified);
   const pendingEvents = events.filter(event => event.status === 'pending_approval');
+
+  // Custom label for pie charts
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-sm font-bold">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   // Loading animation
   if (isLoading) {
@@ -254,52 +337,128 @@ const Admin: React.FC = () => {
           </p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-indigo-100 dark:border-indigo-800 p-6 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending Orgs</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pendingOrganizations.length}</p>
+        {/* Stats Overview with Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+          {/* Left Column - Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-indigo-100 dark:border-indigo-800 p-6 transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending Orgs</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pendingOrganizations.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+                  <Building className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
-                <Building className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            </div>
+
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800 p-6 transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending Events</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pendingEvents.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-pink-100 dark:border-pink-800 p-6 transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Event Requests</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{eventRequests.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-green-100 dark:border-green-800 p-6 transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">User Approvals</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{userApprovals.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800 p-6 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending Events</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pendingEvents.length}</p>
+          {/* Right Column - Charts */}
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-indigo-100 dark:border-indigo-800 p-6">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+              <PieChart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              Quick Overview
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Organizations Chart */}
+              <div className="text-center">
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Organizations</h4>
+                <ResponsiveContainer width="100%" height={120}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={organizationChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomizedLabel}
+                      outerRadius={50}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {organizationChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+                <div className="flex justify-center gap-4 mt-2 text-xs">
+                  {organizationChartData.map((item, index) => (
+                    <div key={index} className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                      <span className="text-gray-600 dark:text-gray-400">{item.name}: {item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-pink-100 dark:border-pink-800 p-6 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Event Requests</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{eventRequests.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-pink-600 dark:text-pink-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-green-100 dark:border-green-800 p-6 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">User Approvals</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{userApprovals.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
+              {/* Events Chart */}
+              <div className="text-center">
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Events</h4>
+                <ResponsiveContainer width="100%" height={120}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={eventsChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomizedLabel}
+                      outerRadius={50}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {eventsChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+                <div className="flex justify-center gap-2 mt-2 text-xs flex-wrap">
+                  {eventsChartData.map((item, index) => (
+                    <div key={index} className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                      <span className="text-gray-600 dark:text-gray-400">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -377,7 +536,7 @@ const Admin: React.FC = () => {
                               {org.email}
                             </p>
                             <p className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
+                              <UserIcon className="w-4 h-4" />
                               {org.phone}
                             </p>
                             <p className="md:col-span-2 flex items-start gap-2">
@@ -695,7 +854,7 @@ const Admin: React.FC = () => {
                             <div className="flex-1">
                               <div className="flex items-center gap-4 mb-3">
                                 <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                                  <User className="w-6 h-6 text-white" />
+                                  <UserIcon className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
@@ -773,7 +932,7 @@ const Admin: React.FC = () => {
                         </label>
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
-                            <User className="w-4 h-4 text-gray-400" />
+                            <UserIcon className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-900 dark:text-white font-medium">{selectedUserApproval.userDisplayName}</span>
                           </div>
                           <div className="flex items-center gap-3">

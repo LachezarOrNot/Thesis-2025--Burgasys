@@ -27,7 +27,7 @@ interface AuthContextType {
   deleteUserAccount: (password?: string, softDelete?: boolean) => Promise<void>;
   reauthenticate: (password: string) => Promise<void>;
   cancelSoftDelete: () => Promise<void>;
-  changePassword: (newPassword: string) => Promise<void>; // Added to interface
+  changePassword: (newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -108,42 +108,103 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if this role requires approval
       const requiresApproval = ['school', 'university', 'firm'].includes(role);
       
-      const userData = {
+      let organizationId = undefined;
+      
+      // If it's an organization role and we have organization info, create the organization first
+      if (requiresApproval && organizationInfo?.organizationName) {
+        try {
+          console.log('Creating organization for user:', organizationInfo);
+          
+          const organization = await databaseService.createOrganization({
+            name: organizationInfo.organizationName,
+            type: role as 'school' | 'firm' | 'university',
+            address: organizationInfo.address || '',
+            phone: organizationInfo.phone || '',
+            email: email,
+            description: organizationInfo.description || '',
+            verified: false, // Will be verified after admin approval
+            createdBy: firebaseUser.uid,
+            adminUsers: [firebaseUser.uid],
+            affiliatedStudents: []
+          });
+
+          organizationId = organization.id;
+          console.log('Organization created with ID:', organizationId);
+
+        } catch (orgError) {
+          console.error('Error creating organization:', orgError);
+          // Don't throw here - we still want to create the user account
+          // The organization can be created later during admin approval
+        }
+      }
+
+      // Create user data without createdAt and updatedAt (they will be added by databaseService)
+      const userData: Omit<User, 'createdAt' | 'updatedAt'> = {
         uid: firebaseUser.uid,
         email: firebaseUser.email!,
         displayName,
         role,
         approved: !requiresApproval, // Auto-approve if no approval required
         approvalRequested: requiresApproval, // Mark as requested if approval needed
-        createdAt: new Date(),
-        updatedAt: new Date()
+        affiliatedOrganizationId: organizationId
+        // createdAt and updatedAt are handled by databaseService.createUser
       };
 
       // Create user in database
-      await databaseService.createUser(userData);
+      console.log('Creating user with data:', userData);
+      const createdUser = await databaseService.createUser(userData);
+
+      // If organization was created, ensure it's properly linked
+      if (organizationId) {
+        try {
+          await databaseService.updateOrganization(organizationId, {
+            createdBy: firebaseUser.uid,
+            adminUsers: [firebaseUser.uid]
+          });
+          console.log('Organization linked to user:', organizationId);
+        } catch (linkError) {
+          console.error('Error linking organization to user:', linkError);
+        }
+      }
 
       // If role requires approval, create an approval request
-      if (requiresApproval && organizationInfo) {
-        await databaseService.createUserApprovalRequest({
-          userId: firebaseUser.uid,
-          userEmail: firebaseUser.email!,
-          userDisplayName: displayName,
-          requestedRole: role as 'school' | 'firm' | 'university',
-          status: 'pending',
-          organizationInfo: {
-            name: organizationInfo.organizationName,
-            address: organizationInfo.address,
-            phone: organizationInfo.phone,
-            description: organizationInfo.description
-          }
-        });
+      if (requiresApproval) {
+        try {
+          await databaseService.createUserApprovalRequest({
+            userId: firebaseUser.uid,
+            userEmail: firebaseUser.email!,
+            userDisplayName: displayName,
+            requestedRole: role as 'school' | 'firm' | 'university',
+            status: 'pending',
+            organizationInfo: organizationInfo ? {
+              name: organizationInfo.organizationName,
+              address: organizationInfo.address,
+              phone: organizationInfo.phone,
+              description: organizationInfo.description
+            } : undefined
+          });
+          console.log('User approval request created');
+        } catch (approvalError) {
+          console.error('Error creating approval request:', approvalError);
+        }
       }
       
-      // Set the user state
-      setUser(userData);
+      // Set the user state with the created user (which includes createdAt and updatedAt)
+      setUser(createdUser);
       
     } catch (error) {
       console.error('Sign up error:', error);
+      
+      // If there was an error and we created a Firebase user but failed to create our user record,
+      // we should delete the Firebase user to maintain consistency
+      if (auth.currentUser) {
+        try {
+          await firebaseDeleteUser(auth.currentUser);
+        } catch (deleteError) {
+          console.error('Error cleaning up Firebase user after failed signup:', deleteError);
+        }
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -333,7 +394,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteUserAccount,
       reauthenticate,
       cancelSoftDelete,
-      changePassword // Added to the context value
+      changePassword
     }}>
       {children}
     </AuthContext.Provider>

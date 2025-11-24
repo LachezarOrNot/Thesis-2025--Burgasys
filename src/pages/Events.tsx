@@ -58,11 +58,11 @@ const Events: React.FC = () => {
       );
     });
 
-    // Apply date filter with error handling
+    // Apply date filter with error handling - USE START_DATETIME NOT CREATED_AT
     if (dateFilter !== 'all') {
       filtered = filtered.filter(event => {
         try {
-          const eventDate = new Date(event.start_datetime);
+          const eventDate = new Date(event.start_datetime); // Use event start date
           if (isNaN(eventDate.getTime())) return false;
           
           switch (dateFilter) {
@@ -111,7 +111,7 @@ const Events: React.FC = () => {
       });
     }
 
-    // Apply sorting with error handling
+    // Apply sorting with error handling - USE START_DATETIME FOR DATE SORTING
     filtered.sort((a, b) => {
       try {
         switch (sortBy) {
@@ -121,8 +121,8 @@ const Events: React.FC = () => {
             return (b.registeredUsers?.length || 0) - (a.registeredUsers?.length || 0);
           case 'date':
           default:
-            const dateA = new Date(a.start_datetime).getTime();
-            const dateB = new Date(b.start_datetime).getTime();
+            const dateA = new Date(a.start_datetime).getTime(); // Use start_datetime
+            const dateB = new Date(b.start_datetime).getTime(); // Use start_datetime
             return dateA - dateB;
         }
       } catch {
@@ -142,6 +142,27 @@ const Events: React.FC = () => {
   };
 
   const hasActiveFilters = searchTerm || dateFilter !== 'all' || categoryFilter !== 'all' || locationFilter !== 'all';
+
+  // Helper function to check if an event date is in a specific timeframe
+  const isEventInTimeframe = (event: Event, timeframe: string): boolean => {
+    try {
+      const eventDate = new Date(event.start_datetime);
+      if (isNaN(eventDate.getTime())) return false;
+      
+      switch (timeframe) {
+        case 'today':
+          return isToday(eventDate);
+        case 'week':
+          return isThisWeek(eventDate);
+        case 'month':
+          return isThisMonth(eventDate);
+        default:
+          return false;
+      }
+    } catch {
+      return false;
+    }
+  };
 
   if (error) {
     return (
@@ -208,13 +229,7 @@ const Events: React.FC = () => {
                   {t('events.thisWeekStats')}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {events.filter(event => {
-                    try {
-                      return isThisWeek(new Date(event.start_datetime));
-                    } catch {
-                      return false;
-                    }
-                  }).length}
+                  {events.filter(event => isEventInTimeframe(event, 'week')).length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
@@ -230,10 +245,15 @@ const Events: React.FC = () => {
                   {t('events.onlineStats')}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {events.filter(event => 
-                    event.location?.toLowerCase().includes('online') || 
-                    event.location?.toLowerCase().includes('virtual')
-                  ).length}
+                  {events.filter(event => {
+                    const location = event.location?.toLowerCase() || '';
+                    return location.includes('online') || 
+                           location.includes('virtual') ||
+                           location.includes('zoom') ||
+                           location.includes('meet') ||
+                           location.includes('webinar') ||
+                           location.includes('digital');
+                  }).length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
@@ -249,10 +269,15 @@ const Events: React.FC = () => {
                   {t('events.inPersonStats')}
                 </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                  {events.filter(event => 
-                    !event.location?.toLowerCase().includes('online') && 
-                    !event.location?.toLowerCase().includes('virtual')
-                  ).length}
+                  {events.filter(event => {
+                    const location = event.location?.toLowerCase() || '';
+                    return !location.includes('online') &&
+                           !location.includes('virtual') &&
+                           !location.includes('zoom') &&
+                           !location.includes('meet') &&
+                           !location.includes('webinar') &&
+                           !location.includes('digital');
+                  }).length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">

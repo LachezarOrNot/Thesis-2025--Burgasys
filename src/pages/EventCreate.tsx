@@ -589,6 +589,7 @@ const EventCreate: React.FC = () => {
               </div>
             </div>
           </div>
+          
 
           {/* Sidebar */}
           <div className="space-y-6">

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, User, ChevronDown, Menu, X } from 'lucide-react';
+import { LogOut, Moon, Sun, User, ChevronDown, Menu, X, Building } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -119,6 +119,16 @@ const Navbar: React.FC = () => {
                     </Link>
                   </div>
                 </div>
+
+                {/* Organizations Link */}
+                <Link 
+                  to="/organizations" 
+                  className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors relative group"
+                >
+                  <Building className="w-4 h-4" />
+                  <span>Organizations</span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
+                </Link>
 
                 {/* Create Organization Link */}
                 {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
@@ -285,6 +295,16 @@ const Navbar: React.FC = () => {
                 className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 Past Events
+              </Link>
+
+              {/* Organizations Link - Mobile */}
+              <Link
+                to="/organizations"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <Building className="w-4 h-4" />
+                Organizations
               </Link>
 
               {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (

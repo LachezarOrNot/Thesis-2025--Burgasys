@@ -32,12 +32,23 @@ import { v4 as uuidv4 } from 'uuid';
 
 class DatabaseService {
   
-  // Safe date conversion utility
+  // FIXED: Safe date conversion utility - DON'T FUCK WITH THE DATES
   private safeDateConvert(date: any): Date {
     if (!date) return new Date();
+    
+    // If it's already a Date object, return it directly - DON'T CONVERT
     if (date instanceof Date) return date;
+    
+    // If it's a Firestore timestamp, convert it
     if (date.toDate && typeof date.toDate === 'function') return date.toDate();
+    
+    // If it's already a proper Date object from our components, return it
+    if (date && typeof date === 'object' && date.constructor.name === 'Date') {
+      return date;
+    }
+    
     try {
+      // For strings or numbers, create a Date object but DON'T apply timezone conversion
       const parsed = new Date(date);
       return isNaN(parsed.getTime()) ? new Date() : parsed;
     } catch {
@@ -119,26 +130,26 @@ class DatabaseService {
       return null;
     }
   }
-  // Add this to your DatabaseService class
-async getAllUsers(): Promise<User[]> {
-  try {
-    const usersQuery = query(collection(db, 'users'));
-    const usersSnap = await getDocs(usersQuery);
-    
-    return usersSnap.docs.map(doc => {
-      const data = doc.data();
-      const convertedData = this.convertFromFirestore(data);
-      return {
-        ...convertedData,
-        createdAt: this.safeDateConvert(convertedData.createdAt),
-        updatedAt: this.safeDateConvert(convertedData.updatedAt)
-      } as User;
-    });
-  } catch (error) {
-    console.error('Error getting all users:', error);
-    return [];
+
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const usersQuery = query(collection(db, 'users'));
+      const usersSnap = await getDocs(usersQuery);
+      
+      return usersSnap.docs.map(doc => {
+        const data = doc.data();
+        const convertedData = this.convertFromFirestore(data);
+        return {
+          ...convertedData,
+          createdAt: this.safeDateConvert(convertedData.createdAt),
+          updatedAt: this.safeDateConvert(convertedData.updatedAt)
+        } as User;
+      });
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      return [];
+    }
   }
-}
 
   async updateUser(uid: string, updates: Partial<User>): Promise<void> {
     const userRef = doc(db, 'users', uid);
@@ -543,7 +554,13 @@ async getAllUsers(): Promise<User[]> {
       const eventId = uuidv4();
       const eventRef = doc(db, 'events', eventId);
 
-      // Use the correct TypeScript types (undefined for optional fields)
+      console.log('🔴 DATABASE SERVICE - CREATING EVENT WITH DATES:');
+      console.log('Raw start_datetime:', eventData.start_datetime);
+      console.log('Raw end_datetime:', eventData.end_datetime);
+      console.log('Type of start_datetime:', typeof eventData.start_datetime);
+      console.log('Type of end_datetime:', typeof eventData.end_datetime);
+
+      // FIXED: Use the dates as they come from the components - NO CONVERSION
       const event: Event = {
         id: eventId,
         name: eventData.name || '',
@@ -552,8 +569,9 @@ async getAllUsers(): Promise<User[]> {
         location: eventData.location || '',
         lat: eventData.lat || 0,
         lng: eventData.lng || 0,
-        start_datetime: this.safeDateConvert(eventData.start_datetime),
-        end_datetime: this.safeDateConvert(eventData.end_datetime),
+        // FIXED: Use dates directly without conversion
+        start_datetime: eventData.start_datetime,
+        end_datetime: eventData.end_datetime,
         capacity: eventData.capacity === undefined || eventData.capacity === null 
           ? undefined 
           : Number(eventData.capacity),
@@ -569,10 +587,11 @@ async getAllUsers(): Promise<User[]> {
         updatedAt: new Date()
       };
 
-      // Prepare the event data for Firestore (convert undefined to null)
+      console.log('🔴 FINAL EVENT DATES BEING SAVED:');
+      console.log('start_datetime:', event.start_datetime);
+      console.log('end_datetime:', event.end_datetime);
+
       const preparedEvent = this.prepareDataForFirestore(event);
-      console.log('Creating event with prepared data:', preparedEvent);
-      
       await setDoc(eventRef, preparedEvent);
       return event;
     } catch (error) {
@@ -589,13 +608,27 @@ async getAllUsers(): Promise<User[]> {
       if (eventSnap.exists()) {
         const data = eventSnap.data();
         const convertedData = this.convertFromFirestore(data);
-        return {
+        
+        console.log('🔴 DATABASE SERVICE - GETTING EVENT DATES:');
+        console.log('Raw start_datetime from Firestore:', convertedData.start_datetime);
+        console.log('Raw end_datetime from Firestore:', convertedData.end_datetime);
+        console.log('Type of start_datetime:', typeof convertedData.start_datetime);
+        console.log('Type of end_datetime:', typeof convertedData.end_datetime);
+
+        const event = {
           ...convertedData,
+          // FIXED: Use safe conversion but log what's happening
           start_datetime: this.safeDateConvert(convertedData.start_datetime),
           end_datetime: this.safeDateConvert(convertedData.end_datetime),
           createdAt: this.safeDateConvert(convertedData.createdAt),
           updatedAt: this.safeDateConvert(convertedData.updatedAt)
         } as Event;
+
+        console.log('🔴 AFTER CONVERSION:');
+        console.log('start_datetime:', event.start_datetime);
+        console.log('end_datetime:', event.end_datetime);
+
+        return event;
       }
       return null;
     } catch (error) {
@@ -668,6 +701,10 @@ async getAllUsers(): Promise<User[]> {
 
   async updateEvent(eventId: string, updates: Partial<Event>): Promise<void> {
     const eventRef = doc(db, 'events', eventId);
+    
+    console.log('🔴 DATABASE SERVICE - UPDATING EVENT DATES:');
+    console.log('Updates start_datetime:', updates.start_datetime);
+    console.log('Updates end_datetime:', updates.end_datetime);
     
     // Handle capacity conversion if it's being updated
     const processedUpdates = { ...updates };
@@ -911,8 +948,6 @@ async getAllUsers(): Promise<User[]> {
       throw error;
     }
   }
-
-  // Add these methods to your DatabaseService class
 
   async scheduleUserDeletion(userId: string, deletionDate: Date): Promise<void> {
     try {

@@ -86,7 +86,7 @@ function App() {
                       <Organization />
                     </ProtectedRoute>
                   } />
-                  <Route path="/org/:id" element={
+                  <Route path="/organizations/:id" element={
                     <ProtectedRoute>
                       <Organization />
                     </ProtectedRoute>
