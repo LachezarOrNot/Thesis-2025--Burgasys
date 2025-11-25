@@ -19,21 +19,6 @@
     "all": "Alle",
     "none": "Keine"
   },
-  "auth": {
-    "login": "Anmelden",
-    "logout": "Abmelden",
-    "signup": "Registrieren",
-    "email": "E-Mail",
-    "password": "Passwort",
-    "confirmPassword": "Passwort bestätigen",
-    "forgotPassword": "Passwort vergessen?",
-    "noAccount": "Noch kein Konto?",
-    "hasAccount": "Bereits ein Konto?",
-    "loginWithGoogle": "Mit Google anmelden",
-    "displayName": "Anzeigename",
-    "role": "Rolle",
-    "organizationInfo": "Organisationsinformationen"
-  },
   "roles": {
     "admin": "Administrator",
     "school": "Schule",
@@ -42,16 +27,286 @@
     "student": "Student",
     "user": "Benutzer"
   },
-  "navigation": {
-    "home": "Startseite",
-    "events": "Veranstaltungen",
-    "organizations": "Organisationen",
-    "admin": "Administration",
-    "profile": "Profil",
-    "dashboard": "Dashboard",
-    "createEvent": "Veranstaltung erstellen",
-    "myEvents": "Meine Veranstaltungen",
-    "settings": "Einstellungen"
+  "navbar": {
+    "eventsDropdown": {
+      "title": "Veranstaltungen",
+      "browseEvents": "Veranstaltungen durchsuchen",
+      "browseDescription": "Entdecke bevorstehende Veranstaltungen",
+      "calendarView": "Kalenderansicht",
+      "calendarDescription": "Veranstaltungen im Kalender ansehen",
+      "pastEvents": "Vergangene Veranstaltungen",
+      "pastDescription": "Veranstaltungshistorie anzeigen"
+    },
+    "organizationsDropdown": {
+      "browseOrganizations": "Organisationen durchsuchen",
+      "browseDescription": "Entdecke und trete Organisationen bei",
+      "createOrganization": "Organisation erstellen",
+      "createDescription": "Neue Organisation starten"
+    },
+    "userMenu": {
+      "dashboard": "Dashboard",
+      "profile": "Profil",
+      "adminPanel": "Admin-Bereich"
+    },
+    "themeToggle": {
+      "lightMode": "Zum Hellmodus wechseln",
+      "darkMode": "Zum Dunkelmodus wechseln"
+    }
+  },
+    "eventCard": {
+    "dateNotSet": "Datum nicht gesetzt",
+    "invalidDate": "Ungültiges Datum",
+    "dateError": "Datumsfehler",
+    "timeNotSet": "Zeit nicht gesetzt",
+    "invalidTime": "Ungültige Zeit",
+    "timeError": "Zeitfehler",
+    "unknownOrganizer": "Unbekannter Veranstalter",
+    "full": "VOLL",
+    "edit": "Bearbeiten",
+    "viewDetails": "Details anzeigen",
+    "deleteConfirm": {
+      "title": "Veranstaltung löschen",
+      "message": "Sind Sie sicher, dass Sie diese Veranstaltung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Löschen"
+    },
+    "status": {
+      "published": "veröffentlicht",
+      "pending_approval": "ausstehende Genehmigung",
+      "finished": "beendet",
+      "draft": "Entwurf",
+      "rejected": "abgelehnt",
+      "unknown": "unbekannt"
+    }
+  },
+  "chat": {
+    "title": "Veranstaltungs-Chat",
+    "messages": "Nachricht",
+    "messages_plural": "Nachrichten",
+    "connectionIssue": "Verbindungsproblem",
+    "changeTheme": "Thema ändern",
+    "noMessages": "Noch keine Nachrichten",
+    "noMessagesDescription": "Sei der Erste, der Hallo sagt!",
+    "retryConnection": "Verbindung erneut versuchen",
+    "typeMessage": "Geben Sie Ihre Nachricht ein...",
+    "send": "Senden",
+    "sending": "Wird gesendet...",
+    "charactersLeft": "Zeichen übrig",
+    "editingMessage": "Sie bearbeiten derzeit eine Nachricht",
+    "messagesVisible": "Nachrichten sind für alle Veranstaltungsteilnehmer sichtbar",
+    "deleteMessage": {
+      "title": "Nachricht löschen",
+      "message": "Sind Sie sicher, dass Sie diese Nachricht löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Löschen"
+    },
+    "flagMessage": "Unangemessene Nachricht melden",
+    "editMessage": "Nachricht bearbeiten",
+    "saveEdit": "Speichern",
+    "cancelEdit": "Abbrechen",
+    "edited": "bearbeitet",
+    "chatNotAvailable": "Chat nicht verfügbar",
+    "chatNotAvailableDescription": "Der Chatraum ist nur für veröffentlichte Veranstaltungen aktiv.",
+    "themes": {
+      "blue": "Blau",
+      "purple": "Lila",
+      "green": "Grün",
+      "orange": "Orange",
+      "pink": "Rosa",
+      "dark": "Dunkel"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin-Dashboard",
+      "description": "Verwalten Sie Organisationen, Veranstaltungen und Benutzer-Genehmigungen mit leistungsstarken administrativen Tools",
+      "stats": {
+        "pendingOrgs": "Ausstehende Organisationen",
+        "pendingEvents": "Ausstehende Veranstaltungen",
+        "eventRequests": "Veranstaltungsanfragen",
+        "userApprovals": "Benutzer-Genehmigungen"
+      },
+      "quickOverview": "Schnellübersicht",
+      "charts": {
+        "organizations": "Organisationen",
+        "events": "Veranstaltungen",
+        "verified": "Verifiziert",
+        "pending": "Ausstehend",
+        "published": "Veröffentlicht",
+        "rejected": "Abgelehnt"
+      },
+      "tabs": {
+        "organizations": "Organisationen",
+        "events": "Veranstaltungen",
+        "eventRequests": "Veranstaltungsanfragen",
+        "userApprovals": "Benutzer-Genehmigungen"
+      }
+    },
+    "organizations": {
+      "title": "Ausstehende Organisationsverifizierungen",
+      "allCaughtUp": "Alles erledigt!",
+      "noPending": "Keine ausstehenden Organisationsverifizierungen",
+      "verify": "Organisation verifizieren",
+      "reject": "Organisation ablehnen"
+    },
+    "events": {
+      "title": "Veranstaltungen, die auf Genehmigung warten",
+      "allClear": "Alles klar!",
+      "noPending": "Keine Veranstaltungen, die auf Genehmigung warten",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen"
+    },
+    "eventRequests": {
+      "title": "Veranstaltungserstellungsanfragen",
+      "noRequests": "Keine Anfragen!",
+      "noPending": "Keine ausstehenden Veranstaltungserstellungsanfragen",
+      "requestedBy": "Angefordert von",
+      "organization": "Organisation",
+      "submitted": "Eingereicht",
+      "eventDetails": "Veranstaltungsdetails",
+      "eventName": "Veranstaltungsname",
+      "subtitle": "Untertitel",
+      "description": "Beschreibung",
+      "dateTime": "Datum & Uhrzeit",
+      "location": "Ort",
+      "capacity": "Kapazität",
+      "attendees": "Teilnehmer",
+      "tags": "Tags",
+      "rejectionReason": "Ablehnungsgrund",
+      "rejectionPlaceholder": "Geben Sie einen Ablehnungsgrund an...",
+      "confirmRejection": "Ablehnung bestätigen",
+      "approveEvent": "Veranstaltung genehmigen"
+    },
+    "userApprovals": {
+      "title": "Benutzer-Genehmigungsanfragen",
+      "noApprovals": "Keine Genehmigungen benötigt!",
+      "noPending": "Keine ausstehenden Benutzer-Genehmigungsanfragen",
+      "requestDetails": "Anfragedetails",
+      "userInformation": "Benutzerinformationen",
+      "organizationInformation": "Organisationsinformationen",
+      "rejectionReason": "Ablehnungsgrund",
+      "rejectionPlaceholder": "Geben Sie einen Ablehnungsgrund an...",
+      "confirmRejection": "Ablehnung bestätigen",
+      "approveUser": "Benutzer genehmigen"
+    },
+    "accessDenied": {
+      "title": "Zugriff verweigert",
+      "message": "Sie benötigen Administratorrechte, um auf diese Seite zuzugreifen."
+    },
+    "loading": "Admin-Dashboard wird geladen..."
+  },
+  "auth": {
+    "signIn": "Bei Ihrem Konto anmelden",
+    "signUp": "Konto erstellen",
+    "noAccount": "Noch kein Konto?",
+    "hasAccount": "Bereits ein Konto?",
+    "signUpLink": "Registrieren",
+    "signInLink": "Anmelden",
+    "fullName": "Vollständiger Name",
+    "fullNamePlaceholder": "Geben Sie Ihren vollständigen Namen ein",
+    "role": "Rolle",
+    "organizationInfo": "Organisationsinformationen",
+    "organizationName": "Organisationsname",
+    "organizationNamePlaceholder": "Geben Sie den Organisationsnamen ein",
+    "address": "Adresse",
+    "addressPlaceholder": "Geben Sie die Organisationsadresse ein",
+    "phone": "Telefonnummer",
+    "phonePlaceholder": "Geben Sie die Telefonnummer ein",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Kurze Beschreibung Ihrer Organisation",
+    "organizationNote": "Hinweis: Ihr Organisationskonto benötigt eine Admin-Genehmigung. Sobald Ihr Konto genehmigt ist, werden Sie automatisch zum Administrator Ihrer Organisation und können Veranstaltungen erstellen.",
+    "email": "E-Mail-Adresse",
+    "emailPlaceholder": "Geben Sie Ihre E-Mail-Adresse ein",
+    "password": "Passwort",
+    "passwordPlaceholder": "Geben Sie Ihr Passwort ein",
+    "passwordRequirement": "Passwort muss mindestens 6 Zeichen lang sein",
+    "submit": "Anmelden",
+    "createAccount": "Konto erstellen",
+    "pleaseWait": "Bitte warten...",
+    "orContinue": "Oder fortfahren mit",
+    "googleSignIn": "Mit Google anmelden",
+    "success": {
+      "organization": "Ihr Konto und Ihre Organisation wurden erstellt und warten auf Admin-Genehmigung. Sie erhalten eine E-Mail, sobald Ihr Konto genehmigt ist.",
+      "regular": "Konto erfolgreich erstellt! Sie können jetzt auf alle Funktionen zugreifen."
+    },
+    "errors": {
+      "organizationCreation": "Organisation konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+    }
+  },
+  "eventCreate": {
+    "title": "Neue Veranstaltung erstellen",
+    "requestTitle": "Neue Veranstaltung anfordern",
+    "description": "Füllen Sie die Details unten aus, um Ihre Veranstaltung zu erstellen",
+    "requestDescription": "Füllen Sie die Details unten aus, um eine Veranstaltung anzufordern. Ihre Anfrage wird von einem Administrator überprüft.",
+    "organizationInfo": "Organisation: Diese Veranstaltung wird mit {{organizationName}} verknüpft",
+    "approvalNote": "Hinweis: Ihre Veranstaltung wird zur Administrator-Genehmigung eingereicht, bevor sie veröffentlicht wird.",
+    "accessDenied": {
+      "title": "Zugriff verweigert",
+      "message": "Sie haben keine Berechtigung, auf diese Seite zuzugreifen."
+    },
+    "sections": {
+      "basicInfo": "Grundinformationen",
+      "images": "Veranstaltungsbilder",
+      "dateTime": "Datum & Uhrzeit",
+      "location": "Ort",
+      "settings": "Einstellungen",
+      "tags": "Tags"
+    },
+    "form": {
+      "eventName": "Veranstaltungsname",
+      "eventNamePlaceholder": "Geben Sie den Veranstaltungsnamen ein",
+      "subtitle": "Untertitel",
+      "subtitlePlaceholder": "Geben Sie einen kurzen Untertitel ein",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Beschreiben Sie Ihre Veranstaltung...",
+      "startDateTime": "Startdatum & -uhrzeit",
+      "endDateTime": "Enddatum & -uhrzeit",
+      "location": "Ort",
+      "locationPlaceholder": "Geben Sie den Veranstaltungsort ein",
+      "status": "Status",
+      "capacity": "Kapazität",
+      "capacityPlaceholder": "Keine Begrenzung, wenn leer",
+      "allowRegistration": "Registrierung erlauben",
+      "addTag": "Tag hinzufügen",
+      "uploadImages": "Klicken Sie zum Hochladen von Bildern",
+      "uploadInfo": "PNG, JPG bis 2MB (werden optimiert)",
+      "processingImages": "Bilder werden verarbeitet...",
+      "imageStorageNote": "Hinweis: Bilder werden als Base64-Strings in der Datenbank gespeichert, um Speicherkosten zu vermeiden.",
+      "createEvent": "Veranstaltung erstellen",
+      "requestEvent": "Veranstaltung anfordern",
+      "creatingEvent": "Veranstaltung wird erstellt...",
+      "submittingRequest": "Anfrage wird gesendet..."
+    },
+    "errors": {
+      "loginRequired": "Sie müssen angemeldet sein, um eine Veranstaltung zu erstellen",
+      "nameRequired": "Veranstaltungsname ist erforderlich",
+      "datetimeRequired": "Start- und End-Datetime sind erforderlich",
+      "dateValidation": "Enddatum muss nach Startdatum liegen",
+      "organizationRequired": "Sie müssen einer Organisation angehören, um Veranstaltungen anzufordern",
+      "general": "Veranstaltung konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+    },
+    "success": {
+      "event": "Veranstaltung erfolgreich erstellt!",
+      "request": "Veranstaltungsanfrage erfolgreich gesendet! Sie wird von einem Administrator überprüft."
+    }
+  },
+  "footer": {
+    "brand": {
+      "description": "Entdecke unglaubliche Erlebnisse, verbinde dich mit tollen Menschen und schaffe bleibende Erinnerungen — angetrieben von Gemeinschaften weltweit.",
+      "location": "Global",
+      "email": "support@burgasys.com"
+    },
+    "explore": {
+      "title": "Entdecken",
+      "upcomingEvents": "Bevorstehende Veranstaltungen",
+      "eventCalendar": "Veranstaltungskalender",
+      "signIn": "Anmelden"
+    },
+    "connect": {
+      "title": "Verbinden",
+      "description": "Bleibe mit den neuesten Updates, Veranstaltungstipps und Community-Geschichten verbunden."
+    },
+    "copyright": "© {{year}} Burgasys · Mit Integrität für die Gemeinschaft gebaut."
   },
   "events": {
     "title": "Veranstaltungen entdecken",
@@ -121,18 +376,6 @@
     "requestAffiliation": "Mitgliedschaft beantragen",
     "affiliationRequests": "Mitgliedschaftsanfragen"
   },
-  "admin": {
-    "adminDashboard": "Admin-Dashboard",
-    "pendingApprovals": "Ausstehende Genehmigungen",
-    "userApprovals": "Benutzer-Genehmigungen",
-    "eventApprovals": "Veranstaltungs-Genehmigungen",
-    "organizationVerifications": "Organisations-Verifizierungen",
-    "approve": "Genehmigen",
-    "reject": "Ablehnen",
-    "verify": "Verifizieren",
-    "unverify": "Verifizierung aufheben",
-    "rejectionReason": "Ablehnungsgrund"
-  },
   "status": {
     "draft": "Entwurf",
     "pending_approval": "Ausstehende Genehmigung",
@@ -141,6 +384,26 @@
     "rejected": "Abgelehnt",
     "pending": "Ausstehend",
     "approved": "Genehmigt"
+  },
+    "eventDetail": {
+    "eventNotFound": "Veranstaltung nicht gefunden",
+    "backToEvents": "Zurück zu Veranstaltungen",
+    "aboutEvent": "Über diese Veranstaltung",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "location": "Ort",
+    "attendees": "Teilnehmer",
+    "locationNotSpecified": "Ort nicht angegeben",
+    "signInToRegister": "Bitte melden Sie sich an, um sich für diese Veranstaltung zu registrieren",
+    "registerForEvent": "Für Veranstaltung registrieren",
+    "registering": "Wird registriert...",
+    "registered": "Sie sind für diese Veranstaltung registriert",
+    "eventFull": "Diese Veranstaltung ist ausgebucht. Sie können sich auf die Warteliste setzen lassen.",
+    "registrationFailed": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "details": "Details",
+    "chat": "Chat",
+    "tabDetails": "Details",
+    "tabChat": "Chat"
   },
   "notifications": {
     "notifications": "Benachrichtigungen",
@@ -152,6 +415,54 @@
     "registrationSuccess": "Erfolgreich für Veranstaltung registriert",
     "registrationWaitlist": "Zur Warteliste hinzugefügt",
     "unregistrationSuccess": "Erfolgreich von Veranstaltung abgemeldet"
+  },
+    "home": {
+    "hero": {
+      "tagline": "Entdecke dein nächstes Erlebnis",
+      "titlePart1": "Entdecke erstaunliche",
+      "titlePart2": "Veranstaltungen",
+      "description": "Verbinde dich mit Gemeinschaften, lerne neue Fähigkeiten und schaffe unvergessliche Erlebnisse durch kuratierte Veranstaltungen",
+      "searchPlaceholder": "Veranstaltungen, Themen oder Orte suchen...",
+      "searchButton": "Suchen"
+    },
+    "stats": {
+      "events": "Veranstaltungen",
+      "participants": "Teilnehmer",
+      "locations": "Standorte"
+    },
+    "featuredEvents": {
+      "title": "Empfohlene Veranstaltungen",
+      "subtitle": "Entdecke bevorstehende Veranstaltungen in deiner Nähe",
+      "viewAll": "Alle Veranstaltungen anzeigen",
+      "noEvents": {
+        "title": "Keine Veranstaltungen gefunden",
+        "description": "Schau später wieder vorbei für neue Veranstaltungen"
+      }
+    },
+    "cta": {
+      "title": "Bereit zu starten?",
+      "description": "Schließe dich Tausenden von Nutzern an, die erstaunliche Veranstaltungen entdecken und erstellen",
+      "signUp": "Kostenlos registrieren",
+      "browseEvents": "Veranstaltungen durchsuchen"
+    }
+  },
+    "navigation": {
+    "home": "Startseite",
+    "events": "Veranstaltungen",
+    "organizations": "Organisationen",
+    "admin": "Administration",
+    "profile": "Profil",
+    "dashboard": "Dashboard",
+    "createEvent": "Veranstaltung erstellen",
+    "myEvents": "Meine Veranstaltungen",
+    "settings": "Einstellungen",
+    "browseEvents": "Veranstaltungen durchsuchen",
+    "calendarView": "Kalenderansicht",
+    "pastEvents": "Vergangene Veranstaltungen",
+    "createOrganization": "Organisation erstellen",
+    "adminPanel": "Admin-Bereich",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden"
   },
   "errors": {
     "required": "Dieses Feld ist erforderlich",

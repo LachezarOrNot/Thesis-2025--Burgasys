@@ -4,9 +4,11 @@ import { Organization, Event, EventCreationRequest, UserApprovalRequest, User as
 import { databaseService } from '../services/database';
 import { Check, X, Building, Calendar, Users, Clock, Eye, Mail, User as UserIcon, ChevronRight, AlertCircle, PieChart } from 'lucide-react';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 const Admin: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [eventRequests, setEventRequests] = useState<EventCreationRequest[]>([]);
@@ -44,26 +46,26 @@ const Admin: React.FC = () => {
 
   // Chart data calculations
   const organizationChartData = [
-    { name: 'Verified', value: organizations.filter(org => org.verified).length, color: '#10b981' },
-    { name: 'Pending', value: organizations.filter(org => !org.verified).length, color: '#f59e0b' }
+    { name: t('admin.dashboard.charts.verified'), value: organizations.filter(org => org.verified).length, color: '#10b981' },
+    { name: t('admin.dashboard.charts.pending'), value: organizations.filter(org => !org.verified).length, color: '#f59e0b' }
   ];
 
   const eventsChartData = [
-    { name: 'Published', value: events.filter(event => event.status === 'published').length, color: '#3b82f6' },
-    { name: 'Pending', value: events.filter(event => event.status === 'pending_approval').length, color: '#f59e0b' },
-    { name: 'Rejected', value: events.filter(event => event.status === 'rejected').length, color: '#ef4444' }
+    { name: t('admin.dashboard.charts.published'), value: events.filter(event => event.status === 'published').length, color: '#3b82f6' },
+    { name: t('admin.dashboard.charts.pending'), value: events.filter(event => event.status === 'pending_approval').length, color: '#f59e0b' },
+    { name: t('admin.dashboard.charts.rejected'), value: events.filter(event => event.status === 'rejected').length, color: '#ef4444' }
   ];
 
   const eventRequestsChartData = [
-    { name: 'Pending', value: eventRequests.length, color: '#f59e0b' },
-    { name: 'Approved', value: 0, color: '#10b981' },
-    { name: 'Rejected', value: 0, color: '#ef4444' }
+    { name: t('admin.dashboard.charts.pending'), value: eventRequests.length, color: '#f59e0b' },
+    { name: t('admin.dashboard.charts.verified'), value: 0, color: '#10b981' },
+    { name: t('admin.dashboard.charts.rejected'), value: 0, color: '#ef4444' }
   ];
 
   const userApprovalsChartData = [
-    { name: 'Pending', value: userApprovals.length, color: '#f59e0b' },
-    { name: 'Approved', value: 0, color: '#10b981' },
-    { name: 'Rejected', value: 0, color: '#ef4444' }
+    { name: t('admin.dashboard.charts.pending'), value: userApprovals.length, color: '#f59e0b' },
+    { name: t('admin.dashboard.charts.verified'), value: 0, color: '#10b981' },
+    { name: t('admin.dashboard.charts.rejected'), value: 0, color: '#ef4444' }
   ];
 
   const handleVerifyOrganization = async (orgId: string, verified: boolean) => {
@@ -300,7 +302,7 @@ const Admin: React.FC = () => {
             <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-indigo-600 rounded-full animate-pulse"></div>
           </div>
-          <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">Loading Admin Dashboard...</p>
+          <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">{t('admin.loading')}</p>
         </div>
       </div>
     );
@@ -314,10 +316,10 @@ const Admin: React.FC = () => {
             <AlertCircle className="w-10 h-10 text-red-500" />
           </div>
           <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-            Access Denied
+            {t('admin.accessDenied.title')}
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-md">
-            You need administrator privileges to access this page.
+            {t('admin.accessDenied.message')}
           </p>
         </div>
       </div>
@@ -330,10 +332,10 @@ const Admin: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tight bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Admin Dashboard
+            {t('admin.dashboard.title')}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Manage organizations, events, and user approvals with powerful administrative tools
+            {t('admin.dashboard.description')}
           </p>
         </div>
 
@@ -344,7 +346,7 @@ const Admin: React.FC = () => {
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-indigo-100 dark:border-indigo-800 p-6 transform hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending Orgs</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">{t('admin.dashboard.stats.pendingOrgs')}</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pendingOrganizations.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
@@ -356,7 +358,7 @@ const Admin: React.FC = () => {
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800 p-6 transform hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Pending Events</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">{t('admin.dashboard.stats.pendingEvents')}</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{pendingEvents.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
@@ -368,7 +370,7 @@ const Admin: React.FC = () => {
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-pink-100 dark:border-pink-800 p-6 transform hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Event Requests</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">{t('admin.dashboard.stats.eventRequests')}</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{eventRequests.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center">
@@ -380,7 +382,7 @@ const Admin: React.FC = () => {
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-green-100 dark:border-green-800 p-6 transform hover:scale-105 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">User Approvals</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">{t('admin.dashboard.stats.userApprovals')}</p>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{userApprovals.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
@@ -394,12 +396,12 @@ const Admin: React.FC = () => {
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-indigo-100 dark:border-indigo-800 p-6">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
               <PieChart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              Quick Overview
+              {t('admin.dashboard.quickOverview')}
             </h3>
             <div className="grid grid-cols-2 gap-6">
               {/* Organizations Chart */}
               <div className="text-center">
-                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Organizations</h4>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">{t('admin.dashboard.charts.organizations')}</h4>
                 <ResponsiveContainer width="100%" height={120}>
                   <RechartsPieChart>
                     <Pie
@@ -431,7 +433,7 @@ const Admin: React.FC = () => {
 
               {/* Events Chart */}
               <div className="text-center">
-                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Events</h4>
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">{t('admin.dashboard.charts.events')}</h4>
                 <ResponsiveContainer width="100%" height={120}>
                   <RechartsPieChart>
                     <Pie
@@ -470,10 +472,10 @@ const Admin: React.FC = () => {
           <div className="border-b border-indigo-100 dark:border-indigo-800 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-indigo-900/20">
             <nav className="flex -mb-px overflow-x-auto">
               {[
-                { id: 'organizations', icon: Building, label: 'Organizations', count: pendingOrganizations.length },
-                { id: 'events', icon: Calendar, label: 'Events', count: pendingEvents.length },
-                { id: 'eventRequests', icon: Clock, label: 'Event Requests', count: eventRequests.length },
-                { id: 'userApprovals', icon: Users, label: 'User Approvals', count: userApprovals.length }
+                { id: 'organizations', icon: Building, label: t('admin.dashboard.tabs.organizations'), count: pendingOrganizations.length },
+                { id: 'events', icon: Calendar, label: t('admin.dashboard.tabs.events'), count: pendingEvents.length },
+                { id: 'eventRequests', icon: Clock, label: t('admin.dashboard.tabs.eventRequests'), count: eventRequests.length },
+                { id: 'userApprovals', icon: Users, label: t('admin.dashboard.tabs.userApprovals'), count: userApprovals.length }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -510,7 +512,7 @@ const Admin: React.FC = () => {
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-3">
                   <Building className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                  Pending Organization Verifications
+                  {t('admin.organizations.title')}
                 </h3>
                 {pendingOrganizations.length > 0 ? (
                   <div className="space-y-6">
@@ -549,14 +551,14 @@ const Admin: React.FC = () => {
                           <button
                             onClick={() => handleVerifyOrganization(org.id, true)}
                             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white p-4 rounded-xl font-bold shadow-lg transform hover:scale-110 transition-all duration-200 group"
-                            title="Verify Organization"
+                            title={t('admin.organizations.verify')}
                           >
                             <Check className="w-5 h-5 group-hover:scale-110 transition-transform" />
                           </button>
                           <button
                             onClick={() => handleVerifyOrganization(org.id, false)}
                             className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white p-4 rounded-xl font-bold shadow-lg transform hover:scale-110 transition-all duration-200 group"
-                            title="Reject Organization"
+                            title={t('admin.organizations.reject')}
                           >
                             <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
                           </button>
@@ -569,8 +571,8 @@ const Admin: React.FC = () => {
                     <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Check className="w-12 h-12 text-green-500" />
                     </div>
-                    <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">All caught up!</p>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">No pending organization verifications</p>
+                    <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('admin.organizations.allCaughtUp')}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">{t('admin.organizations.noPending')}</p>
                   </div>
                 )}
               </div>
@@ -581,7 +583,7 @@ const Admin: React.FC = () => {
               <div>
                 <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-3">
                   <Calendar className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                  Events Pending Approval
+                  {t('admin.events.title')}
                 </h3>
                 {pendingEvents.length > 0 ? (
                   <div className="space-y-6">
@@ -619,14 +621,14 @@ const Admin: React.FC = () => {
                             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
                           >
                             <Check className="w-4 h-4" />
-                            Approve
+                            {t('admin.events.approve')}
                           </button>
                           <button
                             onClick={() => handleRejectEvent(event.id)}
                             className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
                           >
                             <X className="w-4 h-4" />
-                            Reject
+                            {t('admin.events.reject')}
                           </button>
                         </div>
                       </div>
@@ -637,8 +639,8 @@ const Admin: React.FC = () => {
                     <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Check className="w-12 h-12 text-green-500" />
                     </div>
-                    <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">All clear!</p>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">No events pending approval</p>
+                    <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('admin.events.allClear')}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-lg">{t('admin.events.noPending')}</p>
                   </div>
                 )}
               </div>
@@ -650,7 +652,7 @@ const Admin: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-3">
                     <Clock className="w-8 h-8 text-pink-600 dark:text-pink-400" />
-                    Event Creation Requests
+                    {t('admin.eventRequests.title')}
                   </h3>
                   {eventRequests.length > 0 ? (
                     <div className="space-y-4">
@@ -666,15 +668,15 @@ const Admin: React.FC = () => {
                                 {request.eventData.name}
                               </h4>
                               <p className="text-gray-600 dark:text-gray-400 mb-2">
-                                Requested by: <span className="font-semibold">{request.userName}</span> ({request.userEmail})
+                                {t('admin.eventRequests.requestedBy')}: <span className="font-semibold">{request.userName}</span> ({request.userEmail})
                               </p>
                               {request.organizationName && (
                                 <p className="text-gray-600 dark:text-gray-400">
-                                  Organization: <span className="font-semibold">{request.organizationName}</span>
+                                  {t('admin.eventRequests.organization')}: <span className="font-semibold">{request.organizationName}</span>
                                 </p>
                               )}
                               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                Submitted: {new Date(request.submittedAt).toLocaleDateString()}
+                                {t('admin.eventRequests.submitted')}: {new Date(request.submittedAt).toLocaleDateString()}
                               </p>
                             </div>
                             <button
@@ -706,7 +708,7 @@ const Admin: React.FC = () => {
                               className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
                             >
                               <Check className="w-4 h-4" />
-                              Approve Event
+                              {t('admin.eventRequests.approveEvent')}
                             </button>
                             <button
                               onClick={() => {
@@ -716,7 +718,7 @@ const Admin: React.FC = () => {
                               className="flex-1 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
                             >
                               <X className="w-4 h-4" />
-                              Reject
+                              {t('admin.events.reject')}
                             </button>
                           </div>
                         </div>
@@ -727,8 +729,8 @@ const Admin: React.FC = () => {
                       <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Check className="w-12 h-12 text-green-500" />
                       </div>
-                      <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No requests!</p>
-                      <p className="text-gray-500 dark:text-gray-400 text-lg">No event creation requests pending</p>
+                      <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('admin.eventRequests.noRequests')}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">{t('admin.eventRequests.noPending')}</p>
                     </div>
                   )}
                 </div>
@@ -738,13 +740,13 @@ const Admin: React.FC = () => {
                   <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-pink-100 dark:border-pink-800 p-6">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
                       <Eye className="w-5 h-5 text-pink-500" />
-                      Event Details
+                      {t('admin.eventRequests.eventDetails')}
                     </h3>
 
                     <div className="space-y-6">
                       <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                          Event Name
+                          {t('admin.eventRequests.eventName')}
                         </label>
                         <p className="text-gray-900 dark:text-white font-medium">{selectedRequest.eventData.name}</p>
                       </div>
@@ -752,7 +754,7 @@ const Admin: React.FC = () => {
                       {selectedRequest.eventData.subtitle && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                            Subtitle
+                            {t('admin.eventRequests.subtitle')}
                           </label>
                           <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.subtitle}</p>
                         </div>
@@ -761,7 +763,7 @@ const Admin: React.FC = () => {
                       {selectedRequest.eventData.description && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                            Description
+                            {t('admin.eventRequests.description')}
                           </label>
                           <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.description}</p>
                         </div>
@@ -769,7 +771,7 @@ const Admin: React.FC = () => {
 
                       <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                          Date & Time
+                          {t('admin.eventRequests.dateTime')}
                         </label>
                         <p className="text-gray-900 dark:text-white">
                           {new Date(selectedRequest.eventData.start_datetime).toLocaleString()} - {' '}
@@ -779,7 +781,7 @@ const Admin: React.FC = () => {
 
                       <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                          Location
+                          {t('admin.eventRequests.location')}
                         </label>
                         <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.location}</p>
                       </div>
@@ -787,16 +789,16 @@ const Admin: React.FC = () => {
                       {selectedRequest.eventData.capacity && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                            Capacity
+                            {t('admin.eventRequests.capacity')}
                           </label>
-                          <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.capacity} attendees</p>
+                          <p className="text-gray-900 dark:text-white">{selectedRequest.eventData.capacity} {t('admin.eventRequests.attendees')}</p>
                         </div>
                       )}
 
                       {selectedRequest.eventData.tags && selectedRequest.eventData.tags.length > 0 && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
-                            Tags
+                            {t('admin.eventRequests.tags')}
                           </label>
                           <div className="flex flex-wrap gap-2">
                             {selectedRequest.eventData.tags.map((tag, index) => (
@@ -811,21 +813,21 @@ const Admin: React.FC = () => {
                       {/* Rejection Reason Input */}
                       <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-800">
                         <label className="block text-sm font-semibold text-red-700 dark:text-red-300 mb-2">
-                          Rejection Reason
+                          {t('admin.eventRequests.rejectionReason')}
                         </label>
                         <textarea
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
                           rows={3}
                           className="w-full px-3 py-2 border border-red-200 dark:border-red-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-red-900/30 dark:text-white transition-all duration-200"
-                          placeholder="Provide a reason for rejection..."
+                          placeholder={t('admin.eventRequests.rejectionPlaceholder')}
                         />
                         <button
                           onClick={() => handleRejectEventRequest(selectedRequest.id)}
                           disabled={!rejectReason.trim()}
                           className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-lg font-semibold shadow-lg transform hover:scale-105 disabled:hover:scale-100 transition-all duration-200"
                         >
-                          Confirm Rejection
+                          {t('admin.eventRequests.confirmRejection')}
                         </button>
                       </div>
                     </div>
@@ -840,7 +842,7 @@ const Admin: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                   <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-3">
                     <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
-                    User Approval Requests
+                    {t('admin.userApprovals.title')}
                   </h3>
                   {userApprovals.length > 0 ? (
                     <div className="space-y-4">
@@ -890,7 +892,7 @@ const Admin: React.FC = () => {
                               className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
                             >
                               <Check className="w-4 h-4" />
-                              Approve User
+                              {t('admin.userApprovals.approveUser')}
                             </button>
                             <button
                               onClick={() => {
@@ -900,7 +902,7 @@ const Admin: React.FC = () => {
                               className="flex-1 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white py-3 px-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
                             >
                               <X className="w-4 h-4" />
-                              Reject
+                              {t('admin.events.reject')}
                             </button>
                           </div>
                         </div>
@@ -911,8 +913,8 @@ const Admin: React.FC = () => {
                       <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Check className="w-12 h-12 text-green-500" />
                       </div>
-                      <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No approvals needed!</p>
-                      <p className="text-gray-500 dark:text-gray-400 text-lg">No user approval requests pending</p>
+                      <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('admin.userApprovals.noApprovals')}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">{t('admin.userApprovals.noPending')}</p>
                     </div>
                   )}
                 </div>
@@ -922,13 +924,13 @@ const Admin: React.FC = () => {
                   <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-green-100 dark:border-green-800 p-6">
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
                       <Eye className="w-5 h-5 text-green-500" />
-                      Request Details
+                      {t('admin.userApprovals.requestDetails')}
                     </h3>
 
                     <div className="space-y-6">
                       <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                          User Information
+                          {t('admin.userApprovals.userInformation')}
                         </label>
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
@@ -949,7 +951,7 @@ const Admin: React.FC = () => {
                       {selectedUserApproval.organizationInfo && (
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
-                            Organization Information
+                            {t('admin.userApprovals.organizationInformation')}
                           </label>
                           <div className="space-y-2 text-sm">
                             {selectedUserApproval.organizationInfo.name && (
@@ -971,21 +973,21 @@ const Admin: React.FC = () => {
                       {/* Rejection Reason Input */}
                       <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-800">
                         <label className="block text-sm font-semibold text-red-700 dark:text-red-300 mb-2">
-                          Rejection Reason
+                          {t('admin.userApprovals.rejectionReason')}
                         </label>
                         <textarea
                           value={userRejectReason}
                           onChange={(e) => setUserRejectReason(e.target.value)}
                           rows={3}
                           className="w-full px-3 py-2 border border-red-200 dark:border-red-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-red-900/30 dark:text-white transition-all duration-200"
-                          placeholder="Provide a reason for rejection..."
+                          placeholder={t('admin.userApprovals.rejectionPlaceholder')}
                         />
                         <button
                           onClick={() => handleRejectUser(selectedUserApproval.id)}
                           disabled={!userRejectReason.trim()}
                           className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-lg font-semibold shadow-lg transform hover:scale-105 disabled:hover:scale-100 transition-all duration-200"
                         >
-                          Confirm Rejection
+                          {t('admin.userApprovals.confirmRejection')}
                         </button>
                       </div>
                     </div>

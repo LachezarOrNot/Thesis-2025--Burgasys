@@ -242,6 +242,8 @@ class DatabaseService {
     await updateDoc(requestRef, preparedUpdates);
   }
 
+  
+
   async getUserByEmail(email: string): Promise<User | null> {
     try {
       const userQuery = query(
@@ -826,6 +828,7 @@ class DatabaseService {
     }
   }
 
+  // FIXED: Chat message methods with proper image handling
   async sendChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<ChatMessage> {
     const messageId = uuidv4();
     const messageRef = doc(db, 'chatMessages', messageId);
@@ -837,19 +840,50 @@ class DatabaseService {
       edited: false
     };
     
+    console.log('🔴 SENDING CHAT MESSAGE:', {
+      id: chatMessage.id,
+      senderUid: chatMessage.senderUid,
+      content: chatMessage.content,
+      hasImage: !!chatMessage.image,
+      eventId: chatMessage.eventId,
+      timestamp: chatMessage.timestamp
+    });
+    
     const preparedMessage = this.prepareDataForFirestore(chatMessage);
-    await setDoc(messageRef, preparedMessage);
-    return chatMessage;
+    
+    try {
+      await setDoc(messageRef, preparedMessage);
+      console.log('✅ Chat message sent successfully');
+      return chatMessage;
+    } catch (error) {
+      console.error('❌ Error sending chat message:', error);
+      throw error;
+    }
   }
 
   async updateChatMessage(messageId: string, updates: Partial<ChatMessage>): Promise<void> {
     const messageRef = doc(db, 'chatMessages', messageId);
-    const preparedUpdates = this.prepareDataForFirestore({
+    
+    const updateData: any = {
       ...updates,
       edited: true,
       editedAt: new Date()
-    });
-    await updateDoc(messageRef, preparedUpdates);
+    };
+    
+    // Don't include image in updates if it's not being changed
+    if (!updates.image) {
+      delete updateData.image;
+    }
+    
+    const preparedUpdates = this.prepareDataForFirestore(updateData);
+    
+    try {
+      await updateDoc(messageRef, preparedUpdates);
+      console.log('✅ Chat message updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating chat message:', error);
+      throw error;
+    }
   }
 
   async deleteChatMessage(messageId: string): Promise<void> {
@@ -873,13 +907,26 @@ class DatabaseService {
       const messages = snapshot.docs.map(doc => {
         const data = doc.data();
         const convertedData = this.convertFromFirestore(data);
+        
+        console.log('🔴 RECEIVED CHAT MESSAGE:', {
+          id: doc.id,
+          content: convertedData.content,
+          hasImage: !!convertedData.image,
+          timestamp: convertedData.timestamp
+        });
+        
         return {
           ...convertedData,
+          id: doc.id,
           timestamp: this.safeDateConvert(convertedData.timestamp),
           editedAt: convertedData.editedAt ? this.safeDateConvert(convertedData.editedAt) : undefined
         } as ChatMessage;
       });
+      
+      console.log('🔴 TOTAL MESSAGES RECEIVED:', messages.length);
       callback(messages);
+    }, (error) => {
+      console.error('❌ Error in chat subscription:', error);
     });
   }
 

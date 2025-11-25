@@ -19,21 +19,6 @@
     "all": "Всички",
     "none": "Няма"
   },
-  "auth": {
-    "login": "Вход",
-    "logout": "Изход",
-    "signup": "Регистрация",
-    "email": "Имейл",
-    "password": "Парола",
-    "confirmPassword": "Потвърди парола",
-    "forgotPassword": "Забравена парола?",
-    "noAccount": "Нямате акаунт?",
-    "hasAccount": "Вече имате акаунт?",
-    "loginWithGoogle": "Вход с Google",
-    "displayName": "Потребителско име",
-    "role": "Роля",
-    "organizationInfo": "Информация за организацията"
-  },
   "roles": {
     "admin": "Администратор",
     "school": "Училище",
@@ -42,16 +27,286 @@
     "student": "Студент",
     "user": "Потребител"
   },
-  "navigation": {
-    "home": "Начало",
-    "events": "Събития",
-    "organizations": "Организации",
-    "admin": "Админ",
-    "profile": "Профил",
-    "dashboard": "Табло",
-    "createEvent": "Създай събитие",
-    "myEvents": "Моите събития",
-    "settings": "Настройки"
+"navbar": {
+    "eventsDropdown": {
+      "title": "Събития",
+      "browseEvents": "Разгледай събития",
+      "browseDescription": "Открийте предстоящи събития",
+      "calendarView": "Календар",
+      "calendarDescription": "Вижте събитията в календар",
+      "pastEvents": "Минали събития",
+      "pastDescription": "Преглед на историята на събитията"
+    },
+    "organizationsDropdown": {
+      "browseOrganizations": "Разгледай организации",
+      "browseDescription": "Открийте и се присъединете към организации",
+      "createOrganization": "Създай организация",
+      "createDescription": "Започнете нова организация"
+    },
+    "userMenu": {
+      "dashboard": "Табло",
+      "profile": "Профил",
+      "adminPanel": "Админ панел"
+    },
+    "themeToggle": {
+      "lightMode": "Превключи в светъл режим",
+      "darkMode": "Превключи в тъмен режим"
+    }
+  },
+    "eventCard": {
+    "dateNotSet": "Дата не е зададена",
+    "invalidDate": "Невалидна дата",
+    "dateError": "Грешка с датата",
+    "timeNotSet": "Време не е зададено",
+    "invalidTime": "Невалидно време",
+    "timeError": "Грешка с времето",
+    "unknownOrganizer": "Неизвестен организатор",
+    "full": "ПЪЛЕН",
+    "edit": "Редактирай",
+    "viewDetails": "Виж детайли",
+    "deleteConfirm": {
+      "title": "Изтриване на събитие",
+      "message": "Сигурни ли сте, че искате да изтриете това събитие? Това действие не може да бъде отменено.",
+      "cancel": "Отказ",
+      "confirm": "Изтрий"
+    },
+    "status": {
+      "published": "публикувано",
+      "pending_approval": "чака одобрение",
+      "finished": "приключило",
+      "draft": "чернова",
+      "rejected": "отхвърлено",
+      "unknown": "неизвестен"
+    }
+  },
+  "chat": {
+    "title": "Чат на събитието",
+    "messages": "съобщение",
+    "messages_plural": "съобщения",
+    "connectionIssue": "Проблем с връзката",
+    "changeTheme": "Промени темата",
+    "noMessages": "Все още няма съобщения",
+    "noMessagesDescription": "Бъдете първият, който казва здрасти!",
+    "retryConnection": "Опитай отново",
+    "typeMessage": "Напишете съобщение...",
+    "send": "Изпрати",
+    "sending": "Изпращане...",
+    "charactersLeft": "оставащи символи",
+    "editingMessage": "В момента редактирате съобщение",
+    "messagesVisible": "Съобщенията са видими за всички участници в събитието",
+    "deleteMessage": {
+      "title": "Изтриване на съобщение",
+      "message": "Сигурни ли сте, че искате да изтриете това съобщение? Това действие не може да бъде отменено.",
+      "cancel": "Отказ",
+      "confirm": "Изтрий"
+    },
+    "flagMessage": "Докладвай неподходящо съобщение",
+    "editMessage": "Редактирай съобщение",
+    "saveEdit": "Запази",
+    "cancelEdit": "Отказ",
+    "edited": "редактирано",
+    "chatNotAvailable": "Чатът не е наличен",
+    "chatNotAvailableDescription": "Чат стаята е активна само за публикувани събития.",
+    "themes": {
+      "blue": "Синьо",
+      "purple": "Лилаво",
+      "green": "Зелено",
+      "orange": "Оранжево",
+      "pink": "Розово",
+      "dark": "Тъмно"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Админ табло",
+      "description": "Управлявайте организации, събития и потребителски одобрения с мощни административни инструменти",
+      "stats": {
+        "pendingOrgs": "Чакащи организации",
+        "pendingEvents": "Чакащи събития",
+        "eventRequests": "Заявки за събития",
+        "userApprovals": "Потребителски одобрения"
+      },
+      "quickOverview": "Бърз преглед",
+      "charts": {
+        "organizations": "Организации",
+        "events": "Събития",
+        "verified": "Потвърдени",
+        "pending": "Чакащи",
+        "published": "Публикувани",
+        "rejected": "Отхвърлени"
+      },
+      "tabs": {
+        "organizations": "Организации",
+        "events": "Събития",
+        "eventRequests": "Заявки за събития",
+        "userApprovals": "Потребителски одобрения"
+      }
+    },
+    "organizations": {
+      "title": "Чакащи потвърждения на организации",
+      "allCaughtUp": "Всичко е изпълнено!",
+      "noPending": "Няма чакащи потвърждения на организации",
+      "verify": "Потвърди организация",
+      "reject": "Отхвърли организация"
+    },
+    "events": {
+      "title": "Събития, чакащи одобрение",
+      "allClear": "Всичко е ясно!",
+      "noPending": "Няма събития, чакащи одобрение",
+      "approve": "Одобри",
+      "reject": "Отхвърли"
+    },
+    "eventRequests": {
+      "title": "Заявки за създаване на събития",
+      "noRequests": "Няма заявки!",
+      "noPending": "Няма заявки за създаване на събития",
+      "requestedBy": "Заявено от",
+      "organization": "Организация",
+      "submitted": "Изпратено",
+      "eventDetails": "Детайли за събитието",
+      "eventName": "Име на събитието",
+      "subtitle": "Подзаглавие",
+      "description": "Описание",
+      "dateTime": "Дата и час",
+      "location": "Локация",
+      "capacity": "Капацитет",
+      "attendees": "участници",
+      "tags": "Етикети",
+      "rejectionReason": "Причина за отхвърляне",
+      "rejectionPlaceholder": "Посочете причина за отхвърляне...",
+      "confirmRejection": "Потвърди отхвърляне",
+      "approveEvent": "Одобри събитие"
+    },
+    "userApprovals": {
+      "title": "Заявки за одобрение на потребители",
+      "noApprovals": "Няма нужда от одобрения!",
+      "noPending": "Няма заявки за одобрение на потребители",
+      "requestDetails": "Детайли на заявката",
+      "userInformation": "Потребителска информация",
+      "organizationInformation": "Информация за организацията",
+      "rejectionReason": "Причина за отхвърляне",
+      "rejectionPlaceholder": "Посочете причина за отхвърляне...",
+      "confirmRejection": "Потвърди отхвърляне",
+      "approveUser": "Одобри потребител"
+    },
+    "accessDenied": {
+      "title": "Достъп отказан",
+      "message": "Нуждаете се от администраторски права за достъп до тази страница."
+    },
+    "loading": "Зареждане на админ таблото..."
+  },
+  "auth": {
+    "signIn": "Вход в акаунта",
+    "signUp": "Създаване на акаунт",
+    "noAccount": "Нямате акаунт?",
+    "hasAccount": "Вече имате акаунт?",
+    "signUpLink": "Регистрация",
+    "signInLink": "Вход",
+    "fullName": "Пълно име",
+    "fullNamePlaceholder": "Въведете пълното си име",
+    "role": "Роля",
+    "organizationInfo": "Информация за организацията",
+    "organizationName": "Име на организацията",
+    "organizationNamePlaceholder": "Въведете име на организацията",
+    "address": "Адрес",
+    "addressPlaceholder": "Въведете адрес на организацията",
+    "phone": "Телефонен номер",
+    "phonePlaceholder": "Въведете телефонен номер",
+    "description": "Описание",
+    "descriptionPlaceholder": "Кратко описание на вашата организация",
+    "organizationNote": "Забележка: Вашият организационен акаунт изисква одобрение от администратор. След като бъдете одобрен, автоматично ще станете администратор на вашата организация и ще можете да създавате събития.",
+    "email": "Имейл адрес",
+    "emailPlaceholder": "Въведете имейл адреса си",
+    "password": "Парола",
+    "passwordPlaceholder": "Въведете паролата си",
+    "passwordRequirement": "Паролата трябва да е поне 6 символа",
+    "submit": "Вход",
+    "createAccount": "Създай акаунт",
+    "pleaseWait": "Моля изчакайте...",
+    "orContinue": "Или продължете с",
+    "googleSignIn": "Вход с Google",
+    "success": {
+      "organization": "Вашият акаунт и организация са създадени и чакат одобрение от администратор. Ще получите имейл, след като акаунтът ви бъде одобрен.",
+      "regular": "Акаунтът е създаден успешно! Вече имате достъп до всички функции."
+    },
+    "errors": {
+      "organizationCreation": "Неуспешно създаване на организация. Моля, опитайте отново."
+    }
+  },
+  "eventCreate": {
+    "title": "Създай ново събитие",
+    "requestTitle": "Заяви ново събитие",
+    "description": "Попълнете детайлите по-долу, за да създадете събитието си",
+    "requestDescription": "Попълнете детайлите по-долу, за да заявите събитие. Вашата заявка ще бъде прегледана от администратор.",
+    "organizationInfo": "Организация: Това събитие ще бъде свързано с {{organizationName}}",
+    "approvalNote": "Забележка: Вашето събитие ще бъде изпратено за одобрение от администратор преди да бъде публикувано.",
+    "accessDenied": {
+      "title": "Достъп отказан",
+      "message": "Нямате разрешение за достъп до тази страница."
+    },
+    "sections": {
+      "basicInfo": "Основна информация",
+      "images": "Снимки на събитието",
+      "dateTime": "Дата и час",
+      "location": "Локация",
+      "settings": "Настройки",
+      "tags": "Етикети"
+    },
+    "form": {
+      "eventName": "Име на събитието",
+      "eventNamePlaceholder": "Въведете име на събитието",
+      "subtitle": "Подзаглавие",
+      "subtitlePlaceholder": "Въведете кратко подзаглавие",
+      "description": "Описание",
+      "descriptionPlaceholder": "Опишете вашето събитие...",
+      "startDateTime": "Начална дата и час",
+      "endDateTime": "Крайна дата и час",
+      "location": "Локация",
+      "locationPlaceholder": "Въведете локация на събитието",
+      "status": "Статус",
+      "capacity": "Капацитет",
+      "capacityPlaceholder": "Без ограничение, ако е празно",
+      "allowRegistration": "Разреши регистрация",
+      "addTag": "Добави етикет",
+      "uploadImages": "Кликнете за качване на снимки",
+      "uploadInfo": "PNG, JPG до 2MB (ще бъдат оптимизирани)",
+      "processingImages": "Обработване на снимки...",
+      "imageStorageNote": "Забележка: Снимките се съхраняват като Base64 стрингове в базата данни, за да се избегнат разходи за съхранение.",
+      "createEvent": "Създай събитие",
+      "requestEvent": "Заяви събитие",
+      "creatingEvent": "Създаване на събитие...",
+      "submittingRequest": "Изпращане на заявка..."
+    },
+    "errors": {
+      "loginRequired": "Трябва да сте влезли в акаунта си, за да създадете събитие",
+      "nameRequired": "Името на събитието е задължително",
+      "datetimeRequired": "Началният и крайният datetime са задължителни",
+      "dateValidation": "Крайната дата трябва да е след началната дата",
+      "organizationRequired": "Трябва да сте свързани с организация, за да заявите събития",
+      "general": "Неуспешно създаване на събитие. Моля, опитайте отново."
+    },
+    "success": {
+      "event": "Събитието е създадено успешно!",
+      "request": "Заявката за събитие е изпратена успешно! Тя ще бъде прегледана от администратор."
+    }
+  },
+  "footer": {
+    "brand": {
+      "description": "Открийте невероятни преживявания, свържете се с невероятни хора и създайте незабравими спомени — задвижвани от общности по целия свят.",
+      "location": "Глобално",
+      "email": "support@burgasys.com"
+    },
+    "explore": {
+      "title": "Разгледай",
+      "upcomingEvents": "Предстоящи събития",
+      "eventCalendar": "Календар на събития",
+      "signIn": "Вход"
+    },
+    "connect": {
+      "title": "Свържи се",
+      "description": "Останете в течение с най-новите актуализации, съвети за събития и истории от общността."
+    },
+    "copyright": "© {{year}} Burgasys · Създадено с честност за общността."
   },
  "events": {
     "title": "Открийте Събития",
@@ -103,6 +358,36 @@
     "errorLoading": "Грешка при зареждане на събитията",
     "tryAgain": "Опитай отново"
   },
+  "home": {
+    "hero": {
+      "tagline": "Открийте Вашето Следващо Предизвикателство",
+      "titlePart1": "Открийте Невероятни",
+      "titlePart2": "Събития",
+      "description": "Свържете се с общности, научете нови умения и създайте незабравими преживявания чрез подбрани събития",
+      "searchPlaceholder": "Търсене на събития, теми или локации...",
+      "searchButton": "Търсене"
+    },
+    "stats": {
+      "events": "Събития",
+      "participants": "Участници",
+      "locations": "Локации"
+    },
+    "featuredEvents": {
+      "title": "Препоръчани Събития",
+      "subtitle": "Открийте предстоящи събития наблизо",
+      "viewAll": "Вижте Всички Събития",
+      "noEvents": {
+        "title": "Няма намерени събития",
+        "description": "Проверете отново по-късно за нови събития"
+      }
+    },
+    "cta": {
+      "title": "Готови ли сте да започнете?",
+      "description": "Присъединете се към хиляди потребители, които откриват и създават невероятни събития",
+      "signUp": "Регистрация Безплатно",
+      "browseEvents": "Разгледайте Събития"
+    }
+  },
   "organizations": {
     "organizations": "Организации",
     "organization": "Организация",
@@ -121,17 +406,43 @@
     "requestAffiliation": "Заяви връзка",
     "affiliationRequests": "Заявки за връзка"
   },
-  "admin": {
-    "adminDashboard": "Админ табло",
-    "pendingApprovals": "Чакащи одобрения",
-    "userApprovals": "Одобрения на потребители",
-    "eventApprovals": "Одобрения на събития",
-    "organizationVerifications": "Потвърждения на организации",
-    "approve": "Одобри",
-    "reject": "Отхвърли",
-    "verify": "Потвърди",
-    "unverify": "Отмени потвърждение",
-    "rejectionReason": "Причина за отхвърляне"
+    "eventDetail": {
+    "eventNotFound": "Събитието не е намерено",
+    "backToEvents": "Обратно към събитията",
+    "aboutEvent": "За това събитие",
+    "date": "Дата",
+    "time": "Време",
+    "location": "Местоположение",
+    "attendees": "Участници",
+    "locationNotSpecified": "Местоположението не е указано",
+    "signInToRegister": "Моля, влезте в профила си, за да се регистрирате за това събитие",
+    "registerForEvent": "Регистрирай се за събитието",
+    "registering": "Регистриране...",
+    "registered": "Вие сте регистрирани за това събитие",
+    "eventFull": "Това събитие е пълно. Можете да се присъедините към списъка за изчакване.",
+    "registrationFailed": "Неуспешна регистрация. Моля, опитайте отново.",
+    "details": "Детайли",
+    "chat": "Чат",
+    "tabDetails": "Детайли",
+    "tabChat": "Чат"
+  },
+    "navigation": {
+    "home": "Начало",
+    "events": "Събития",
+    "organizations": "Организации",
+    "admin": "Админ",
+    "profile": "Профил",
+    "dashboard": "Табло",
+    "createEvent": "Създай събитие",
+    "myEvents": "Моите събития",
+    "settings": "Настройки",
+    "browseEvents": "Разгледай събития",
+    "calendarView": "Календар",
+    "pastEvents": "Минали събития",
+    "createOrganization": "Създай организация",
+    "adminPanel": "Админ панел",
+    "signIn": "Вход",
+    "signOut": "Изход"
   },
   "status": {
     "draft": "Чернова",

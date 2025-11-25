@@ -6,8 +6,6 @@ import {
   Mail, 
   Phone, 
   Calendar, 
-  Settings, 
-  Bell, 
   Shield, 
   Trash2, 
   Eye,
@@ -20,10 +18,12 @@ import {
   Clock,
   AlertTriangle
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Profile: React.FC = () => {
   const { user, updateUserProfile, deleteUserAccount, signOut, changePassword, reauthenticate } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -37,14 +37,6 @@ const Profile: React.FC = () => {
     displayName: user?.displayName || '',
     phoneNumber: user?.phoneNumber || '',
     bio: user?.bio || ''
-  });
-  
-  const [settings, setSettings] = useState({
-    emailNotifications: true,
-    pushNotifications: false,
-    showOnlineStatus: true,
-    language: 'english',
-    theme: 'system'
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -62,9 +54,9 @@ const Profile: React.FC = () => {
   // Calculate disabled states
   const isDeleteButtonDisabled = loading;
   const isCancelButtonDisabled = loading;
-const isConfirmDeleteDisabled = Boolean(
-  loading || ((deleteOption === 'hard' || user?.email) && !passwordForDeletion)
-);
+  const isConfirmDeleteDisabled = Boolean(
+    loading || ((deleteOption === 'hard' || user?.email) && !passwordForDeletion)
+  );
   const isChangePasswordDisabled = loading;
 
   const handleSaveProfile = async () => {
@@ -73,25 +65,10 @@ const isConfirmDeleteDisabled = Boolean(
       setError('');
       await updateUserProfile(formData);
       setIsEditing(false);
-      setSuccess('Profile updated successfully!');
+      setSuccess(t('profile.profileUpdated'));
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError('Failed to update profile');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      // Save settings logic here
-      console.log('Saving settings:', settings);
-      setSuccess('Settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      setError('Failed to save settings');
+      setError(t('profile.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -100,22 +77,22 @@ const isConfirmDeleteDisabled = Boolean(
   const handleChangePassword = async () => {
     // Validation
     if (!passwordData.currentPassword) {
-      setError('Please enter your current password');
+      setError(t('profile.enterCurrentPassword'));
       return;
     }
     
     if (!passwordData.newPassword) {
-      setError('Please enter a new password');
+      setError(t('profile.enterNewPassword'));
       return;
     }
     
     if (passwordData.newPassword.length < 6) {
-      setError('New password must be at least 6 characters long');
+      setError(t('profile.passwordTooShort'));
       return;
     }
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError("New passwords don't match");
+      setError(t('profile.passwordsDontMatch'));
       return;
     }
 
@@ -132,7 +109,7 @@ const isConfirmDeleteDisabled = Boolean(
       
       // Reset form
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setSuccess('Password changed successfully!');
+      setSuccess(t('profile.passwordChanged'));
       
     } catch (error: any) {
       console.error('Error changing password:', error);
@@ -140,18 +117,18 @@ const isConfirmDeleteDisabled = Boolean(
       // Handle specific Firebase errors
       switch (error.code) {
         case 'auth/wrong-password':
-          setError('Current password is incorrect');
+          setError(t('profile.incorrectPassword'));
           break;
         case 'auth/weak-password':
-          setError('New password is too weak');
+          setError(t('profile.weakPassword'));
           break;
         case 'auth/requires-recent-login':
-          setError('Please sign in again to change your password');
+          setError(t('profile.reauthenticateRequired'));
           await signOut();
           navigate('/login');
           break;
         default:
-          setError(error.message || 'Failed to change password. Please try again.');
+          setError(error.message || t('profile.passwordChangeFailed'));
       }
     } finally {
       setLoading(false);
@@ -170,7 +147,7 @@ const isConfirmDeleteDisabled = Boolean(
       await deleteUserAccount(password, deleteOption === 'soft');
       
       if (deleteOption === 'soft') {
-        setSuccess('Account scheduled for deletion. You can recover by logging in within 10 days.');
+        setSuccess(t('profile.accountScheduledForDeletion'));
         setTimeout(() => {
           navigate('/');
         }, 3000);
@@ -181,15 +158,15 @@ const isConfirmDeleteDisabled = Boolean(
       console.error('Error deleting account:', error);
       
       if (error.code === 'auth/requires-recent-login') {
-        setError('Please sign in again to delete your account.');
+        setError(t('profile.reauthenticateForDeletion'));
         await signOut();
         navigate('/login');
       } else if (error.message === 'No user logged in') {
-        setError('No user is currently logged in.');
+        setError(t('profile.noUserLoggedIn'));
       } else if (error.message.includes('Invalid password')) {
-        setError('Invalid password. Please try again.');
+        setError(t('profile.invalidPassword'));
       } else {
-        setError(error.message || 'Failed to delete account. Please try again.');
+        setError(error.message || t('profile.deleteFailed'));
       }
     } finally {
       setLoading(false);
@@ -204,7 +181,7 @@ const isConfirmDeleteDisabled = Boolean(
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
-      setError('Failed to sign out');
+      setError(t('profile.signOutFailed'));
     }
   };
 
@@ -218,10 +195,10 @@ const isConfirmDeleteDisabled = Boolean(
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            No User Logged In
+            {t('profile.noUserLoggedIn')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Please log in to view your profile.
+            {t('profile.pleaseLogIn')}
           </p>
         </div>
       </div>
@@ -229,10 +206,8 @@ const isConfirmDeleteDisabled = Boolean(
   }
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'profile', label: t('profile.tabs.profile'), icon: User },
+    { id: 'security', label: t('profile.tabs.security'), icon: Shield },
   ];
 
   return (
@@ -263,7 +238,9 @@ const isConfirmDeleteDisabled = Boolean(
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {user.displayName}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{user.role}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                  {t(`roles.${user.role}`)}
+                </p>
               </div>
 
               <nav className="space-y-2">
@@ -296,7 +273,7 @@ const isConfirmDeleteDisabled = Boolean(
                   className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Sign Out</span>
+                  <span className="font-medium">{t('profile.signOut')}</span>
                 </button>
               </div>
             </div>
@@ -309,8 +286,12 @@ const isConfirmDeleteDisabled = Boolean(
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile Information</h2>
-                    <p className="text-gray-600 dark:text-gray-400">Manage your personal information</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {t('profile.profileInformation')}
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {t('profile.managePersonalInfo')}
+                    </p>
                   </div>
                   <div className="flex gap-3">
                     {isEditing ? (
@@ -320,7 +301,7 @@ const isConfirmDeleteDisabled = Boolean(
                           className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                         >
                           <X className="w-4 h-4" />
-                          Cancel
+                          {t('common.cancel')}
                         </button>
                         <button
                           onClick={handleSaveProfile}
@@ -328,7 +309,7 @@ const isConfirmDeleteDisabled = Boolean(
                           className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
                         >
                           <Save className="w-4 h-4" />
-                          {loading ? 'Saving...' : 'Save Changes'}
+                          {loading ? t('common.loading') : t('common.save')}
                         </button>
                       </>
                     ) : (
@@ -337,7 +318,7 @@ const isConfirmDeleteDisabled = Boolean(
                         className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors"
                       >
                         <Edit className="w-4 h-4" />
-                        Edit Profile
+                        {t('profile.editProfile')}
                       </button>
                     )}
                   </div>
@@ -347,7 +328,7 @@ const isConfirmDeleteDisabled = Boolean(
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Display Name
+                        {t('profile.displayName')}
                       </label>
                       {isEditing ? (
                         <input
@@ -364,7 +345,7 @@ const isConfirmDeleteDisabled = Boolean(
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <Mail className="w-4 h-4 inline mr-2" />
-                        Email Address
+                        {t('profile.emailAddress')}
                       </label>
                       <p className="text-gray-900 dark:text-white text-lg">{user.email}</p>
                     </div>
@@ -372,7 +353,7 @@ const isConfirmDeleteDisabled = Boolean(
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <Phone className="w-4 h-4 inline mr-2" />
-                        Phone Number
+                        {t('profile.phoneNumber')}
                       </label>
                       {isEditing ? (
                         <input
@@ -380,17 +361,19 @@ const isConfirmDeleteDisabled = Boolean(
                           value={formData.phoneNumber}
                           onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="+1 (555) 123-4567"
+                          placeholder={t('profile.phonePlaceholder')}
                         />
                       ) : (
-                        <p className="text-gray-900 dark:text-white text-lg">{user.phoneNumber || 'Not provided'}</p>
+                        <p className="text-gray-900 dark:text-white text-lg">
+                          {user.phoneNumber || t('profile.notProvided')}
+                        </p>
                       )}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         <Calendar className="w-4 h-4 inline mr-2" />
-                        Member Since
+                        {t('profile.memberSince')}
                       </label>
                       <p className="text-gray-900 dark:text-white text-lg">
                         {new Date(user.createdAt).toLocaleDateString()}
@@ -400,7 +383,7 @@ const isConfirmDeleteDisabled = Boolean(
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Bio
+                      {t('profile.bio')}
                     </label>
                     {isEditing ? (
                       <textarea
@@ -408,79 +391,35 @@ const isConfirmDeleteDisabled = Boolean(
                         onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                         rows={4}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="Tell us about yourself..."
+                        placeholder={t('profile.bioPlaceholder')}
                       />
                     ) : (
-                      <p className="text-gray-900 dark:text-white text-lg">{user.bio || 'No bio provided'}</p>
+                      <p className="text-gray-900 dark:text-white text-lg">
+                        {user.bio || t('profile.noBioProvided')}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Settings Tab */}
-            {activeTab === 'settings' && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Account Settings</h2>
-                
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Language
-                      </label>
-                      <select
-                        value={settings.language}
-                        onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                      >
-                        <option value="english">English</option>
-                        <option value="spanish">Spanish</option>
-                        <option value="french">French</option>
-                        <option value="german">German</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Theme
-                      </label>
-                      <select
-                        value={settings.theme}
-                        onChange={(e) => setSettings(prev => ({ ...prev, theme: e.target.value }))}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                      >
-                        <option value="system">System</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveSettings}
-                    disabled={loading}
-                    className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {loading ? 'Saving...' : 'Save Settings'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Security Tab - Using the enhanced version */}
+            {/* Security Tab */}
             {activeTab === 'security' && (
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Security</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                  {t('profile.security')}
+                </h2>
                 
                 <div className="space-y-6">
                   {/* Password Change Section */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Password</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      {t('profile.changePassword')}
+                    </h3>
                     <div className="space-y-4 max-w-md">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Current Password
+                          {t('profile.currentPassword')}
                         </label>
                         <div className="relative">
                           <input
@@ -488,7 +427,7 @@ const isConfirmDeleteDisabled = Boolean(
                             value={passwordData.currentPassword}
                             onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white pr-12"
-                            placeholder="Enter current password"
+                            placeholder={t('profile.enterCurrentPassword')}
                           />
                           <button
                             type="button"
@@ -502,7 +441,7 @@ const isConfirmDeleteDisabled = Boolean(
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          New Password
+                          {t('profile.newPassword')}
                         </label>
                         <div className="relative">
                           <input
@@ -510,7 +449,7 @@ const isConfirmDeleteDisabled = Boolean(
                             value={passwordData.newPassword}
                             onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white pr-12"
-                            placeholder="Enter new password (min. 6 characters)"
+                            placeholder={t('profile.enterNewPassword')}
                           />
                           <button
                             type="button"
@@ -524,7 +463,7 @@ const isConfirmDeleteDisabled = Boolean(
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Confirm New Password
+                          {t('profile.confirmNewPassword')}
                         </label>
                         <div className="relative">
                           <input
@@ -532,7 +471,7 @@ const isConfirmDeleteDisabled = Boolean(
                             value={passwordData.confirmPassword}
                             onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white pr-12"
-                            placeholder="Confirm new password"
+                            placeholder={t('profile.confirmNewPassword')}
                           />
                           <button
                             type="button"
@@ -550,20 +489,24 @@ const isConfirmDeleteDisabled = Boolean(
                         className="flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Key className="w-4 h-4" />
-                        {loading ? 'Changing Password...' : 'Change Password'}
+                        {loading ? t('profile.changingPassword') : t('profile.changePassword')}
                       </button>
                     </div>
                   </div>
 
                   {/* Delete Account Section */}
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                    <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
+                    <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4">
+                      {t('profile.dangerZone')}
+                    </h3>
                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-semibold text-red-800 dark:text-red-300">Delete Account</h4>
+                          <h4 className="font-semibold text-red-800 dark:text-red-300">
+                            {t('profile.deleteAccount')}
+                          </h4>
                           <p className="text-red-600 dark:text-red-400 text-sm mt-1">
-                            Permanently delete your account and all associated data.
+                            {t('profile.deleteAccountDescription')}
                           </p>
                         </div>
                         <button
@@ -572,67 +515,10 @@ const isConfirmDeleteDisabled = Boolean(
                           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Delete Account
+                          {t('profile.deleteAccount')}
                         </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Notifications Tab */}
-            {activeTab === 'notifications' && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Notification Settings</h2>
-                
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Email Notifications</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Receive event updates via email</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.emailNotifications}
-                        onChange={(e) => setSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Push Notifications</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Receive browser notifications</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.pushNotifications}
-                        onChange={(e) => setSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
-                    </label>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">Show Online Status</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Allow others to see when you're online</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.showOnlineStatus}
-                        onChange={(e) => setSettings(prev => ({ ...prev, showOnlineStatus: e.target.checked }))}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -648,10 +534,10 @@ const isConfirmDeleteDisabled = Boolean(
             <div className="text-center mb-6">
               <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Delete Account
+                {t('profile.deleteAccount')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Choose how you want to delete your account:
+                {t('profile.chooseDeleteOption')}
               </p>
             </div>
 
@@ -670,10 +556,12 @@ const isConfirmDeleteDisabled = Boolean(
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-4 h-4 text-blue-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">Soft Delete</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {t('profile.softDelete')}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Schedule deletion in 10 days. You can recover your account by logging in during this period.
+                    {t('profile.softDeleteDescription')}
                   </p>
                 </div>
               </label>
@@ -691,10 +579,12 @@ const isConfirmDeleteDisabled = Boolean(
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <AlertTriangle className="w-4 h-4 text-red-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">Immediate Delete</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {t('profile.hardDelete')}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Permanently delete your account immediately. This action cannot be undone.
+                    {t('profile.hardDeleteDescription')}
                   </p>
                 </div>
               </label>
@@ -704,14 +594,14 @@ const isConfirmDeleteDisabled = Boolean(
             {(deleteOption === 'hard' || user?.email) && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Enter your password to confirm
+                  {t('profile.enterPasswordToConfirm')}
                 </label>
                 <input
                   type="password"
                   value={passwordForDeletion}
                   onChange={(e) => setPasswordForDeletion(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your password"
+                  placeholder={t('profile.enterYourPassword')}
                 />
               </div>
             )}
@@ -727,14 +617,14 @@ const isConfirmDeleteDisabled = Boolean(
                 disabled={isCancelButtonDisabled}
                 className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors disabled:opacity-50"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={isConfirmDeleteDisabled}
                 className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Deleting...' : `Delete Account ${deleteOption === 'soft' ? 'in 10 Days' : 'Now'}`}
+                {loading ? t('profile.deleting') : `${t('profile.deleteAccount')} ${deleteOption === 'soft' ? t('profile.inDays') : t('profile.now')}`}
               </button>
             </div>
           </div>

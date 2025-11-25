@@ -19,21 +19,6 @@
     "all": "All",
     "none": "None"
   },
-  "auth": {
-    "login": "Login",
-    "logout": "Logout",
-    "signup": "Sign Up",
-    "email": "Email",
-    "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "forgotPassword": "Forgot Password?",
-    "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?",
-    "loginWithGoogle": "Login with Google",
-    "displayName": "Display Name",
-    "role": "Role",
-    "organizationInfo": "Organization Information"
-  },
   "roles": {
     "admin": "Administrator",
     "school": "School",
@@ -41,17 +26,6 @@
     "firm": "Firm",
     "student": "Student",
     "user": "User"
-  },
-  "navigation": {
-    "home": "Home",
-    "events": "Events",
-    "organizations": "Organizations",
-    "admin": "Admin",
-    "profile": "Profile",
-    "dashboard": "Dashboard",
-    "createEvent": "Create Event",
-    "myEvents": "My Events",
-    "settings": "Settings"
   },
   "events": {
     "title": "Discover Events",
@@ -121,17 +95,304 @@
     "requestAffiliation": "Request Affiliation",
     "affiliationRequests": "Affiliation Requests"
   },
+   "navigation": {
+    "home": "Home",
+    "events": "Events",
+    "organizations": "Organizations",
+    "admin": "Admin",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "createEvent": "Create Event",
+    "myEvents": "My Events",
+    "settings": "Settings",
+    "browseEvents": "Browse Events",
+    "calendarView": "Calendar View",
+    "pastEvents": "Past Events",
+    "createOrganization": "Create Organization",
+    "adminPanel": "Admin Panel",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "navbar": {
+    "eventsDropdown": {
+      "title": "Events",
+      "browseEvents": "Browse Events",
+      "browseDescription": "Discover upcoming events",
+      "calendarView": "Calendar View",
+      "calendarDescription": "See events in calendar",
+      "pastEvents": "Past Events",
+      "pastDescription": "View event history"
+    },
+    "organizationsDropdown": {
+      "browseOrganizations": "Browse Organizations",
+      "browseDescription": "Discover and join organizations",
+      "createOrganization": "Create Organization",
+      "createDescription": "Start a new organization"
+    },
+    "userMenu": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "adminPanel": "Admin Panel"
+    },
+    "themeToggle": {
+      "lightMode": "Switch to light mode",
+      "darkMode": "Switch to dark mode"
+    }
+  },
+    "eventCard": {
+    "dateNotSet": "Date not set",
+    "invalidDate": "Invalid date",
+    "dateError": "Date error",
+    "timeNotSet": "Time not set",
+    "invalidTime": "Invalid time",
+    "timeError": "Time error",
+    "unknownOrganizer": "Unknown Organizer",
+    "full": "FULL",
+    "edit": "Edit",
+    "viewDetails": "View Details",
+    "deleteConfirm": {
+      "title": "Delete Event",
+      "message": "Are you sure you want to delete this event? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "status": {
+      "published": "published",
+      "pending_approval": "pending approval",
+      "finished": "finished",
+      "draft": "draft",
+      "rejected": "rejected",
+      "unknown": "unknown"
+    }
+  },
+  "chat": {
+    "title": "Event Chat",
+    "messages": "message",
+    "messages_plural": "messages",
+    "connectionIssue": "Connection Issue",
+    "changeTheme": "Change theme",
+    "noMessages": "No messages yet",
+    "noMessagesDescription": "Be the first to say hello!",
+    "retryConnection": "Retry Connection",
+    "typeMessage": "Type your message...",
+    "send": "Send",
+    "sending": "Sending...",
+    "charactersLeft": "characters left",
+    "editingMessage": "Currently editing a message",
+    "messagesVisible": "Messages are visible to all event participants",
+    "deleteMessage": {
+      "title": "Delete Message",
+      "message": "Are you sure you want to delete this message? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "flagMessage": "Flag inappropriate message",
+    "editMessage": "Edit message",
+    "saveEdit": "Save",
+    "cancelEdit": "Cancel",
+    "edited": "edited",
+    "chatNotAvailable": "Chat is not available",
+    "chatNotAvailableDescription": "The chatroom is only active for published events.",
+    "themes": {
+      "blue": "Blue",
+      "purple": "Purple",
+      "green": "Green",
+      "orange": "Orange",
+      "pink": "Pink",
+      "dark": "Dark"
+    }
+  },
   "admin": {
-    "adminDashboard": "Admin Dashboard",
-    "pendingApprovals": "Pending Approvals",
-    "userApprovals": "User Approvals",
-    "eventApprovals": "Event Approvals",
-    "organizationVerifications": "Organization Verifications",
-    "approve": "Approve",
-    "reject": "Reject",
-    "verify": "Verify",
-    "unverify": "Unverify",
-    "rejectionReason": "Rejection Reason"
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "description": "Manage organizations, events, and user approvals with powerful administrative tools",
+      "stats": {
+        "pendingOrgs": "Pending Orgs",
+        "pendingEvents": "Pending Events",
+        "eventRequests": "Event Requests",
+        "userApprovals": "User Approvals"
+      },
+      "quickOverview": "Quick Overview",
+      "charts": {
+        "organizations": "Organizations",
+        "events": "Events",
+        "verified": "Verified",
+        "pending": "Pending",
+        "published": "Published",
+        "rejected": "Rejected"
+      },
+      "tabs": {
+        "organizations": "Organizations",
+        "events": "Events",
+        "eventRequests": "Event Requests",
+        "userApprovals": "User Approvals"
+      }
+    },
+    "organizations": {
+      "title": "Pending Organization Verifications",
+      "allCaughtUp": "All caught up!",
+      "noPending": "No pending organization verifications",
+      "verify": "Verify Organization",
+      "reject": "Reject Organization"
+    },
+    "events": {
+      "title": "Events Pending Approval",
+      "allClear": "All clear!",
+      "noPending": "No events pending approval",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "eventRequests": {
+      "title": "Event Creation Requests",
+      "noRequests": "No requests!",
+      "noPending": "No event creation requests pending",
+      "requestedBy": "Requested by",
+      "organization": "Organization",
+      "submitted": "Submitted",
+      "eventDetails": "Event Details",
+      "eventName": "Event Name",
+      "subtitle": "Subtitle",
+      "description": "Description",
+      "dateTime": "Date & Time",
+      "location": "Location",
+      "capacity": "Capacity",
+      "attendees": "attendees",
+      "tags": "Tags",
+      "rejectionReason": "Rejection Reason",
+      "rejectionPlaceholder": "Provide a reason for rejection...",
+      "confirmRejection": "Confirm Rejection",
+      "approveEvent": "Approve Event"
+    },
+    "userApprovals": {
+      "title": "User Approval Requests",
+      "noApprovals": "No approvals needed!",
+      "noPending": "No user approval requests pending",
+      "requestDetails": "Request Details",
+      "userInformation": "User Information",
+      "organizationInformation": "Organization Information",
+      "rejectionReason": "Rejection Reason",
+      "rejectionPlaceholder": "Provide a reason for rejection...",
+      "confirmRejection": "Confirm Rejection",
+      "approveUser": "Approve User"
+    },
+    "accessDenied": {
+      "title": "Access Denied",
+      "message": "You need administrator privileges to access this page."
+    },
+    "loading": "Loading Admin Dashboard..."
+  },
+  "auth": {
+    "signIn": "Sign in to your account",
+    "signUp": "Create your account",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "signUpLink": "Sign up",
+    "signInLink": "Sign in",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "role": "Role",
+    "organizationInfo": "Organization Information",
+    "organizationName": "Organization Name",
+    "organizationNamePlaceholder": "Enter organization name",
+    "address": "Address",
+    "addressPlaceholder": "Enter organization address",
+    "phone": "Phone Number",
+    "phonePlaceholder": "Enter phone number",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief description of your organization",
+    "organizationNote": "Note: Your organization account requires admin approval. Once approved, you will automatically become the admin of your organization and can start creating events.",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter your email address",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "passwordRequirement": "Password must be at least 6 characters long",
+    "submit": "Sign in",
+    "createAccount": "Create account",
+    "pleaseWait": "Please wait...",
+    "orContinue": "Or continue with",
+    "googleSignIn": "Sign in with Google",
+    "success": {
+      "organization": "Your account and organization have been created and are pending admin approval. You will receive an email once your account is approved.",
+      "regular": "Account created successfully! You can now access all features."
+    },
+    "errors": {
+      "organizationCreation": "Failed to create organization. Please try again."
+    }
+  },
+  "eventCreate": {
+    "title": "Create New Event",
+    "requestTitle": "Request New Event",
+    "description": "Fill in the details below to create your event",
+    "requestDescription": "Fill in the details below to request an event. Your request will be reviewed by an administrator.",
+    "organizationInfo": "Organization: This event will be associated with {{organizationName}}",
+    "approvalNote": "Note: Your event will be submitted for administrator approval before being published.",
+    "accessDenied": {
+      "title": "Access Denied",
+      "message": "You don't have permission to access this page."
+    },
+    "sections": {
+      "basicInfo": "Basic Information",
+      "images": "Event Images",
+      "dateTime": "Date & Time",
+      "location": "Location",
+      "settings": "Settings",
+      "tags": "Tags"
+    },
+    "form": {
+      "eventName": "Event Name",
+      "eventNamePlaceholder": "Enter event name",
+      "subtitle": "Subtitle",
+      "subtitlePlaceholder": "Enter a brief subtitle",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe your event...",
+      "startDateTime": "Start Date & Time",
+      "endDateTime": "End Date & Time",
+      "location": "Location",
+      "locationPlaceholder": "Enter event location",
+      "status": "Status",
+      "capacity": "Capacity",
+      "capacityPlaceholder": "No limit if empty",
+      "allowRegistration": "Allow registration",
+      "addTag": "Add a tag",
+      "uploadImages": "Click to upload images",
+      "uploadInfo": "PNG, JPG up to 2MB (will be optimized)",
+      "processingImages": "Processing images...",
+      "imageStorageNote": "Note: Images are stored as Base64 strings in the database to avoid storage costs.",
+      "createEvent": "Create Event",
+      "requestEvent": "Request Event",
+      "creatingEvent": "Creating Event...",
+      "submittingRequest": "Submitting Request..."
+    },
+    "errors": {
+      "loginRequired": "You must be logged in to create an event",
+      "nameRequired": "Event name is required",
+      "datetimeRequired": "Start and end datetime are required",
+      "dateValidation": "End date must be after start date",
+      "organizationRequired": "You must be affiliated with an organization to request events",
+      "general": "Failed to create event. Please try again."
+    },
+    "success": {
+      "event": "Event created successfully!",
+      "request": "Event request submitted successfully! It will be reviewed by an administrator."
+    }
+  },
+  "footer": {
+    "brand": {
+      "description": "Discover incredible experiences, connect with amazing people, and create memories that matter — powered by communities worldwide.",
+      "location": "Global",
+      "email": "support@burgasys.com"
+    },
+    "explore": {
+      "title": "Explore",
+      "upcomingEvents": "Upcoming Events",
+      "eventCalendar": "Event Calendar",
+      "signIn": "Sign In"
+    },
+    "connect": {
+      "title": "Connect",
+      "description": "Stay connected with the latest updates, event tips, and community stories."
+    },
+    "copyright": "© {{year}} Burgasys · Built with integrity for the community."
   },
   "status": {
     "draft": "Draft",
@@ -141,6 +402,115 @@
     "rejected": "Rejected",
     "pending": "Pending",
     "approved": "Approved"
+  },
+    "eventDetail": {
+    "eventNotFound": "Event not found",
+    "backToEvents": "Back to events",
+    "aboutEvent": "About this event",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location",
+    "attendees": "Attendees",
+    "locationNotSpecified": "Location not specified",
+    "signInToRegister": "Please sign in to register for this event",
+    "registerForEvent": "Register for Event",
+    "registering": "Registering...",
+    "registered": "You are registered for this event",
+    "eventFull": "This event is full. You can join the waitlist.",
+    "registrationFailed": "Registration failed. Please try again.",
+    "details": "Details",
+    "chat": "Chat",
+    "tabDetails": "Details",
+    "tabChat": "Chat"
+  },
+    "profile": {
+    "noUserLoggedIn": "No User Logged In",
+    "pleaseLogIn": "Please log in to view your profile.",
+    "profileUpdated": "Profile updated successfully!",
+    "updateFailed": "Failed to update profile",
+    "enterCurrentPassword": "Please enter your current password",
+    "enterNewPassword": "Please enter a new password",
+    "passwordTooShort": "New password must be at least 6 characters long",
+    "passwordsDontMatch": "New passwords don't match",
+    "passwordChanged": "Password changed successfully!",
+    "incorrectPassword": "Current password is incorrect",
+    "weakPassword": "New password is too weak",
+    "reauthenticateRequired": "Please sign in again to change your password",
+    "passwordChangeFailed": "Failed to change password. Please try again.",
+    "accountScheduledForDeletion": "Account scheduled for deletion. You can recover by logging in within 10 days.",
+    "reauthenticateForDeletion": "Please sign in again to delete your account.",
+    "noUserLoggedIn": "No user is currently logged in.",
+    "invalidPassword": "Invalid password. Please try again.",
+    "deleteFailed": "Failed to delete account. Please try again.",
+    "signOutFailed": "Failed to sign out",
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security"
+    },
+    "signOut": "Sign Out",
+    "profileInformation": "Profile Information",
+    "managePersonalInfo": "Manage your personal information",
+    "editProfile": "Edit Profile",
+    "displayName": "Display Name",
+    "emailAddress": "Email Address",
+    "phoneNumber": "Phone Number",
+    "phonePlaceholder": "+1 (555) 123-4567",
+    "memberSince": "Member Since",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell us about yourself...",
+    "notProvided": "Not provided",
+    "noBioProvided": "No bio provided",
+    "security": "Security",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "enterCurrentPassword": "Enter current password",
+    "newPassword": "New Password",
+    "enterNewPassword": "Enter new password (min. 6 characters)",
+    "confirmNewPassword": "Confirm New Password",
+    "changingPassword": "Changing Password...",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountDescription": "Permanently delete your account and all associated data.",
+    "chooseDeleteOption": "Choose how you want to delete your account:",
+    "softDelete": "Soft Delete",
+    "softDeleteDescription": "Schedule deletion in 10 days. You can recover your account by logging in during this period.",
+    "hardDelete": "Immediate Delete",
+    "hardDeleteDescription": "Permanently delete your account immediately. This action cannot be undone.",
+    "enterPasswordToConfirm": "Enter your password to confirm",
+    "enterYourPassword": "Enter your password",
+    "deleting": "Deleting...",
+    "inDays": "in 10 Days",
+    "now": "Now"
+  },
+    "home": {
+    "hero": {
+      "tagline": "Discover Your Next Experience",
+      "titlePart1": "Discover Amazing",
+      "titlePart2": "Events",
+      "description": "Connect with communities, learn new skills, and create unforgettable experiences through curated events",
+      "searchPlaceholder": "Search events, topics, or locations...",
+      "searchButton": "Search"
+    },
+    "stats": {
+      "events": "Events",
+      "participants": "Participants",
+      "locations": "Locations"
+    },
+    "featuredEvents": {
+      "title": "Featured Events",
+      "subtitle": "Discover upcoming events happening near you",
+      "viewAll": "View All Events",
+      "noEvents": {
+        "title": "No events found",
+        "description": "Check back later for new events"
+      }
+    },
+    "cta": {
+      "title": "Ready to Get Started?",
+      "description": "Join thousands of users discovering and creating amazing events",
+      "signUp": "Sign Up Free",
+      "browseEvents": "Browse Events"
+    }
   },
   "notifications": {
     "notifications": "Notifications",

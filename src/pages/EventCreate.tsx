@@ -15,10 +15,12 @@ import {
   Shield,
   AlertTriangle
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const EventCreate: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -89,7 +91,7 @@ const EventCreate: React.FC = () => {
     e.preventDefault();
     
     if (!user) {
-      setError('You must be logged in to create an event');
+      setError(t('eventCreate.errors.loginRequired'));
       return;
     }
 
@@ -99,12 +101,12 @@ const EventCreate: React.FC = () => {
 
       // Validate required fields
       if (!formData.name.trim()) {
-        setError('Event name is required');
+        setError(t('eventCreate.errors.nameRequired'));
         return;
       }
 
       if (!formData.start_datetime || !formData.end_datetime) {
-        setError('Start and end datetime are required');
+        setError(t('eventCreate.errors.datetimeRequired'));
         return;
       }
 
@@ -113,7 +115,7 @@ const EventCreate: React.FC = () => {
       const endDate = new Date(formData.end_datetime);
       
       if (startDate >= endDate) {
-        setError('End date must be after start date');
+        setError(t('eventCreate.errors.dateValidation'));
         return;
       }
 
@@ -122,7 +124,7 @@ const EventCreate: React.FC = () => {
       
       // For non-admin users, ensure they have an organization
       if (!isAdmin && !organizationInfo.id) {
-        setError('You must be affiliated with an organization to request events');
+        setError(t('eventCreate.errors.organizationRequired'));
         return;
       }
 
@@ -155,7 +157,7 @@ const EventCreate: React.FC = () => {
         // Prepare the event data for Firestore
         const preparedEventData = prepareDataForFirestore(eventData);
         await databaseService.createEvent(preparedEventData);
-        alert('Event created successfully!');
+        alert(t('eventCreate.success.event'));
         navigate('/events');
       } else if (canRequestEvents) {
         // Prepare the event data for Firestore
@@ -180,13 +182,13 @@ const EventCreate: React.FC = () => {
         // Prepare the entire request data for Firestore
         const preparedRequestData = prepareDataForFirestore(eventRequestData);
         await databaseService.createEventRequest(preparedRequestData);
-        alert('Event request submitted successfully! It will be reviewed by an administrator.');
+        alert(t('eventCreate.success.request'));
         navigate('/events');
       }
       
     } catch (error) {
       console.error('Error creating event:', error);
-      setError('Failed to create event. Please try again.');
+      setError(t('eventCreate.errors.general'));
     } finally {
       setLoading(false);
     }
@@ -339,10 +341,10 @@ const EventCreate: React.FC = () => {
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Access Denied
+            {t('eventCreate.accessDenied.title')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            You don't have permission to access this page.
+            {t('eventCreate.accessDenied.message')}
           </p>
         </div>
       </div>
@@ -357,12 +359,12 @@ const EventCreate: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            {isAdmin ? 'Create New Event' : 'Request New Event'}
+            {isAdmin ? t('eventCreate.title') : t('eventCreate.requestTitle')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             {isAdmin 
-              ? 'Fill in the details below to create your event'
-              : 'Fill in the details below to request an event. Your request will be reviewed by an administrator.'
+              ? t('eventCreate.description')
+              : t('eventCreate.requestDescription')
             }
           </p>
 
@@ -372,7 +374,7 @@ const EventCreate: React.FC = () => {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-blue-500" />
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Organization:</strong> This event will be associated with {organizationInfo.name}
+                  {t('eventCreate.organizationInfo', { organizationName: organizationInfo.name })}
                 </p>
               </div>
             </div>
@@ -384,7 +386,7 @@ const EventCreate: React.FC = () => {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-500" />
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  <strong>Note:</strong> Your event will be submitted for administrator approval before being published.
+                  {t('eventCreate.approvalNote')}
                 </p>
               </div>
             </div>
@@ -403,13 +405,13 @@ const EventCreate: React.FC = () => {
             {/* Basic Information */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Basic Information
+                {t('eventCreate.sections.basicInfo')}
               </h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Event Name *
+                    {t('eventCreate.form.eventName')} *
                   </label>
                   <input
                     type="text"
@@ -417,33 +419,33 @@ const EventCreate: React.FC = () => {
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter event name"
+                    placeholder={t('eventCreate.form.eventNamePlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Subtitle
+                    {t('eventCreate.form.subtitle')}
                   </label>
                   <input
                     type="text"
                     value={formData.subtitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter a brief subtitle"
+                    placeholder={t('eventCreate.form.subtitlePlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
+                    {t('eventCreate.form.description')}
                   </label>
                   <textarea
                     rows={4}
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Describe your event..."
+                    placeholder={t('eventCreate.form.descriptionPlaceholder')}
                   />
                 </div>
               </div>
@@ -453,7 +455,7 @@ const EventCreate: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <ImageIcon className="w-5 h-5" />
-                Event Images
+                {t('eventCreate.sections.images')}
               </h2>
               
               <div className="space-y-4">
@@ -474,10 +476,10 @@ const EventCreate: React.FC = () => {
                     <Upload className="w-8 h-8 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        Click to upload images
+                        {t('eventCreate.form.uploadImages')}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        PNG, JPG up to 2MB (will be optimized)
+                        {t('eventCreate.form.uploadInfo')}
                       </p>
                     </div>
                   </label>
@@ -488,7 +490,7 @@ const EventCreate: React.FC = () => {
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      Processing images...
+                      {t('eventCreate.form.processingImages')}
                     </p>
                   </div>
                 )}
@@ -522,7 +524,7 @@ const EventCreate: React.FC = () => {
                 {/* Storage Info */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <strong>Note:</strong> Images are stored as Base64 strings in the database to avoid storage costs. 
+                    {t('eventCreate.form.imageStorageNote')}
                     {formData.images.length > 0 && ` Current images: ${formData.images.length}`}
                   </p>
                 </div>
@@ -533,13 +535,13 @@ const EventCreate: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Date & Time
+                {t('eventCreate.sections.dateTime')}
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Start Date & Time *
+                    {t('eventCreate.form.startDateTime')} *
                   </label>
                   <input
                     type="datetime-local"
@@ -552,7 +554,7 @@ const EventCreate: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    End Date & Time *
+                    {t('eventCreate.form.endDateTime')} *
                   </label>
                   <input
                     type="datetime-local"
@@ -569,13 +571,13 @@ const EventCreate: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <MapPin className="w-5 h-5" />
-                Location
+                {t('eventCreate.sections.location')}
               </h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Location *
+                    {t('eventCreate.form.location')} *
                   </label>
                   <input
                     type="text"
@@ -583,7 +585,7 @@ const EventCreate: React.FC = () => {
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter event location"
+                    placeholder={t('eventCreate.form.locationPlaceholder')}
                   />
                 </div>
               </div>
@@ -597,13 +599,13 @@ const EventCreate: React.FC = () => {
             {isAdmin && (
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Settings
+                  {t('eventCreate.sections.settings')}
                 </h2>
                 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Status
+                      {t('eventCreate.form.status')}
                     </label>
                     <select
                       value={formData.status}
@@ -619,7 +621,7 @@ const EventCreate: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                       <Users className="w-4 h-4" />
-                      Capacity
+                      {t('eventCreate.form.capacity')}
                     </label>
                     <input
                       type="number"
@@ -627,7 +629,7 @@ const EventCreate: React.FC = () => {
                       value={formData.capacity}
                       onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                      placeholder="No limit if empty"
+                      placeholder={t('eventCreate.form.capacityPlaceholder')}
                     />
                   </div>
 
@@ -640,7 +642,7 @@ const EventCreate: React.FC = () => {
                       className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                     />
                     <label htmlFor="allow_registration" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Allow registration
+                      {t('eventCreate.form.allowRegistration')}
                     </label>
                   </div>
                 </div>
@@ -651,7 +653,7 @@ const EventCreate: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <Tag className="w-5 h-5" />
-                Tags
+                {t('eventCreate.sections.tags')}
               </h2>
               
               <div className="space-y-3">
@@ -661,7 +663,7 @@ const EventCreate: React.FC = () => {
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Add a tag"
+                    placeholder={t('eventCreate.form.addTag')}
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                   />
                   <button
@@ -702,10 +704,10 @@ const EventCreate: React.FC = () => {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  {isAdmin ? 'Creating Event...' : 'Submitting Request...'}
+                  {isAdmin ? t('eventCreate.form.creatingEvent') : t('eventCreate.form.submittingRequest')}
                 </>
               ) : (
-                isAdmin ? 'Create Event' : 'Request Event'
+                isAdmin ? t('eventCreate.form.createEvent') : t('eventCreate.form.requestEvent')
               )}
             </button>
 
@@ -716,10 +718,10 @@ const EventCreate: React.FC = () => {
                   <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                   <div>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
-                      Event Request
+                      {t('eventCreate.requestTitle')}
                     </p>
                     <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                      Your event will be submitted for review. An administrator will approve or reject your request.
+                      {t('eventCreate.approvalNote')}
                     </p>
                   </div>
                 </div>

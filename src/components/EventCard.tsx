@@ -5,6 +5,7 @@ import { Event } from '../types';
 import { format, isValid } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
 import { databaseService } from '../services/database';
+import { useTranslation } from 'react-i18next';
 
 interface EventCardProps {
   event: Event;
@@ -14,16 +15,14 @@ interface EventCardProps {
 const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // FIXED: SIMPLE DATE FORMATTING - NO TIMEZONE BULLSHIT
   const formatDateSafe = (date: any): string => {
-    if (!date) return 'Date not set';
+    if (!date) return t('eventCard.dateNotSet');
     
     try {
-      console.log('🟢 EVENTCARD - Formatting date:', date);
-      
       let dateObj;
       if (date instanceof Date) {
         dateObj = date;
@@ -31,23 +30,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
         dateObj = new Date(date);
       }
       
-      console.log('🟢 EVENTCARD - Date object:', dateObj);
-      console.log('🟢 EVENTCARD - ISO string:', dateObj.toISOString());
-      console.log('🟢 EVENTCARD - UTC string:', dateObj.toUTCString());
-      console.log('🟢 EVENTCARD - Local string:', dateObj.toString());
+      if (!isValid(dateObj)) return t('eventCard.invalidDate');
       
-      if (!isValid(dateObj)) return 'Invalid date';
-      
-      // Use the date as-is - no timezone conversion
       return format(dateObj, 'MMM dd, yyyy');
     } catch (error) {
-      console.error('🟢 EVENTCARD - Date formatting error:', error);
-      return 'Date error';
+      console.error('Date formatting error:', error);
+      return t('eventCard.dateError');
     }
   };
 
   const formatTimeSafe = (date: any): string => {
-    if (!date) return 'Time not set';
+    if (!date) return t('eventCard.timeNotSet');
     
     try {
       let dateObj;
@@ -57,44 +50,14 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
         dateObj = new Date(date);
       }
       
-      if (!isValid(dateObj)) return 'Invalid time';
+      if (!isValid(dateObj)) return t('eventCard.invalidTime');
       
-      // Use the time as-is - no timezone conversion
       return format(dateObj, 'HH:mm');
     } catch (error) {
-      console.error('🟢 EVENTCARD - Time formatting error:', error);
-      return 'Time error';
+      console.error('Time formatting error:', error);
+      return t('eventCard.timeError');
     }
   };
-
-  // DEBUG: Log everything when component loads
-  React.useEffect(() => {
-    console.log('🚨🚨🚨 EVENTCARD DEBUG 🚨🚨🚨');
-    console.log('EVENT NAME:', event.name);
-    console.log('RAW START:', event.start_datetime);
-    console.log('RAW END:', event.end_datetime);
-    console.log('START TYPE:', typeof event.start_datetime);
-    console.log('END TYPE:', typeof event.end_datetime);
-    
-    if (event.start_datetime) {
-      const start = new Date(event.start_datetime);
-      console.log('START AS DATE:', start);
-      console.log('START ISO:', start.toISOString());
-      console.log('START UTC:', start.toUTCString());
-      console.log('START LOCAL:', start.toString());
-      console.log('START FORMATTED:', formatDateSafe(event.start_datetime));
-    }
-    
-    if (event.end_datetime) {
-      const end = new Date(event.end_datetime);
-      console.log('END AS DATE:', end);
-      console.log('END ISO:', end.toISOString());
-      console.log('END UTC:', end.toUTCString());
-      console.log('END LOCAL:', end.toString());
-      console.log('END FORMATTED:', formatDateSafe(event.end_datetime));
-    }
-    console.log('🚨🚨🚨 END DEBUG 🚨🚨🚨');
-  }, [event]);
 
   const registeredCount = event.registeredUsers?.length || 0;
   const isFull = event.capacity && registeredCount >= event.capacity;
@@ -106,7 +69,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   );
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+    if (!window.confirm(t('eventCard.deleteConfirm.message'))) {
       return;
     }
 
@@ -121,6 +84,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
 
   const handleEdit = () => {
     navigate(`/events/${event.id}/edit`);
+  };
+
+  const getStatusText = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      'published': t('eventCard.status.published'),
+      'pending_approval': t('eventCard.status.pending_approval'),
+      'finished': t('eventCard.status.finished'),
+      'draft': t('eventCard.status.draft'),
+      'rejected': t('eventCard.status.rejected')
+    };
+    return statusMap[status] || t('eventCard.status.unknown');
   };
 
   return (
@@ -147,7 +121,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
               event.status === 'finished' ? 'bg-gray-500/90 text-white' :
               'bg-blue-500/90 text-white'
             }`}>
-              {event.status ? event.status.replace('_', ' ') : 'unknown'}
+              {getStatusText(event.status || 'unknown')}
             </span>
           </div>
 
@@ -157,14 +131,14 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
               <button
                 onClick={handleEdit}
                 className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
-                title="Edit Event"
+                title={t('eventCard.edit')}
               >
                 <Edit className="w-4 h-4" />
               </button>
               <button
                 onClick={handleDelete}
                 className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400"
-                title="Delete Event"
+                title={t('common.delete')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -178,7 +152,9 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
                 <Users className="w-4 h-4" />
                 <span>{registeredCount}/{event.capacity}</span>
                 {isFull && (
-                  <span className="bg-red-500 px-2 py-0.5 rounded text-xs font-bold">FULL</span>
+                  <span className="bg-red-500 px-2 py-0.5 rounded text-xs font-bold">
+                    {t('eventCard.full')}
+                  </span>
                 )}
               </div>
             </div>
@@ -249,7 +225,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-600">
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-            By {event.organization?.name || 'Unknown Organizer'}
+            {t('common.by')} {event.organization?.name || t('eventCard.unknownOrganizer')}
           </div>
 
           <div className="flex items-center gap-2">
@@ -259,7 +235,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md hover:shadow-lg"
               >
                 <Edit className="w-4 h-4" />
-                Edit
+                {t('eventCard.edit')}
               </button>
             )}
             <Link 
@@ -267,7 +243,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
               className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md hover:shadow-lg group/link"
             >
               <Eye className="w-4 h-4" />
-              View Details
+              {t('eventCard.viewDetails')}
               <Sparkles className="w-4 h-4 opacity-0 group-hover/link:opacity-100 transition-opacity duration-300" />
             </Link>
           </div>

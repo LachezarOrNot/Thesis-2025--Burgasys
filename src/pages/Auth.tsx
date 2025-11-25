@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building, MapPin, Phone } from 'lucide-react';
 import { databaseService } from '../services/database';
+import { useTranslation } from 'react-i18next';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,6 +21,7 @@ const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const { t } = useTranslation();
 
   const { signUp, signIn, signInWithGoogle } = useAuth();
 
@@ -66,7 +68,7 @@ const Auth: React.FC = () => {
 
           } catch (orgError) {
             console.error('Error creating organization:', orgError);
-            throw new Error('Failed to create organization. Please try again.');
+            throw new Error(t('auth.errors.organizationCreation'));
           }
         }
 
@@ -84,9 +86,9 @@ const Auth: React.FC = () => {
 
         // Show appropriate success message
         if (requiresApproval) {
-          setSuccessMessage('Your account and organization have been created and are pending admin approval. You will receive an email once your account is approved.');
+          setSuccessMessage(t('auth.success.organization'));
         } else {
-          setSuccessMessage('Account created successfully! You can now access all features.');
+          setSuccessMessage(t('auth.success.regular'));
         }
       }
     } catch (error: any) {
@@ -132,10 +134,10 @@ const Auth: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            {isLogin ? 'Sign in to your account' : 'Create your account'}
+            {isLogin ? t('auth.signIn') : t('auth.signUp')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {isLogin ? t('auth.noAccount') : t('auth.hasAccount')}{' '}
             <button
               onClick={() => {
                 setIsLogin(!isLogin);
@@ -143,7 +145,7 @@ const Auth: React.FC = () => {
               }}
               className="font-medium text-primary-600 hover:text-primary-500"
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
+              {isLogin ? t('auth.signUpLink') : t('auth.signInLink')}
             </button>
           </p>
         </div>
@@ -165,7 +167,7 @@ const Auth: React.FC = () => {
             <>
               <div>
                 <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Full Name *
+                  {t('auth.fullName')} *
                 </label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -177,14 +179,14 @@ const Auth: React.FC = () => {
                     value={formData.displayName}
                     onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
                     className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                    placeholder="Enter your full name"
+                    placeholder={t('auth.fullNamePlaceholder')}
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Role *
+                  {t('auth.role')} *
                 </label>
                 <select
                   id="role"
@@ -193,11 +195,11 @@ const Auth: React.FC = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as UserRole }))}
                   className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
                 >
-                  <option value="user">General User</option>
-                  <option value="student">Student</option>
-                  <option value="school">School</option>
-                  <option value="firm">Firm/Company</option>
-                  <option value="university">University</option>
+                  <option value="user">{t('roles.user')}</option>
+                  <option value="student">{t('roles.student')}</option>
+                  <option value="school">{t('roles.school')}</option>
+                  <option value="firm">{t('roles.firm')}</option>
+                  <option value="university">{t('roles.university')}</option>
                 </select>
               </div>
 
@@ -205,12 +207,12 @@ const Auth: React.FC = () => {
                 <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 flex items-center gap-2">
                     <Building className="w-4 h-4" />
-                    Organization Information
+                    {t('auth.organizationInfo')}
                   </h3>
                   
                   <div>
                     <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Organization Name *
+                      {t('auth.organizationName')} *
                     </label>
                     <div className="relative">
                       <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -222,14 +224,14 @@ const Auth: React.FC = () => {
                         value={formData.organizationName}
                         onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                        placeholder="Enter organization name"
+                        placeholder={t('auth.organizationNamePlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Address *
+                      {t('auth.address')} *
                     </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -241,14 +243,14 @@ const Auth: React.FC = () => {
                         value={formData.address}
                         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                        placeholder="Enter organization address"
+                        placeholder={t('auth.addressPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Phone Number *
+                      {t('auth.phone')} *
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -260,14 +262,14 @@ const Auth: React.FC = () => {
                         value={formData.phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                         className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                        placeholder="Enter phone number"
+                        placeholder={t('auth.phonePlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Description
+                      {t('auth.description')}
                     </label>
                     <textarea
                       id="description"
@@ -276,15 +278,13 @@ const Auth: React.FC = () => {
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                      placeholder="Brief description of your organization"
+                      placeholder={t('auth.descriptionPlaceholder')}
                     />
                   </div>
 
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                      <strong>Note:</strong> Your organization account requires admin approval. 
-                      Once approved, you will automatically become the admin of your organization 
-                      and can start creating events.
+                      {t('auth.organizationNote')}
                     </p>
                   </div>
                 </div>
@@ -294,7 +294,7 @@ const Auth: React.FC = () => {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email Address *
+              {t('auth.email')} *
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -307,14 +307,14 @@ const Auth: React.FC = () => {
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                placeholder="Enter your email address"
+                placeholder={t('auth.emailPlaceholder')}
               />
             </div>
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password *
+              {t('auth.password')} *
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -327,7 +327,7 @@ const Auth: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                 className="relative block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                placeholder="Enter your password"
+                placeholder={t('auth.passwordPlaceholder')}
                 minLength={6}
               />
               <button
@@ -340,7 +340,7 @@ const Auth: React.FC = () => {
             </div>
             {!isLogin && (
               <p className="text-xs text-gray-500 mt-1">
-                Password must be at least 6 characters long
+                {t('auth.passwordRequirement')}
               </p>
             )}
           </div>
@@ -351,7 +351,7 @@ const Auth: React.FC = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Please wait...' : (isLogin ? 'Sign in' : 'Create account')}
+              {loading ? t('auth.pleaseWait') : (isLogin ? t('auth.submit') : t('auth.createAccount'))}
             </button>
           </div>
 
@@ -361,7 +361,7 @@ const Auth: React.FC = () => {
                 <div className="w-full border-t border-gray-300 dark:border-gray-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500">Or continue with</span>
+                <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500">{t('auth.orContinue')}</span>
               </div>
             </div>
 
@@ -377,7 +377,7 @@ const Auth: React.FC = () => {
                   alt="Google" 
                   className="w-5 h-5 mr-2"
                 />
-                Sign in with Google
+                {t('auth.googleSignIn')}
               </button>
             </div>
           </div>

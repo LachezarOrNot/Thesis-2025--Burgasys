@@ -114,6 +114,7 @@ export interface ChatMessage {
   senderName: string;
   role: UserRole;
   content: string;
+  image?: string; 
   timestamp: Date;
   edited?: boolean;
   editedAt?: Date;

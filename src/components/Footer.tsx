@@ -12,8 +12,11 @@ import {
   Linkedin,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 const Footer: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="relative overflow-hidden bg-black text-gray-300 py-14">
       {/* Animated gradient background */}
@@ -46,18 +49,17 @@ const Footer: React.FC = () => {
             </div>
 
             <p className="text-gray-400 mb-5 leading-relaxed">
-              Discover incredible experiences, connect with amazing people, and
-              create memories that matter — powered by communities worldwide.
+              {t('footer.brand.description')}
             </p>
 
             <div className="flex items-center gap-6 text-sm text-gray-400">
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-blue-400" />
-                <span>Global</span>
+                <span>{t('footer.brand.location')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-purple-400" />
-                <span>support@eventhub.com</span>
+                <span>{t('footer.brand.email')}</span>
               </div>
             </div>
           </motion.div>
@@ -70,7 +72,7 @@ const Footer: React.FC = () => {
             className="flex-1"
           >
             <h3 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">
-              Explore
+              {t('footer.explore.title')}
             </h3>
             <ul className="space-y-3 text-sm">
               <li>
@@ -79,7 +81,7 @@ const Footer: React.FC = () => {
                   className="group flex items-center space-x-2 hover:text-blue-400 transition-all duration-300"
                 >
                   <CalendarDays className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>Upcoming Events</span>
+                  <span>{t('footer.explore.upcomingEvents')}</span>
                 </Link>
               </li>
               <li>
@@ -88,7 +90,7 @@ const Footer: React.FC = () => {
                   className="group flex items-center space-x-2 hover:text-purple-400 transition-all duration-300"
                 >
                   <Calendar className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>Event Calendar</span>
+                  <span>{t('footer.explore.eventCalendar')}</span>
                 </Link>
               </li>
               <li>
@@ -97,7 +99,7 @@ const Footer: React.FC = () => {
                   className="group flex items-center space-x-2 hover:text-indigo-400 transition-all duration-300"
                 >
                   <LogIn className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>Sign In</span>
+                  <span>{t('footer.explore.signIn')}</span>
                 </Link>
               </li>
             </ul>
@@ -111,7 +113,7 @@ const Footer: React.FC = () => {
             className="flex-1 md:text-right"
           >
             <h3 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">
-              Connect
+              {t('footer.connect.title')}
             </h3>
             <div className="flex md:justify-end justify-center items-center space-x-5 mb-6">
               <a
@@ -135,8 +137,7 @@ const Footer: React.FC = () => {
             </div>
 
             <p className="text-gray-500 text-sm leading-relaxed md:max-w-xs md:ml-auto">
-              Stay connected with the latest updates, event tips, and community
-              stories.
+              {t('footer.connect.description')}
             </p>
           </motion.div>
         </div>
@@ -149,9 +150,7 @@ const Footer: React.FC = () => {
           className="mt-14 border-t border-gray-800 pt-6 text-center text-sm text-gray-500"
         >
           <p>
-            © {new Date().getFullYear()}{" "}
-            <span className="text-white font-semibold">Burgasys</span> · Built
-            with integrity for the community.
+            {t('footer.copyright', { year: new Date().getFullYear() })}
           </p>
         </motion.div>
       </div>

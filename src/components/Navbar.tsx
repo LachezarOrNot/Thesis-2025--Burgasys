@@ -1,19 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, User, ChevronDown, Menu, X, Building } from 'lucide-react';
+import { LogOut, Moon, Sun, User, ChevronDown, Menu, X, Building, Plus, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import RoleBadge from './RoleBadge';
+import { useTranslation } from 'react-i18next';
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isEventsOpen, setIsEventsOpen] = useState(false);
+  const [isOrganizationsOpen, setIsOrganizationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const eventsDropdownRef = useRef<HTMLDivElement>(null);
+  const organizationsDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
@@ -30,6 +34,9 @@ const Navbar: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (eventsDropdownRef.current && !eventsDropdownRef.current.contains(event.target as Node)) {
         setIsEventsOpen(false);
+      }
+      if (organizationsDropdownRef.current && !organizationsDropdownRef.current.contains(event.target as Node)) {
+        setIsOrganizationsOpen(false);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
@@ -69,7 +76,7 @@ const Navbar: React.FC = () => {
                     onClick={() => setIsEventsOpen(!isEventsOpen)}
                     className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors group"
                   >
-                    <span>Events</span>
+                    <span>{t('navbar.eventsDropdown.title')}</span>
                     <ChevronDown 
                       className={`h-4 w-4 transition-transform duration-300 ${
                         isEventsOpen ? 'rotate-180' : ''
@@ -90,9 +97,9 @@ const Navbar: React.FC = () => {
                       onClick={() => setIsEventsOpen(false)}
                       className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
                     >
-                      <div className="font-medium">Browse Events</div>
+                      <div className="font-medium">{t('navbar.eventsDropdown.browseEvents')}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Discover upcoming events
+                        {t('navbar.eventsDropdown.browseDescription')}
                       </div>
                     </Link>
                     
@@ -101,9 +108,9 @@ const Navbar: React.FC = () => {
                       onClick={() => setIsEventsOpen(false)}
                       className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
                     >
-                      <div className="font-medium">Calendar View</div>
+                      <div className="font-medium">{t('navbar.eventsDropdown.calendarView')}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        See events in calendar
+                        {t('navbar.eventsDropdown.calendarDescription')}
                       </div>
                     </Link>
                     
@@ -112,41 +119,75 @@ const Navbar: React.FC = () => {
                       onClick={() => setIsEventsOpen(false)}
                       className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
-                      <div className="font-medium">Past Events</div>
+                      <div className="font-medium">{t('navbar.eventsDropdown.pastEvents')}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        View event history
+                        {t('navbar.eventsDropdown.pastDescription')}
                       </div>
                     </Link>
                   </div>
                 </div>
 
-                {/* Organizations Link */}
-                <Link 
-                  to="/organizations" 
-                  className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors relative group"
-                >
-                  <Building className="w-4 h-4" />
-                  <span>Organizations</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-
-                {/* Create Organization Link */}
-                {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
-                  <Link 
-                    to="/organizations/create" 
-                    className="text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors relative group"
+                {/* Organizations Dropdown */}
+                <div className="relative" ref={organizationsDropdownRef}>
+                  <button
+                    onClick={() => setIsOrganizationsOpen(!isOrganizationsOpen)}
+                    className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors group"
                   >
-                    Create Organization
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
-                  </Link>
-                )}
+                    <Building className="w-4 h-4" />
+                    <span>{t('navigation.organizations')}</span>
+                    <ChevronDown 
+                      className={`h-4 w-4 transition-transform duration-300 ${
+                        isOrganizationsOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div
+                    className={`absolute left-0 mt-3 w-56 bg-white dark:bg-gray-700 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 overflow-hidden transition-all duration-300 origin-top ${
+                      isOrganizationsOpen 
+                        ? 'opacity-100 visible scale-100 translate-y-0' 
+                        : 'opacity-0 invisible scale-95 -translate-y-2'
+                    }`}
+                  >
+                    <Link
+                      to="/organizations"
+                      onClick={() => setIsOrganizationsOpen(false)}
+                      className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
+                    >
+                      <div className="font-medium flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        {t('navbar.organizationsDropdown.browseOrganizations')}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {t('navbar.organizationsDropdown.browseDescription')}
+                      </div>
+                    </Link>
+                    
+                    {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
+                      <Link
+                        to="/organizations/create"
+                        onClick={() => setIsOrganizationsOpen(false)}
+                        className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                      >
+                        <div className="font-medium flex items-center gap-2">
+                          <Plus className="w-4 h-4" />
+                          {t('navbar.organizationsDropdown.createOrganization')}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t('navbar.organizationsDropdown.createDescription')}
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </>
             ) : (
               <Link
                 to="/"
                 className="text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors relative group"
               >
-                Home
+                {t('navigation.home')}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300 group-hover:w-full"></span>
               </Link>
             )}
@@ -158,7 +199,7 @@ const Navbar: React.FC = () => {
             <button
               onClick={toggleTheme}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? t('navbar.themeToggle.lightMode') : t('navbar.themeToggle.darkMode')}
             >
               {theme === 'dark' ? (
                 <Sun className="h-5 w-5 transition-transform hover:rotate-180 duration-500" />
@@ -207,7 +248,7 @@ const Navbar: React.FC = () => {
                       onClick={() => setIsUserMenuOpen(false)}
                       className="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
-                      Dashboard
+                      {t('navbar.userMenu.dashboard')}
                     </Link>
                     
                     <Link
@@ -215,7 +256,7 @@ const Navbar: React.FC = () => {
                       onClick={() => setIsUserMenuOpen(false)}
                       className="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
-                      Profile
+                      {t('navbar.userMenu.profile')}
                     </Link>
 
                     {user.role === 'admin' && (
@@ -224,7 +265,7 @@ const Navbar: React.FC = () => {
                         onClick={() => setIsUserMenuOpen(false)}
                         className="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-t border-gray-100 dark:border-gray-600"
                       >
-                        Admin Panel
+                        {t('navbar.userMenu.adminPanel')}
                       </Link>
                     )}
 
@@ -236,7 +277,7 @@ const Navbar: React.FC = () => {
                       className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2 border-t border-gray-100 dark:border-gray-600"
                     >
                       <LogOut className="w-4 h-4" />
-                      Sign Out
+                      {t('navigation.signOut')}
                     </button>
                   </div>
                 </div>
@@ -247,7 +288,7 @@ const Navbar: React.FC = () => {
                 className="hidden md:flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-5 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 <User className="w-4 h-4" />
-                Sign In
+                {t('navigation.signIn')}
               </Link>
             )}
 
@@ -273,12 +314,16 @@ const Navbar: React.FC = () => {
         >
           {user ? (
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {/* Events Section */}
+              <div className="px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                {t('navbar.eventsDropdown.title')}
+              </div>
               <Link
                 to="/events"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                Browse Events
+                {t('navbar.eventsDropdown.browseEvents')}
               </Link>
               
               <Link
@@ -286,7 +331,7 @@ const Navbar: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                Calendar View
+                {t('navbar.eventsDropdown.calendarView')}
               </Link>
               
               <Link
@@ -294,26 +339,30 @@ const Navbar: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                Past Events
+                {t('navbar.eventsDropdown.pastEvents')}
               </Link>
 
-              {/* Organizations Link - Mobile */}
+              {/* Organizations Section */}
+              <div className="px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-2">
+                {t('navigation.organizations')}
+              </div>
               <Link
                 to="/organizations"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                <Building className="w-4 h-4" />
-                Organizations
+                <Users className="w-4 h-4" />
+                {t('navbar.organizationsDropdown.browseOrganizations')}
               </Link>
 
               {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
                 <Link
                   to="/organizations/create"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  Create Organization
+                  <Plus className="w-4 h-4" />
+                  {t('navbar.organizationsDropdown.createOrganization')}
                 </Link>
               )}
 
@@ -328,7 +377,7 @@ const Navbar: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                Dashboard
+                {t('navbar.userMenu.dashboard')}
               </Link>
 
               <Link
@@ -336,7 +385,7 @@ const Navbar: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                Profile
+                {t('navbar.userMenu.profile')}
               </Link>
 
               {user.role === 'admin' && (
@@ -345,7 +394,7 @@ const Navbar: React.FC = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  Admin Panel
+                  {t('navbar.userMenu.adminPanel')}
                 </Link>
               )}
 
@@ -357,7 +406,7 @@ const Navbar: React.FC = () => {
                 className="px-4 py-2.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                {t('navigation.signOut')}
               </button>
             </div>
           ) : (
@@ -368,7 +417,7 @@ const Navbar: React.FC = () => {
                 className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-5 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg mx-4"
               >
                 <User className="w-4 h-4" />
-                Sign In
+                {t('navigation.signIn')}
               </Link>
             </div>
           )}

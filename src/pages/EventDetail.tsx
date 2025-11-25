@@ -8,10 +8,12 @@ import { MapPin, Calendar, Users, Clock, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useTranslation } from 'react-i18next';
 
 const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [event, setEvent] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState('details');
   const [loading, setLoading] = useState(true);
@@ -37,24 +39,24 @@ const EventDetail: React.FC = () => {
 
   // Safe date formatting with validation
   const formatDateSafe = (date: any): string => {
-    if (!date) return 'Date not set';
+    if (!date) return t('eventCard.dateNotSet');
     
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-      return isValid(dateObj) ? format(dateObj, 'MMMM dd, yyyy') : 'Invalid date';
+      return isValid(dateObj) ? format(dateObj, 'MMMM dd, yyyy') : t('eventCard.invalidDate');
     } catch {
-      return 'Date error';
+      return t('eventCard.dateError');
     }
   };
 
   const formatTimeSafe = (date: any): string => {
-    if (!date) return 'Time not set';
+    if (!date) return t('eventCard.timeNotSet');
     
     try {
       const dateObj = date instanceof Date ? date : new Date(date);
-      return isValid(dateObj) ? format(dateObj, 'HH:mm') : 'Invalid time';
+      return isValid(dateObj) ? format(dateObj, 'HH:mm') : t('eventCard.invalidTime');
     } catch {
-      return 'Time error';
+      return t('eventCard.timeError');
     }
   };
 
@@ -81,10 +83,14 @@ const EventDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Event not found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">The event you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            {t('eventDetail.eventNotFound')}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {t('eventDetail.eventNotFound')}
+          </p>
           <Link to="/events" className="text-primary-500 hover:text-primary-600">
-            Back to events
+            {t('eventDetail.backToEvents')}
           </Link>
         </div>
       </div>
@@ -104,7 +110,7 @@ const EventDetail: React.FC = () => {
           className="inline-flex items-center text-primary-500 hover:text-primary-600 mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to events
+          {t('eventDetail.backToEvents')}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
@@ -138,7 +144,7 @@ const EventDetail: React.FC = () => {
                   event.status === 'finished' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
                   'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                 }`}>
-                  {event.status ? event.status.replace('_', ' ') : 'unknown'}
+                  {event.status ? t(`status.${event.status}`) : t('eventCard.status.unknown')}
                 </span>
               </div>
 
@@ -146,32 +152,32 @@ const EventDetail: React.FC = () => {
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <Calendar className="w-5 h-5 mr-3" />
                   <div>
-                    <p className="font-medium">Date</p>
+                    <p className="font-medium">{t('eventDetail.date')}</p>
                     <p>{formatDateSafe(event.start_datetime)} - {formatDateSafe(event.end_datetime)}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <Clock className="w-5 h-5 mr-3" />
                   <div>
-                    <p className="font-medium">Time</p>
+                    <p className="font-medium">{t('eventDetail.time')}</p>
                     <p>{formatTimeSafe(event.start_datetime)} - {formatTimeSafe(event.end_datetime)}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <MapPin className="w-5 h-5 mr-3" />
                   <div>
-                    <p className="font-medium">Location</p>
-                    <p>{event.location || 'Location not specified'}</p>
+                    <p className="font-medium">{t('eventDetail.location')}</p>
+                    <p>{event.location || t('eventDetail.locationNotSpecified')}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-gray-600 dark:text-gray-400">
                   <Users className="w-5 h-5 mr-3" />
                   <div>
-                    <p className="font-medium">Attendees</p>
+                    <p className="font-medium">{t('eventDetail.attendees')}</p>
                     <p>
                       {registeredCount}
                       {event.capacity && ` / ${event.capacity}`}
-                      {isFull && ' (Full)'}
+                      {isFull && ` (${t('eventCard.full')})`}
                     </p>
                   </div>
                 </div>
@@ -192,7 +198,7 @@ const EventDetail: React.FC = () => {
 
               {!user && (
                 <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg mb-4">
-                  Please sign in to register for this event
+                  {t('eventDetail.signInToRegister')}
                 </div>
               )}
 
@@ -202,22 +208,22 @@ const EventDetail: React.FC = () => {
                   disabled={registrationStatus === 'loading'}
                   className="bg-primary-500 hover:bg-primary-600 text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
                 >
-                  {registrationStatus === 'loading' ? 'Registering...' : 'Register for Event'}
+                  {registrationStatus === 'loading' ? t('eventDetail.registering') : t('eventDetail.registerForEvent')}
                 </button>
               )}
               {isRegistered && (
                 <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg">
-                  You are registered for this event
+                  {t('eventDetail.registered')}
                 </div>
               )}
               {isFull && !isRegistered && (
                 <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg">
-                  This event is full. You can join the waitlist.
+                  {t('eventDetail.eventFull')}
                 </div>
               )}
               {registrationStatus === 'error' && (
                 <div className="bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg">
-                  Failed to register. Please try again.
+                  {t('eventDetail.registrationFailed')}
                 </div>
               )}
             </div>
@@ -237,7 +243,7 @@ const EventDetail: React.FC = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === 'details' ? t('eventDetail.tabDetails') : t('eventDetail.tabChat')}
                 </button>
               ))}
             </nav>
@@ -246,7 +252,9 @@ const EventDetail: React.FC = () => {
           <div className="p-6">
             {activeTab === 'details' && (
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">About this event</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  {t('eventDetail.aboutEvent')}
+                </h3>
                 <div className="prose dark:prose-invert max-w-none">
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{event.description}</p>
                 </div>
