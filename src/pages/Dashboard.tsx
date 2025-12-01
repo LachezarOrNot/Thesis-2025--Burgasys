@@ -5,12 +5,14 @@ import { Event, EventRegistration } from '../types';
 import { Calendar, Users, MapPin, Plus, Clock, Activity, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useTranslation } from 'react-i18next';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [userEvents, setUserEvents] = useState<Event[]>([]);
   const [registeredEvents, setRegisteredEvents] = useState<EventRegistration[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadDashboardData();
@@ -65,7 +67,9 @@ const Dashboard: React.FC = () => {
             <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin"></div>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-primary-500 rounded-full animate-pulse"></div>
           </div>
-          <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">Loading Your Dashboard...</p>
+          <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
+            {t('common.loading')}
+          </p>
         </div>
       </div>
     );
@@ -77,10 +81,10 @@ const Dashboard: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tight bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-            Welcome back, {user?.displayName}!
+            {t('dashboard.welcome', { name: user?.displayName })}
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Here's what's happening with your events.
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
@@ -93,11 +97,11 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Your Events
+              {t('dashboard.stats.yourEvents')}
             </h3>
             <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">{userEvents.length}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {upcomingEvents.length} upcoming
+              {t('dashboard.stats.upcoming', { count: upcomingEvents.length })}
             </p>
           </div>
           
@@ -108,11 +112,11 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Registered Events
+              {t('dashboard.stats.registeredEvents')}
             </h3>
             <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">{totalRegistrations}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Events you're attending
+              {t('dashboard.stats.eventsAttending')}
             </p>
           </div>
           
@@ -123,11 +127,11 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Locations
+              {t('dashboard.stats.locations')}
             </h3>
             <p className="text-3xl font-bold text-primary-600 dark:text-primary-400">{uniqueLocations}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Unique venues
+              {t('dashboard.stats.uniqueVenues')}
             </p>
           </div>
 
@@ -138,11 +142,13 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Role
+              {t('dashboard.stats.role')}
             </h3>
-            <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 capitalize">{user?.role}</p>
+            <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 capitalize">
+              {t(`roles.${user?.role}`)}
+            </p>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Account type
+              {t('dashboard.stats.accountType')}
             </p>
           </div>
         </div>
@@ -150,7 +156,7 @@ const Dashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 mb-10 animate-fade-in-up">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Quick Actions
+            {t('dashboard.quickActions.title')}
           </h2>
           <div className={`grid gap-4 ${canCreateEvents ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
             {/* Create Event Button - Only show for authorized roles */}
@@ -163,8 +169,8 @@ const Dashboard: React.FC = () => {
                   <Plus className="w-6 h-6 text-white" />
                 </div>
                 <div className="text-left">
-                  <div className="text-lg font-bold">Create Event</div>
-                  <div className="text-sm opacity-90">Start a new event</div>
+                  <div className="text-lg font-bold">{t('navigation.createEvent')}</div>
+                  <div className="text-sm opacity-90">{t('dashboard.quickActions.startNewEvent')}</div>
                 </div>
               </Link>
             )}
@@ -177,8 +183,8 @@ const Dashboard: React.FC = () => {
                 <Calendar className="w-6 h-6 text-primary-500" />
               </div>
               <div className="text-left">
-                <div className="text-lg font-bold">Browse Events</div>
-                <div className="text-sm opacity-90">Discover events</div>
+                <div className="text-lg font-bold">{t('navigation.browseEvents')}</div>
+                <div className="text-sm opacity-90">{t('dashboard.quickActions.discoverEvents')}</div>
               </div>
             </Link>
             
@@ -190,8 +196,8 @@ const Dashboard: React.FC = () => {
                 <Clock className="w-6 h-6 text-primary-500" />
               </div>
               <div className="text-left">
-                <div className="text-lg font-bold">View Calendar</div>
-                <div className="text-sm opacity-90">Schedule view</div>
+                <div className="text-lg font-bold">{t('navigation.calendarView')}</div>
+                <div className="text-sm opacity-90">{t('dashboard.quickActions.scheduleView')}</div>
               </div>
             </Link>
           </div>
@@ -201,14 +207,14 @@ const Dashboard: React.FC = () => {
         <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 animate-fade-in-up">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Your Recent Events
+              {t('dashboard.recentEvents.title')}
             </h2>
             {userEvents.length > 0 && (
               <Link 
                 to="/events"
                 className="text-primary-500 hover:text-primary-600 font-semibold flex items-center gap-2 transition-all duration-200 transform hover:scale-105"
               >
-                View all
+                {t('common.viewAll')}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             )}
@@ -220,12 +226,12 @@ const Dashboard: React.FC = () => {
                 <Calendar className="w-12 h-12 text-primary-500" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                {canCreateEvents ? 'No Events Created Yet' : 'No Events'}
+                {canCreateEvents ? t('dashboard.recentEvents.noEventsCreated') : t('dashboard.recentEvents.noEvents')}
               </h3>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
                 {canCreateEvents 
-                  ? "You haven't created any events yet"
-                  : "You haven't created any events"
+                  ? t('dashboard.recentEvents.noEventsCreatedDescription')
+                  : t('dashboard.recentEvents.noEventsDescription')
                 }
               </p>
               {canCreateEvents && (
@@ -234,7 +240,7 @@ const Dashboard: React.FC = () => {
                   className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200 inline-flex items-center gap-3"
                 >
                   <Plus className="w-5 h-5" />
-                  Create Your First Event
+                  {t('dashboard.recentEvents.createFirstEvent')}
                 </Link>
               )}
             </div>
@@ -257,7 +263,7 @@ const Dashboard: React.FC = () => {
                         ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                     }`}>
-                      {event.status.replace('_', ' ')}
+                      {t(`status.${event.status}`)}
                     </div>
                   </div>
                   
@@ -278,13 +284,13 @@ const Dashboard: React.FC = () => {
 
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-600">
                     <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {event.registeredUsers?.length || 0} registered
+                      {t('dashboard.recentEvents.registeredCount', { count: event.registeredUsers?.length || 0 })}
                     </span>
                     <Link 
                       to={`/events/${event.id}`}
                       className="text-primary-500 hover:text-primary-600 font-semibold text-sm flex items-center gap-1 transition-all duration-200 hover:gap-2"
                     >
-                      View Details
+                      {t('eventCard.viewDetails')}
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
@@ -299,13 +305,13 @@ const Dashboard: React.FC = () => {
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 p-8 mt-10 animate-fade-in-up">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Events You're Attending
+                {t('dashboard.registeredEvents.title')}
               </h2>
               <Link 
                 to="/events"
                 className="text-primary-500 hover:text-primary-600 font-semibold flex items-center gap-2 transition-all duration-200 transform hover:scale-105"
               >
-                View all
+                {t('common.viewAll')}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -317,16 +323,16 @@ const Dashboard: React.FC = () => {
                   style={{ animationDelay: `${index * 150}ms` }}
                 >
                   <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-3 line-clamp-2">
-                    Event #{registration.eventName}
+                    {registration.eventName}
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4" />
-                      Registered for event
+                      {t('dashboard.registeredEvents.registeredForEvent')}
                     </div>
                     <div className="flex items-center gap-2">
                       <Activity className="w-4 h-4" />
-                      Status: {registration.status || 'registered'}
+                      {t('dashboard.registeredEvents.status', { status: t(`status.${registration.status}`) || t('status.pending') })}
                     </div>
                   </div>
                 </div>

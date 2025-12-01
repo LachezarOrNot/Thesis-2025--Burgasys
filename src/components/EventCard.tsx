@@ -12,6 +12,38 @@ interface EventCardProps {
   onEventUpdate?: () => void;
 }
 
+// --- START: SHARED DATE FIX HELPER ---
+// Fixed helper to intelligently convert Firestore Timestamps, Strings, or JS Dates
+const processDate = (date: any): Date | null => {
+  if (!date) return null;
+
+  // 1. Check if it's a Firestore Timestamp (has .toDate() method)
+  if (typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+
+  // 2. Check if it's a raw object with seconds (common in serialized Firestore data)
+  if (typeof date === 'object' && typeof date.seconds === 'number') {
+    return new Date(date.seconds * 1000);
+  }
+
+  // 3. Check if it's already a JS Date object
+  if (date instanceof Date) {
+    return isValid(date) ? date : null;
+  }
+
+  // 4. Try parsing string/number ONLY if it's a primitive type
+  if (typeof date === 'string' || typeof date === 'number') {
+    const parsed = new Date(date);
+    return isValid(parsed) ? parsed : null;
+  }
+
+  // If we got here, it's an unrecognized format
+  console.warn('Unrecognized date format:', date);
+  return null;
+};
+// --- END: SHARED DATE FIX HELPER ---
+
 const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -20,18 +52,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const formatDateSafe = (date: any): string => {
-    if (!date) return t('eventCard.dateNotSet');
-    
+    // Use the robust processor
+    const dateObj = processDate(date);
+    if (!dateObj) return t('eventCard.dateNotSet');
     try {
-      let dateObj;
-      if (date instanceof Date) {
-        dateObj = date;
-      } else {
-        dateObj = new Date(date);
-      }
-      
-      if (!isValid(dateObj)) return t('eventCard.invalidDate');
-      
       return format(dateObj, 'MMM dd, yyyy');
     } catch (error) {
       console.error('Date formatting error:', error);
@@ -40,18 +64,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   };
 
   const formatTimeSafe = (date: any): string => {
-    if (!date) return t('eventCard.timeNotSet');
-    
+    // Use the robust processor
+    const dateObj = processDate(date);
+    if (!dateObj) return t('eventCard.timeNotSet');
     try {
-      let dateObj;
-      if (date instanceof Date) {
-        dateObj = date;
-      } else {
-        dateObj = new Date(date);
-      }
-      
-      if (!isValid(dateObj)) return t('eventCard.invalidTime');
-      
       return format(dateObj, 'HH:mm');
     } catch (error) {
       console.error('Time formatting error:', error);
@@ -63,7 +79,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
   const isFull = event.capacity && registeredCount >= event.capacity;
 
   const canEditDelete = user && (
-    user.role === 'admin' || 
+    user.role === 'admin' ||
     user.uid === event.createdBy ||
     user.uid === event.organiser_org_id
   );
@@ -102,8 +118,8 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
       {/* Image Section with Overlays */}
       {event.images && event.images.length > 0 && !imageError && (
         <div className="relative h-52 overflow-hidden">
-          <img 
-            src={event.images[0]} 
+          <img
+            src={event.images[0]}
             alt={event.name}
             className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -112,15 +128,20 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
             onError={() => setImageError(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-          
+
           {/* Status Badge */}
           <div className="absolute top-4 left-4">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
-              event.status === 'published' ? 'bg-green-500/90 text-white' :
-              event.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
-              event.status === 'finished' ? 'bg-gray-500/90 text-white' :
-              'bg-blue-500/90 text-white'
-            }`}>
+            <span
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm ${
+                event.status === 'published'
+                  ? 'bg-green-500/90 text-white'
+                  : event.status === 'pending_approval'
+                  ? 'bg-yellow-500/90 text-white'
+                  : event.status === 'finished'
+                  ? 'bg-gray-500/90 text-white'
+                  : 'bg-blue-500/90 text-white'
+              }`}
+            >
               {getStatusText(event.status || 'unknown')}
             </span>
           </div>
@@ -207,7 +228,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-5">
             {event.tags.slice(0, 3).map(tag => (
-              <span 
+              <span
                 key={tag}
                 className="px-3 py-1.5 bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-semibold transition-colors duration-300 hover:bg-primary-200 dark:hover:bg-primary-800/60"
               >
@@ -227,7 +248,6 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
             {t('common.by')} {event.organization?.name || t('eventCard.unknownOrganizer')}
           </div>
-
           <div className="flex items-center gap-2">
             {canEditDelete && (
               <button
@@ -238,7 +258,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onEventUpdate }) => {
                 {t('eventCard.edit')}
               </button>
             )}
-            <Link 
+            <Link
               to={`/events/${event.id}`}
               className="px-5 py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 shadow-md hover:shadow-lg group/link"
             >

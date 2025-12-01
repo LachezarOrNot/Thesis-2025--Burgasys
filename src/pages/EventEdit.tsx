@@ -3,30 +3,30 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { databaseService } from '../services/database';
 import { Event, EventStatus } from '../types';
-import { 
-  ArrowLeft, 
-  Save, 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Tag, 
+import {
+  ArrowLeft,
+  Save,
+  Calendar,
+  MapPin,
+  Users,
+  Tag,
   Image as ImageIcon,
   Upload,
   X,
   Plus,
-  AlertCircle 
+  AlertCircle
 } from 'lucide-react';
 
 const EventEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -43,7 +43,7 @@ const EventEdit: React.FC = () => {
     allow_registration: true,
     images: [] as string[] // Array to store Base64 image strings
   });
-  
+
   const [newTag, setNewTag] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
 
@@ -53,11 +53,11 @@ const EventEdit: React.FC = () => {
 
   const loadEvent = async () => {
     if (!id) return;
-    
+
     try {
       setLoading(true);
       const eventData = await databaseService.getEvent(id);
-      
+
       if (!eventData) {
         setError('Event not found');
         return;
@@ -70,7 +70,16 @@ const EventEdit: React.FC = () => {
       }
 
       setEvent(eventData);
-      
+
+      // Helper function to convert Date to local ISO string for datetime-local input
+      const toLocalISOString = (date: Date | null): string => {
+        if (!date) return '';
+        const d = new Date(date);
+        // Subtract timezone offset to get local time in ISO format
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().slice(0, 16);
+      };
+
       // Populate form data
       setFormData({
         name: eventData.name || '',
@@ -79,15 +88,15 @@ const EventEdit: React.FC = () => {
         location: eventData.location || '',
         lat: eventData.lat || 0,
         lng: eventData.lng || 0,
-        start_datetime: eventData.start_datetime ? new Date(eventData.start_datetime).toISOString().slice(0, 16) : '',
-        end_datetime: eventData.end_datetime ? new Date(eventData.end_datetime).toISOString().slice(0, 16) : '',
+        start_datetime: toLocalISOString(eventData.start_datetime),
+        end_datetime: toLocalISOString(eventData.end_datetime),
         capacity: eventData.capacity?.toString() || '',
         tags: eventData.tags || [],
         status: eventData.status || 'published',
         allow_registration: eventData.allow_registration ?? true,
         images: eventData.images || []
       });
-      
+
     } catch (error) {
       console.error('Error loading event:', error);
       setError('Failed to load event');
@@ -132,10 +141,10 @@ const EventEdit: React.FC = () => {
       };
 
       await databaseService.updateEvent(id, updates);
-      
+
       alert('Event updated successfully!');
       navigate(`/events/${id}`);
-      
+
     } catch (error) {
       console.error('Error updating event:', error);
       setError('Failed to update event');
@@ -159,21 +168,21 @@ const EventEdit: React.FC = () => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       if (!ctx) {
         reject(new Error('Could not get canvas context'));
         return;
       }
-      
+
       const img = new Image();
-      
+
       img.onload = () => {
         // Calculate new dimensions (max width 800px)
         const maxWidth = 800;
         const scale = Math.min(maxWidth / img.width, 1);
         canvas.width = img.width * scale;
         canvas.height = img.height * scale;
-        
+
         // Draw and compress with 80% quality
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
@@ -184,11 +193,11 @@ const EventEdit: React.FC = () => {
           }
         }, 'image/jpeg', 0.8);
       };
-      
+
       img.onerror = () => {
         reject(new Error('Failed to load image'));
       };
-      
+
       img.src = URL.createObjectURL(file);
     });
   };
@@ -199,10 +208,10 @@ const EventEdit: React.FC = () => {
 
     try {
       setUploadingImages(true);
-      
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
+
         // Validate file type
         if (!file.type.startsWith('image/')) {
           alert('Please upload only image files');
@@ -222,7 +231,7 @@ const EventEdit: React.FC = () => {
 
           // Convert to Base64
           const base64String = await fileToBase64(optimizedFile);
-          
+
           // Add to images array
           setFormData(prev => ({
             ...prev,
@@ -234,7 +243,7 @@ const EventEdit: React.FC = () => {
           continue;
         }
       }
-      
+
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image');
@@ -339,7 +348,7 @@ const EventEdit: React.FC = () => {
               </p>
             </div>
           </div>
-          
+
           <button
             onClick={handleSubmit}
             disabled={saving || uploadingImages}
@@ -365,7 +374,7 @@ const EventEdit: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Basic Information
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -415,7 +424,7 @@ const EventEdit: React.FC = () => {
                 <ImageIcon className="w-5 h-5" />
                 Event Images
               </h2>
-              
+
               <div className="space-y-4">
                 {/* Image Upload Area */}
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
@@ -481,7 +490,7 @@ const EventEdit: React.FC = () => {
                 {/* Storage Info */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <strong>Note:</strong> Images are stored as Base64 strings in the database to avoid storage costs. 
+                    <strong>Note:</strong> Images are stored as Base64 strings in the database to avoid storage costs.
                     {formData.images.length > 0 && ` Current images: ${formData.images.length}`}
                   </p>
                 </div>
@@ -494,7 +503,7 @@ const EventEdit: React.FC = () => {
                 <Calendar className="w-5 h-5" />
                 Date & Time
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -530,7 +539,7 @@ const EventEdit: React.FC = () => {
                 <MapPin className="w-5 h-5" />
                 Location
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -556,7 +565,7 @@ const EventEdit: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Settings
               </h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -610,7 +619,7 @@ const EventEdit: React.FC = () => {
                 <Tag className="w-5 h-5" />
                 Tags
               </h2>
-              
+
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <input
@@ -629,7 +638,7 @@ const EventEdit: React.FC = () => {
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {formData.tags.map(tag => (
                     <span

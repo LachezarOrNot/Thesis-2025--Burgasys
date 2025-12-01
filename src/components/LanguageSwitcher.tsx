@@ -9,7 +9,7 @@ const LanguageSwitcher: React.FC = () => {
     { code: 'en', name: 'English', flag: '🇺🇸' },
     { code: 'bg', name: 'Български', flag: '🇧🇬' },
     { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+    { code: 'ru', name: 'Русский', flag: 'ru' },
   ];
 
   return (

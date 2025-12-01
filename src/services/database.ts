@@ -32,29 +32,44 @@ import { v4 as uuidv4 } from 'uuid';
 
 class DatabaseService {
   
-  // FIXED: Safe date conversion utility - DON'T FUCK WITH THE DATES
-  private safeDateConvert(date: any): Date {
-    if (!date) return new Date();
-    
-    // If it's already a Date object, return it directly - DON'T CONVERT
-    if (date instanceof Date) return date;
-    
-    // If it's a Firestore timestamp, convert it
-    if (date.toDate && typeof date.toDate === 'function') return date.toDate();
-    
-    // If it's already a proper Date object from our components, return it
-    if (date && typeof date === 'object' && date.constructor.name === 'Date') {
-      return date;
-    }
-    
+ // FIXED: Safe date conversion utility
+private safeDateConvert(date: any): Date {
+  // Return current date only if date is null/undefined
+  if (date == null) return new Date();
+  
+  // If it's already a Date object, return it directly
+  if (date instanceof Date) {
+    return isNaN(date.getTime()) ? new Date() : date;
+  }
+  
+  // If it's a Firestore timestamp with toDate method, convert it
+  if (date.toDate && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  
+  // ✅ CRITICAL FIX: Handle serialized Firestore Timestamp (object with seconds)
+  if (typeof date === 'object' && typeof date.seconds === 'number') {
+    console.log('Converting Firestore timestamp:', date.seconds);
+    const converted = new Date(date.seconds * 1000);
+    console.log('Converted to:', converted);
+    return converted;
+  }
+  
+  // For strings or numbers, try to parse
+  if (typeof date === 'string' || typeof date === 'number') {
     try {
-      // For strings or numbers, create a Date object but DON'T apply timezone conversion
       const parsed = new Date(date);
       return isNaN(parsed.getTime()) ? new Date() : parsed;
     } catch {
+      console.warn('Failed to parse date:', date);
       return new Date();
     }
   }
+  
+  // If we get here, it's an unrecognized format
+  console.warn('Unrecognized date format, returning current date:', date);
+  return new Date();
+}
 
   // Helper function to remove undefined values for Firestore by converting them to null
   private prepareDataForFirestore(data: any): any {

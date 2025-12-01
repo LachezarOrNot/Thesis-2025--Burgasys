@@ -17,13 +17,21 @@
     "search": "Search",
     "filter": "Filter",
     "all": "All",
-    "none": "None"
+    "none": "None",
+    "more": "more",
+    "by": "By",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "goHome": "Go Home",
+    "results": "Results",
+    "required": "Required",
+    "optional": "Optional"
   },
   "roles": {
     "admin": "Administrator",
     "school": "School",
     "university": "University",
-    "firm": "Firm",
+    "firm": "Company",
     "student": "Student",
     "user": "User"
   },
@@ -65,7 +73,7 @@
     "inPersonStats": "In Person",
     "filteredEvents": "Filtered Events",
     "allEvents": "All Events",
-    "showing": "Showing",
+    "showing": "Showing events",
     "of": "of",
     "events": "events",
     "noEventsFound": "No Events Found",
@@ -93,9 +101,53 @@
     "affiliatedStudents": "Affiliated Students",
     "noOrganizations": "No organizations found",
     "requestAffiliation": "Request Affiliation",
-    "affiliationRequests": "Affiliation Requests"
+    "affiliationRequests": "Affiliation Requests",
+    "logo": "Organization Logo",
+    "uploadLogo": "Upload Logo",
+    "logoPreview": "Logo preview",
+    "uploadRequirements": "PNG, JPG up to 2MB",
+    "contactInfo": "Contact Information",
+    "email": "Email",
+    "createSubtitle": "Register your school, university, or company",
+    "accessDenied": "Access Restricted",
+    "accessDeniedDescription": "You need special permissions to create organizations.",
+    "allOrganizations": "All Organizations",
+    "adminViewDescription": "Administrative view - Manage all organizations in the system",
+    "adminView": "Admin View",
+    "totalOrganizations": "Total Organizations",
+    "pending": "Pending",
+    "companies": "Companies",
+    "loading": "Loading organizations...",
+    "loadError": "Error Loading Organizations",
+    "noOrganizationsAdmin": "There are no organizations in the system yet.",
+    "noOrganizationsUser": "You are not affiliated with any organization yet.",
+    "notFound": "Organization not found",
+    "noAccess": "No organization ID provided and you are not affiliated with any organization",
+    "notFoundDescription": "The organization you're looking for doesn't exist or has been removed.",
+    "browseAll": "Browse All Organizations",
+    "goToMyOrganization": "Go to My Organization",
+    "backToAll": "Back to All Organizations",
+    "pendingVerification": "Pending Verification",
+    "myOrganization": "My Organization",
+    "noDescription": "No description available.",
+    "totalEvents": "Total Events",
+    "upcomingEvents": "Upcoming Events",
+    "pastEvents": "Past Events",
+    "eventsBy": "Events by {{name}}",
+    "noEventsDescription": "This organization hasn't created any events yet.",
+    "loadingSingle": "Loading organization...",
+    "errors": {
+      "nameRequired": "Organization name is required",
+      "addressRequired": "Address is required",
+      "phoneRequired": "Phone number is required",
+      "emailRequired": "Email is required",
+      "logoUploadFailed": "Failed to upload logo",
+      "invalidImageType": "Please upload an image file",
+      "imageTooLarge": "Logo size must be less than 2MB"
+    },
+    "createSuccess": "Organization created successfully!"
   },
-   "navigation": {
+  "navigation": {
     "home": "Home",
     "events": "Events",
     "organizations": "Organizations",
@@ -139,7 +191,7 @@
       "darkMode": "Switch to dark mode"
     }
   },
-    "eventCard": {
+  "eventCard": {
     "dateNotSet": "Date not set",
     "invalidDate": "Invalid date",
     "dateError": "Date error",
@@ -162,8 +214,100 @@
       "finished": "finished",
       "draft": "draft",
       "rejected": "rejected",
-      "unknown": "unknown"
+      "unknown": "unknown",
+      "cancelled": "cancelled"
     }
+  },
+  "eventDetail": {
+    "eventNotFound": "Event not found",
+    "backToEvents": "Back to events",
+    "aboutEvent": "About this event",
+    "date": "Date",
+    "time": "Time",
+    "location": "Location",
+    "attendees": "attendees",
+    "locationNotSpecified": "Location not specified",
+    "signInToRegister": "Please sign in to register for this event",
+    "registerForEvent": "Register for Event",
+    "registering": "Registering...",
+    "registered": "You are registered for this event",
+    "eventFull": "This event is full. You can join the waitlist.",
+    "registrationFailed": "Registration failed. Please try again.",
+    "details": "Details",
+    "chat": "Chat",
+    "tabDetails": "Details",
+    "tabChat": "Chat"
+  },
+  "eventCreate": {
+    "title": "Create New Event",
+    "requestTitle": "Request New Event",
+    "description": "Fill in the details below to create your event",
+    "requestDescription": "Fill in the details below to request an event. Your request will be reviewed by an administrator.",
+    "organizationInfo": "Organization: This event will be associated with {{organizationName}}",
+    "approvalNote": "Note: Your event will be submitted for administrator approval before being published.",
+    "accessDenied": {
+      "title": "Access Denied",
+      "message": "You don't have permission to access this page."
+    },
+    "sections": {
+      "basicInfo": "Basic Information",
+      "images": "Event Images",
+      "dateTime": "Date & Time",
+      "location": "Location",
+      "settings": "Settings",
+      "tags": "Tags"
+    },
+    "form": {
+      "eventName": "Event Name",
+      "eventNamePlaceholder": "Enter event name",
+      "subtitle": "Subtitle",
+      "subtitlePlaceholder": "Enter a brief subtitle",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe your event...",
+      "startDateTime": "Start Date & Time",
+      "endDateTime": "End Date & Time",
+      "location": "Location",
+      "locationPlaceholder": "Enter event location",
+      "status": "Status",
+      "capacity": "Capacity",
+      "capacityPlaceholder": "No limit if empty",
+      "allowRegistration": "Allow registration",
+      "addTag": "Add a tag",
+      "uploadImages": "Click to upload images",
+      "uploadInfo": "PNG, JPG up to 2MB (will be optimized)",
+      "processingImages": "Processing images...",
+      "imageStorageNote": "Note: Images are stored as Base64 strings in the database to avoid storage costs.",
+      "createEvent": "Create Event",
+      "requestEvent": "Request Event",
+      "creatingEvent": "Creating Event...",
+      "submittingRequest": "Submitting Request...",
+      "imageAlt": "Event image {{index}}"
+    },
+    "errors": {
+      "loginRequired": "You must be logged in to create an event",
+      "nameRequired": "Event name is required",
+      "datetimeRequired": "Start and end datetime are required",
+      "dateValidation": "End date must be after start date",
+      "organizationRequired": "You must be affiliated with an organization to request events",
+      "general": "Failed to create event. Please try again.",
+      "invalidImageType": "Please upload only image files",
+      "imageTooLarge": "Image size must be less than 2MB",
+      "imageProcessingFailed": "Failed to process image",
+      "imageUploadFailed": "Failed to upload image"
+    },
+    "success": {
+      "event": "Event created successfully!",
+      "request": "Event request submitted successfully! It will be reviewed by an administrator."
+    }
+  },
+  "eventEdit": {
+    "title": "Edit Event",
+    "subtitle": "Update your event details"
+  },
+  "calendar": {
+    "subtitle": "Browse and filter upcoming events by date and location",
+    "noEvents": "No Upcoming Events",
+    "noEventsDescription": "There are no upcoming events scheduled yet."
   },
   "chat": {
     "title": "Event Chat",
@@ -319,111 +463,7 @@
       "organizationCreation": "Failed to create organization. Please try again."
     }
   },
-  "eventCreate": {
-    "title": "Create New Event",
-    "requestTitle": "Request New Event",
-    "description": "Fill in the details below to create your event",
-    "requestDescription": "Fill in the details below to request an event. Your request will be reviewed by an administrator.",
-    "organizationInfo": "Organization: This event will be associated with {{organizationName}}",
-    "approvalNote": "Note: Your event will be submitted for administrator approval before being published.",
-    "accessDenied": {
-      "title": "Access Denied",
-      "message": "You don't have permission to access this page."
-    },
-    "sections": {
-      "basicInfo": "Basic Information",
-      "images": "Event Images",
-      "dateTime": "Date & Time",
-      "location": "Location",
-      "settings": "Settings",
-      "tags": "Tags"
-    },
-    "form": {
-      "eventName": "Event Name",
-      "eventNamePlaceholder": "Enter event name",
-      "subtitle": "Subtitle",
-      "subtitlePlaceholder": "Enter a brief subtitle",
-      "description": "Description",
-      "descriptionPlaceholder": "Describe your event...",
-      "startDateTime": "Start Date & Time",
-      "endDateTime": "End Date & Time",
-      "location": "Location",
-      "locationPlaceholder": "Enter event location",
-      "status": "Status",
-      "capacity": "Capacity",
-      "capacityPlaceholder": "No limit if empty",
-      "allowRegistration": "Allow registration",
-      "addTag": "Add a tag",
-      "uploadImages": "Click to upload images",
-      "uploadInfo": "PNG, JPG up to 2MB (will be optimized)",
-      "processingImages": "Processing images...",
-      "imageStorageNote": "Note: Images are stored as Base64 strings in the database to avoid storage costs.",
-      "createEvent": "Create Event",
-      "requestEvent": "Request Event",
-      "creatingEvent": "Creating Event...",
-      "submittingRequest": "Submitting Request..."
-    },
-    "errors": {
-      "loginRequired": "You must be logged in to create an event",
-      "nameRequired": "Event name is required",
-      "datetimeRequired": "Start and end datetime are required",
-      "dateValidation": "End date must be after start date",
-      "organizationRequired": "You must be affiliated with an organization to request events",
-      "general": "Failed to create event. Please try again."
-    },
-    "success": {
-      "event": "Event created successfully!",
-      "request": "Event request submitted successfully! It will be reviewed by an administrator."
-    }
-  },
-  "footer": {
-    "brand": {
-      "description": "Discover incredible experiences, connect with amazing people, and create memories that matter — powered by communities worldwide.",
-      "location": "Global",
-      "email": "support@burgasys.com"
-    },
-    "explore": {
-      "title": "Explore",
-      "upcomingEvents": "Upcoming Events",
-      "eventCalendar": "Event Calendar",
-      "signIn": "Sign In"
-    },
-    "connect": {
-      "title": "Connect",
-      "description": "Stay connected with the latest updates, event tips, and community stories."
-    },
-    "copyright": "© {{year}} Burgasys · Built with integrity for the community."
-  },
-  "status": {
-    "draft": "Draft",
-    "pending_approval": "Pending Approval",
-    "published": "Published",
-    "finished": "Finished",
-    "rejected": "Rejected",
-    "pending": "Pending",
-    "approved": "Approved"
-  },
-    "eventDetail": {
-    "eventNotFound": "Event not found",
-    "backToEvents": "Back to events",
-    "aboutEvent": "About this event",
-    "date": "Date",
-    "time": "Time",
-    "location": "Location",
-    "attendees": "Attendees",
-    "locationNotSpecified": "Location not specified",
-    "signInToRegister": "Please sign in to register for this event",
-    "registerForEvent": "Register for Event",
-    "registering": "Registering...",
-    "registered": "You are registered for this event",
-    "eventFull": "This event is full. You can join the waitlist.",
-    "registrationFailed": "Registration failed. Please try again.",
-    "details": "Details",
-    "chat": "Chat",
-    "tabDetails": "Details",
-    "tabChat": "Chat"
-  },
-    "profile": {
+  "profile": {
     "noUserLoggedIn": "No User Logged In",
     "pleaseLogIn": "Please log in to view your profile.",
     "profileUpdated": "Profile updated successfully!",
@@ -439,7 +479,6 @@
     "passwordChangeFailed": "Failed to change password. Please try again.",
     "accountScheduledForDeletion": "Account scheduled for deletion. You can recover by logging in within 10 days.",
     "reauthenticateForDeletion": "Please sign in again to delete your account.",
-    "noUserLoggedIn": "No user is currently logged in.",
     "invalidPassword": "Invalid password. Please try again.",
     "deleteFailed": "Failed to delete account. Please try again.",
     "signOutFailed": "Failed to sign out",
@@ -482,7 +521,7 @@
     "inDays": "in 10 Days",
     "now": "Now"
   },
-    "home": {
+  "home": {
     "hero": {
       "tagline": "Discover Your Next Experience",
       "titlePart1": "Discover Amazing",
@@ -512,6 +551,34 @@
       "browseEvents": "Browse Events"
     }
   },
+  "footer": {
+    "brand": {
+      "description": "Discover incredible experiences, connect with amazing people, and create memories that matter — powered by communities worldwide.",
+      "location": "Global",
+      "email": "support@burgasys.com"
+    },
+    "explore": {
+      "title": "Explore",
+      "upcomingEvents": "Upcoming Events",
+      "eventCalendar": "Event Calendar",
+      "signIn": "Sign In"
+    },
+    "connect": {
+      "title": "Connect",
+      "description": "Stay connected with the latest updates, event tips, and community stories."
+    },
+    "copyright": "© {{year}} Burgasys · Built with integrity for the community."
+  },
+  "status": {
+    "draft": "Draft",
+    "pending_approval": "Pending Approval",
+    "published": "Published",
+    "finished": "Finished",
+    "rejected": "Rejected",
+    "pending": "Pending",
+    "approved": "Approved",
+    "cancelled": "Cancelled"
+  },
   "notifications": {
     "notifications": "Notifications",
     "markAsRead": "Mark as Read",
@@ -523,6 +590,41 @@
     "registrationWaitlist": "Added to waitlist",
     "unregistrationSuccess": "Successfully unregistered from event"
   },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "subtitle": "Here's what's happening with your events.",
+    "stats": {
+      "yourEvents": "Your Events",
+      "registeredEvents": "Registered Events",
+      "locations": "Locations",
+      "role": "Role",
+      "upcoming": "{{count}} upcoming",
+      "eventsAttending": "Events you're attending",
+      "uniqueVenues": "Unique venues",
+      "accountType": "Account type"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "startNewEvent": "Start a new event",
+      "discoverEvents": "Discover events",
+      "scheduleView": "Schedule view"
+    },
+    "recentEvents": {
+      "title": "Your Recent Events",
+      "noEvents": "No Events",
+      "noEventsCreated": "No Events Created Yet",
+      "noEventsDescription": "You haven't created any events",
+      "noEventsCreatedDescription": "You haven't created any events yet",
+      "createFirstEvent": "Create Your First Event",
+      "registeredCount": "{{count}} registered"
+    },
+    "registeredEvents": {
+      "title": "Events You're Attending",
+      "registeredForEvent": "Registered for event",
+      "status": "Status: {{status}}"
+    }
+  },
+
   "errors": {
     "required": "This field is required",
     "invalidEmail": "Invalid email address",
