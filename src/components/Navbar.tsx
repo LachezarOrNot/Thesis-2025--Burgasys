@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, User, ChevronDown, Menu, X, Building, Plus, Users } from 'lucide-react';
+import { 
+  LogOut, Moon, Sun, User, ChevronDown, Menu, X, 
+  Building, Plus, Users, Globe, Calendar, History, 
+  LayoutDashboard, Shield 
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -83,6 +87,7 @@ const Navbar: React.FC = () => {
                       }`}
                     />
                   </button>
+                  
 
                   {/* Dropdown Menu */}
                   <div
@@ -95,33 +100,56 @@ const Navbar: React.FC = () => {
                     <Link
                       to="/events"
                       onClick={() => setIsEventsOpen(false)}
-                      className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
                     >
-                      <div className="font-medium">{t('navbar.eventsDropdown.browseEvents')}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {t('navbar.eventsDropdown.browseDescription')}
+                      <Users className="w-4 h-4" />
+                      <div>
+                        <div className="font-medium">{t('navbar.eventsDropdown.browseEvents')}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t('navbar.eventsDropdown.browseDescription')}
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/map"
+                      onClick={() => setIsEventsOpen(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <div>
+                        <div className="font-medium">Map Explorer</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          Explore events on map
+                        </div>
                       </div>
                     </Link>
                     
                     <Link
                       to="/calendar"
                       onClick={() => setIsEventsOpen(false)}
-                      className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
                     >
-                      <div className="font-medium">{t('navbar.eventsDropdown.calendarView')}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {t('navbar.eventsDropdown.calendarDescription')}
+                      <Calendar className="w-4 h-4" />
+                      <div>
+                        <div className="font-medium">{t('navbar.eventsDropdown.calendarView')}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t('navbar.eventsDropdown.calendarDescription')}
+                        </div>
                       </div>
                     </Link>
                     
                     <Link
                       to="/past-events"
                       onClick={() => setIsEventsOpen(false)}
-                      className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
-                      <div className="font-medium">{t('navbar.eventsDropdown.pastEvents')}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {t('navbar.eventsDropdown.pastDescription')}
+                      <History className="w-4 h-4" />
+                      <div>
+                        <div className="font-medium">{t('navbar.eventsDropdown.pastEvents')}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t('navbar.eventsDropdown.pastDescription')}
+                        </div>
                       </div>
                     </Link>
                   </div>
@@ -153,14 +181,14 @@ const Navbar: React.FC = () => {
                     <Link
                       to="/organizations"
                       onClick={() => setIsOrganizationsOpen(false)}
-                      className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-b border-gray-100 dark:border-gray-600"
                     >
-                      <div className="font-medium flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        {t('navbar.organizationsDropdown.browseOrganizations')}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {t('navbar.organizationsDropdown.browseDescription')}
+                      <Users className="w-4 h-4" />
+                      <div>
+                        <div className="font-medium">{t('navbar.organizationsDropdown.browseOrganizations')}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t('navbar.organizationsDropdown.browseDescription')}
+                        </div>
                       </div>
                     </Link>
                     
@@ -168,14 +196,14 @@ const Navbar: React.FC = () => {
                       <Link
                         to="/organizations/create"
                         onClick={() => setIsOrganizationsOpen(false)}
-                        className="block px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                       >
-                        <div className="font-medium flex items-center gap-2">
-                          <Plus className="w-4 h-4" />
-                          {t('navbar.organizationsDropdown.createOrganization')}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {t('navbar.organizationsDropdown.createDescription')}
+                        <Plus className="w-4 h-4" />
+                        <div>
+                          <div className="font-medium">{t('navbar.organizationsDropdown.createOrganization')}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {t('navbar.organizationsDropdown.createDescription')}
+                          </div>
                         </div>
                       </Link>
                     )}
@@ -246,16 +274,18 @@ const Navbar: React.FC = () => {
                     <Link
                       to="/dashboard"
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
+                      <LayoutDashboard className="w-4 h-4" />
                       {t('navbar.userMenu.dashboard')}
                     </Link>
                     
                     <Link
                       to="/profile"
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                     >
+                      <User className="w-4 h-4" />
                       {t('navbar.userMenu.profile')}
                     </Link>
 
@@ -263,8 +293,9 @@ const Navbar: React.FC = () => {
                       <Link
                         to="/admin"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-t border-gray-100 dark:border-gray-600"
+                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-t border-gray-100 dark:border-gray-600"
                       >
+                        <Shield className="w-4 h-4" />
                         {t('navbar.userMenu.adminPanel')}
                       </Link>
                     )}
@@ -274,7 +305,7 @@ const Navbar: React.FC = () => {
                         setIsUserMenuOpen(false);
                         handleSignOut();
                       }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2 border-t border-gray-100 dark:border-gray-600"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t border-gray-100 dark:border-gray-600"
                     >
                       <LogOut className="w-4 h-4" />
                       {t('navigation.signOut')}
@@ -321,24 +352,36 @@ const Navbar: React.FC = () => {
               <Link
                 to="/events"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
+                <Users className="w-4 h-4" />
                 {t('navbar.eventsDropdown.browseEvents')}
+              </Link>
+              
+              <Link
+                to="/map"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <Globe className="w-4 h-4" />
+                Map Explorer
               </Link>
               
               <Link
                 to="/calendar"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
+                <Calendar className="w-4 h-4" />
                 {t('navbar.eventsDropdown.calendarView')}
               </Link>
               
               <Link
                 to="/past-events"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
+                <History className="w-4 h-4" />
                 {t('navbar.eventsDropdown.pastEvents')}
               </Link>
 
@@ -375,16 +418,18 @@ const Navbar: React.FC = () => {
               <Link
                 to="/dashboard"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
+                <LayoutDashboard className="w-4 h-4" />
                 {t('navbar.userMenu.dashboard')}
               </Link>
 
               <Link
                 to="/profile"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
+                <User className="w-4 h-4" />
                 {t('navbar.userMenu.profile')}
               </Link>
 
@@ -392,8 +437,9 @@ const Navbar: React.FC = () => {
                 <Link
                   to="/admin"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
+                  <Shield className="w-4 h-4" />
                   {t('navbar.userMenu.adminPanel')}
                 </Link>
               )}
@@ -403,7 +449,7 @@ const Navbar: React.FC = () => {
                   setIsMobileMenuOpen(false);
                   handleSignOut();
                 }}
-                className="px-4 py-2.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
+                className="flex items-center gap-2 px-4 py-2.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 {t('navigation.signOut')}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -7,8 +7,12 @@ import './services/i18n';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import { configureLeaflet } from './config/leafletConfig';
 
-// Pages with lazy loading and error handling
+// Import Leaflet CSS
+import 'leaflet/dist/leaflet.css';
+
+// Pages with lazy loading
 const Home = React.lazy(() => import('./pages/Home'));
 const Auth = React.lazy(() => import('./pages/Auth'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -23,7 +27,7 @@ const AdminUserApprovals = React.lazy(() => import('./pages/AdminUserApprovals')
 const Organization = React.lazy(() => import('./pages/Organization'));
 const CreateOrganization = React.lazy(() => import('./pages/CreateOrganization'));
 const EditEvent = React.lazy(() => import('./pages/EventEdit'));
-
+const MapExplorer = React.lazy(() => import('./pages/MapExplorer'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -31,20 +35,22 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Component to handle root redirect based on auth status
 const RootRedirect: React.FC = () => {
   const { user, loading } = useAuth();
   
-  // Show loading while checking auth state
   if (loading) {
     return <LoadingFallback />;
   }
   
-  // Redirect to events if authenticated, otherwise to auth
   return user ? <Navigate to="/events" replace /> : <Navigate to="/auth" replace />;
 };
 
 function App() {
+  // Configure Leaflet once on mount
+  useEffect(() => {
+    configureLeaflet();
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -54,13 +60,9 @@ function App() {
             <main className="min-h-screen">
               <React.Suspense fallback={<LoadingFallback />}>
                 <Routes>
-                  {/* Redirect root to auth or events based on auth status */}
                   <Route path="/" element={<Home />} />
-                  
-                  {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
                   
-                  {/* Protected routes - redirect to home if not authenticated */}
                   <Route path="/events" element={
                     <ProtectedRoute>
                       <Events />
@@ -69,6 +71,16 @@ function App() {
                   <Route path="/events/:id" element={
                     <ProtectedRoute>
                       <EventDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/events/create" element={
+                    <ProtectedRoute>
+                      <EventCreate />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/events/:id/edit" element={
+                    <ProtectedRoute>
+                      <EditEvent />
                     </ProtectedRoute>
                   } />
                   <Route path="/calendar" element={
@@ -81,6 +93,11 @@ function App() {
                       <PastEvents />
                     </ProtectedRoute>
                   } />
+                  <Route path="/map" element={
+                    <ProtectedRoute>
+                      <MapExplorer />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/organizations" element={
                     <ProtectedRoute>
                       <Organization />
@@ -91,22 +108,10 @@ function App() {
                       <Organization />
                     </ProtectedRoute>
                   } />
-                  
-                  {/* User dashboard routes */}
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Dashboard />
                     </ProtectedRoute>
-                  } />
-                  <Route path="/events/create" element={
-                    <ProtectedRoute>
-                      <EventCreate />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/events/:id/edit" element={
-                    <ProtectedRoute>
-                      <EditEvent />
-                   </ProtectedRoute>
                   } />
                   <Route path="/profile" element={
                     <ProtectedRoute>
@@ -118,21 +123,17 @@ function App() {
                       <CreateOrganization />
                     </ProtectedRoute>
                   } />
-                  
-                  {/* Admin-only route */}
                   <Route path="/admin" element={
                     <ProtectedRoute requiredRole="admin">
                       <Admin />
                     </ProtectedRoute>
                   } />
-
                   <Route path="/admin/user-approvals" element={
-                     <ProtectedRoute requiredRole="admin">
-                        <AdminUserApprovals />
-                     </ProtectedRoute>
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminUserApprovals />
+                    </ProtectedRoute>
                   } />
-
-                  {/* Fallback route */}
+                  
                   <Route path="*" element={
                     <div className="min-h-screen flex items-center justify-center">
                       <div className="text-center">

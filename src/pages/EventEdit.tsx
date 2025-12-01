@@ -14,13 +14,17 @@ import {
   Upload,
   X,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Globe
 } from 'lucide-react';
+import MapLocationPicker from '../components/MapLocationPicker';
+import { useTranslation } from 'react-i18next';
 
 const EventEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,9 +50,12 @@ const EventEdit: React.FC = () => {
 
   const [newTag, setNewTag] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
-    loadEvent();
+    if (id) {
+      loadEvent();
+    }
   }, [id]);
 
   const loadEvent = async () => {
@@ -75,9 +82,14 @@ const EventEdit: React.FC = () => {
       const toLocalISOString = (date: Date | null): string => {
         if (!date) return '';
         const d = new Date(date);
-        // Subtract timezone offset to get local time in ISO format
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 16);
+        // Convert to local time string for datetime-local input
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
       };
 
       // Populate form data
@@ -124,16 +136,39 @@ const EventEdit: React.FC = () => {
         return;
       }
 
+      if (!formData.location.trim()) {
+        setError('Location is required');
+        return;
+      }
+
+      // Validate location coordinates
+      if (!formData.lat || !formData.lng || formData.lat === 0 || formData.lng === 0) {
+        setError('Please select a valid location on the map');
+        return;
+      }
+
+      // Validate dates
+      const startDate = new Date(formData.start_datetime);
+      const endDate = new Date(formData.end_datetime);
+      
+      if (startDate >= endDate) {
+        setError('End date must be after start date');
+        return;
+      }
+
+      // Handle subtitle conversion - ensure it's either string or undefined, not null
+      const subtitle = formData.subtitle.trim() || undefined;
+      
       const updates = {
         name: formData.name.trim(),
-        subtitle: formData.subtitle.trim(),
+        subtitle: subtitle, // This is now string | undefined, not string | null
         description: formData.description.trim(),
         location: formData.location.trim(),
         lat: formData.lat,
         lng: formData.lng,
-        start_datetime: new Date(formData.start_datetime),
-        end_datetime: new Date(formData.end_datetime),
-        capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
+        start_datetime: startDate,
+        end_datetime: endDate,
+        capacity: formData.capacity ? parseInt(formData.capacity) : undefined, // Use undefined instead of null
         tags: formData.tags,
         images: formData.images, // Base64 images
         status: formData.status,
@@ -153,13 +188,22 @@ const EventEdit: React.FC = () => {
     }
   };
 
-  // Convert file to Base64 string
+  const handleLocationSelect = (lat: number, lng: number, address?: string) => {
+    setFormData(prev => ({
+      ...prev,
+      lat,
+      lng,
+      location: address || prev.location
+    }));
+  };
+
+  // Convert file to Base64 string - FIXED VERSION
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onerror = () => reject(reader.error);
     });
   };
 
@@ -334,7 +378,7 @@ const EventEdit: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(`/events/${id}`)}
               className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -535,25 +579,92 @@ const EventEdit: React.FC = () => {
 
             {/* Location */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Location
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Location
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowMap(!showMap)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-sm rounded-lg"
+                >
+                  <Globe className="w-4 h-4" />
+                  {showMap ? 'Hide Map' : 'Use Map'}
+                </button>
+              </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Location *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="Enter event location"
+                {showMap ? (
+                  <MapLocationPicker
+                    latitude={formData.lat}
+                    longitude={formData.lng}
+                    onLocationSelect={handleLocationSelect}
+                    onLocationNameChange={(address) => setFormData(prev => ({ ...prev, location: address }))}
+                    locationName={formData.location}
                   />
-                </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Location *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.location}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="Enter event location"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Click "Use Map" above to select location on an interactive map
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Latitude
+                        </label>
+                        <input
+                          type="number"
+                          step="0.000001"
+                          value={formData.lat || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, lat: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter latitude"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Longitude
+                        </label>
+                        <input
+                          type="number"
+                          step="0.000001"
+                          value={formData.lng || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, lng: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter longitude"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {(formData.lat !== 0 || formData.lng !== 0) && (
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-green-500" />
+                      <div>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          Location coordinates set: {formData.lat.toFixed(6)}, {formData.lng.toFixed(6)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -655,6 +766,35 @@ const EventEdit: React.FC = () => {
                       </button>
                     </span>
                   ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Current Event Info */}
+            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Current Event Info
+              </h2>
+              
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Event ID</p>
+                  <p className="font-mono text-gray-700 dark:text-gray-300">{id}</p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Created By</p>
+                  <p className="text-gray-700 dark:text-gray-300">{event?.createdBy}</p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Organization ID</p>
+                  <p className="text-gray-700 dark:text-gray-300">{event?.organiser_org_id || 'None'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Registered Users</p>
+                  <p className="text-gray-700 dark:text-gray-300">{event?.registeredUsers?.length || 0}</p>
                 </div>
               </div>
             </div>
