@@ -6,8 +6,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import en from '../locales/en.json';
 import bg from '../locales/bg.json';
 import de from '../locales/de.json';
-import ua from '../locales/ru.json';
-import { ru } from 'date-fns/locale';
+import ru from '../locales/ru.json';
 
 const resources = {
   en: {

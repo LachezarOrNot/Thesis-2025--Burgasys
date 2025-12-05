@@ -11,37 +11,30 @@ import { useTranslation } from 'react-i18next';
 import EventMap from '../components/EventMap';
 
 // --- START: DATE FIX & HELPER ---
-// Fixed helper to intelligently convert Firestore Timestamps, Strings, or JS Dates
 const processDate = (date: any): Date | null => {
   if (!date) return null;
 
-  // 1. Check if it's a Firestore Timestamp (has .toDate() method)
   if (typeof date.toDate === 'function') {
     return date.toDate();
   }
 
-  // 2. Check if it's a raw object with seconds (common in serialized Firestore data)
   if (typeof date === 'object' && typeof date.seconds === 'number') {
     return new Date(date.seconds * 1000);
   }
 
-  // 3. Check if it's already a JS Date object
   if (date instanceof Date) {
     return isValid(date) ? date : null;
   }
 
-  // 4. Try parsing string/number ONLY if it's a primitive type
   if (typeof date === 'string' || typeof date === 'number') {
     const parsed = new Date(date);
     return isValid(parsed) ? parsed : null;
   }
 
-  // If we got here, it's an unrecognized format
   console.warn('Unrecognized date format:', date);
   return null;
 };
 
-// Safe date formatting with validation
 const formatDateSafe = (date: any): string => {
   const dateObj = processDate(date);
   if (!dateObj) return 'N/A';
@@ -66,7 +59,6 @@ const EventDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [isRegistered, setIsRegistered] = useState(false);
-  const [showFullMap, setShowFullMap] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -75,7 +67,6 @@ const EventDetail: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    // Check if current user is already registered
     if (event && user) {
       const registered = event.registeredUsers?.includes(user.uid) || false;
       setIsRegistered(registered);
@@ -105,7 +96,6 @@ const EventDetail: React.FC = () => {
       await databaseService.registerForEvent(event.id, user.uid);
       setRegistrationStatus('success');
       setIsRegistered(true);
-      // Reload event to update counts
       loadEvent();
     } catch (error: any) {
       console.error('Error registering for event:', error);
@@ -159,13 +149,6 @@ const EventDetail: React.FC = () => {
       </div>
     );
   }
-
-  // --- DEBUGGING LOG ---
-  console.log('--- EventDetail Date Debug ---');
-  console.log('Raw start_datetime:', event.start_datetime);
-  console.log('Raw end_datetime:', event.end_datetime);
-  console.log('Formatted Start Date:', formatDateSafe(event.start_datetime));
-  console.log('--- End Date Debug ---');
 
   const isOwner = user?.uid === event.createdBy;
   const capacityReached = event.capacity ? (event.registeredUsers?.length || 0) >= event.capacity : false;
@@ -259,7 +242,7 @@ const EventDetail: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-10">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden">
           <div className="p-6 md:p-8">
             <div className="flex flex-col lg:flex-row gap-8">
@@ -290,39 +273,16 @@ const EventDetail: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900 dark:text-white">Location</p>
-                      <p className="text-gray-600 dark:text-gray-400 mb-2">{event.location}</p>
+                      <p className="text-gray-600 dark:text-gray-400">{event.location}</p>
                       
                       {hasValidLocation && (
-                        <>
-                          <div className="flex gap-2 mt-2">
-                            <button
-                              onClick={() => setShowFullMap(!showFullMap)}
-                              className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
-                            >
-                              <Globe className="w-4 h-4" />
-                              {showFullMap ? 'Hide Map' : 'Show Map'}
-                            </button>
-                            <button
-                              onClick={getDirections}
-                              className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
-                            >
-                              <Navigation className="w-4 h-4" />
-                              Get Directions
-                            </button>
-                          </div>
-                          
-                          {showFullMap && (
-                            <div className="mt-4">
-                              <EventMap
-                                latitude={event.lat}
-                                longitude={event.lng}
-                                eventName={event.name}
-                                location={event.location}
-                                height="300px"
-                              />
-                            </div>
-                          )}
-                        </>
+                        <button
+                          onClick={getDirections}
+                          className="mt-2 text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
+                        >
+                          <Navigation className="w-4 h-4" />
+                          Get Directions
+                        </button>
                       )}
                     </div>
                   </div>
@@ -399,25 +359,55 @@ const EventDetail: React.FC = () => {
                 {/* Tab Content */}
                 <div className="min-h-[200px]">
                   {activeTab === 'details' && (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
+                      {/* Description */}
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
-                        <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                        <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line leading-relaxed">
                           {event.description || 'No description provided.'}
                         </p>
                       </div>
 
+                      {/* Location Map - Full Width in Main Content */}
+                      {hasValidLocation && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Event Location</h3>
+                          <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <EventMap
+                              latitude={event.lat}
+                              longitude={event.lng}
+                              eventName={event.name}
+                              location={event.location}
+                              height="400px"
+                            />
+                          </div>
+                          <div className="mt-3 flex items-center justify-between">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              <MapPin className="w-4 h-4 inline mr-1" />
+                              {event.location}
+                            </p>
+                            <button
+                              onClick={getDirections}
+                              className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
+                            >
+                              <Navigation className="w-4 h-4" />
+                              Open in Maps
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Event Images */}
-                      {event.images && event.images.length > 0 && (
+                      {event.images && event.images.length > 1 && (
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Event Photos</h3>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {event.images.map((image, index) => (
+                            {event.images.slice(1).map((image, index) => (
                               <div key={index} className="relative group">
                                 <img
                                   src={image}
-                                  alt={`Event image ${index + 1}`}
-                                  className="w-full h-48 object-cover rounded-lg"
+                                  alt={`Event image ${index + 2}`}
+                                  className="w-full h-48 object-cover rounded-lg shadow-sm"
                                 />
                               </div>
                             ))}
@@ -433,7 +423,7 @@ const EventDetail: React.FC = () => {
                             {event.tags.map(tag => (
                               <span
                                 key={tag}
-                                className="px-3 py-1 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 rounded-full text-sm"
+                                className="px-4 py-2 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 rounded-full text-sm font-medium"
                               >
                                 {tag}
                               </span>
@@ -441,25 +431,11 @@ const EventDetail: React.FC = () => {
                           </div>
                         </div>
                       )}
-
-                      {/* Location Map (Mini version) */}
-                      {hasValidLocation && !showFullMap && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Location</h3>
-                          <EventMap
-                            latitude={event.lat}
-                            longitude={event.lng}
-                            eventName={event.name}
-                            location={event.location}
-                            height="200px"
-                          />
-                        </div>
-                      )}
                     </div>
                   )}
 
                   {activeTab === 'chat' && isRegistered && (
-                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 h-[500px]">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 h-[600px]">
                       <ChatRoom eventId={event.id} eventStatus={event.status} />
                     </div>
                   )}
@@ -510,9 +486,7 @@ const EventDetail: React.FC = () => {
                         <button
                           onClick={handleRegister}
                           disabled={registrationStatus === 'loading'}
-                          className={`w-full py-3 px-4 rounded-lg font-semibold text-lg transition-all transform active:scale-95 ${
-                            'bg-primary-500 hover:bg-primary-600 text-white shadow-lg hover:shadow-primary-500/30'
-                          }`}
+                          className="w-full py-3 px-4 rounded-lg font-semibold text-lg transition-all transform active:scale-95 bg-primary-500 hover:bg-primary-600 text-white shadow-lg hover:shadow-primary-500/30"
                         >
                           {registrationStatus === 'loading' ? (
                             <div className="flex items-center justify-center gap-2">
@@ -533,24 +507,20 @@ const EventDetail: React.FC = () => {
 
                   {/* Additional Info */}
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Event Information</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">Event Information</h4>
                     <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                       <li className="flex justify-between">
                         <span>Status:</span>
-                        <span className="font-medium">{event.status.replace('_', ' ')}</span>
+                        <span className="font-medium capitalize">{event.status.replace('_', ' ')}</span>
                       </li>
                       <li className="flex justify-between">
                         <span>Created:</span>
                         <span>{formatDateSafe(event.createdAt)}</span>
                       </li>
-                      <li className="flex justify-between">
-                        <span>Last Updated:</span>
-                        <span>{formatDateSafe(event.updatedAt)}</span>
-                      </li>
                       {hasValidLocation && (
-                        <li className="flex justify-between">
-                          <span>Coordinates:</span>
-                          <span className="font-mono text-xs">
+                        <li className="flex flex-col gap-1 pt-2">
+                          <span className="font-medium text-gray-700 dark:text-gray-300">Coordinates:</span>
+                          <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                             {event.lat.toFixed(6)}, {event.lng.toFixed(6)}
                           </span>
                         </li>
@@ -558,25 +528,26 @@ const EventDetail: React.FC = () => {
                     </ul>
                   </div>
 
-                  {/* Share Button */}
-                  <button
-                    onClick={handleShare}
-                    className="mt-4 w-full py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    Share Event
-                  </button>
-
-                  {/* Map Directions Button */}
-                  {hasValidLocation && (
+                  {/* Action Buttons */}
+                  <div className="mt-6 space-y-2">
                     <button
-                      onClick={getDirections}
-                      className="mt-2 w-full py-2 px-4 bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                      onClick={handleShare}
+                      className="w-full py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 font-medium"
                     >
-                      <Navigation className="w-4 h-4" />
-                      Get Directions
+                      <Share2 className="w-4 h-4" />
+                      Share Event
                     </button>
-                  )}
+
+                    {hasValidLocation && (
+                      <button
+                        onClick={getDirections}
+                        className="w-full py-2.5 px-4 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
+                      >
+                        <Navigation className="w-4 h-4" />
+                        Get Directions
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
