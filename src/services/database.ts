@@ -46,6 +46,14 @@ private safeDateConvert(date: any): Date {
   if (date.toDate && typeof date.toDate === 'function') {
     return date.toDate();
   }
+
+  if (typeof date === 'object' && typeof date.seconds === 'number') {
+  console.log('🔍 Converting seconds:', date.seconds);
+  const converted = new Date(date.seconds * 1000);
+  console.log('🔍 Converted date object:', converted);
+  console.log('🔍 Time:', converted.getHours(), ':', converted.getMinutes());
+  return converted;
+}
   
   // ✅ CRITICAL FIX: Handle serialized Firestore Timestamp (object with seconds)
   if (typeof date === 'object' && typeof date.seconds === 'number') {
