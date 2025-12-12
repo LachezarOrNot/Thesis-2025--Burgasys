@@ -1,9 +1,10 @@
+// src/components/Navbar.tsx - Updated version with Admin link
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   LogOut, Moon, Sun, User, ChevronDown, Menu, X, 
   Building, Plus, Users, Globe, Calendar, History, 
-  LayoutDashboard, Shield 
+  LayoutDashboard, Shield, Bell, Settings, UserCheck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -242,6 +243,17 @@ const Navbar: React.FC = () => {
               <div className="hidden md:flex items-center gap-4">
                 <RoleBadge role={user.role} size="sm" />
                 
+                {/* Admin Dashboard Link - Visible only to admins */}
+                {user.role === 'admin' && (
+                  <Link
+                    to="/users"
+                    className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+                
                 {/* User Menu */}
                 <div className="relative" ref={userMenuRef}>
                   <button 
@@ -290,14 +302,32 @@ const Navbar: React.FC = () => {
                     </Link>
 
                     {user.role === 'admin' && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-t border-gray-100 dark:border-gray-600"
-                      >
-                        <Shield className="w-4 h-4" />
-                        {t('navbar.userMenu.adminPanel')}
-                      </Link>
+                      <>
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors border-t border-gray-100 dark:border-gray-600"
+                        >
+                          <Shield className="w-4 h-4" />
+                          {t('navbar.userMenu.adminPanel')}
+                        </Link>
+                        <Link
+                          to="/users"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        >
+                          <Users className="w-4 h-4" />
+                          User Management
+                        </Link>
+                        <Link
+                          to="/admin/user-approvals"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                          User Approvals
+                        </Link>
+                      </>
                     )}
 
                     <button
@@ -345,6 +375,39 @@ const Navbar: React.FC = () => {
         >
           {user ? (
             <div className="flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {/* Admin Section - Mobile */}
+              {user.role === 'admin' && (
+                <>
+                  <div className="px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Admin Panel
+                  </div>
+                  <Link
+                    to="/users"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    User Management
+                  </Link>
+                  <Link
+                    to="/admin/user-approvals"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    User Approvals
+                  </Link>
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Admin Dashboard
+                  </Link>
+                </>
+              )}
+
               {/* Events Section */}
               <div className="px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {t('navbar.eventsDropdown.title')}
@@ -432,17 +495,6 @@ const Navbar: React.FC = () => {
                 <User className="w-4 h-4" />
                 {t('navbar.userMenu.profile')}
               </Link>
-
-              {user.role === 'admin' && (
-                <Link
-                  to="/admin"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <Shield className="w-4 h-4" />
-                  {t('navbar.userMenu.adminPanel')}
-                </Link>
-              )}
 
               <button
                 onClick={() => {

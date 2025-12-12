@@ -120,6 +120,49 @@ private safeDateConvert(date: any): Date {
     return data;
   }
 
+  // NEW METHOD: Check and update finished events
+  async checkAndUpdateFinishedEvents(): Promise<{ updated: number }> {
+    try {
+      const now = new Date();
+      console.log('🔍 Checking for finished events at:', now.toISOString());
+      
+      // Query events that are published and have passed their end date
+      const eventsQuery = query(
+        collection(db, 'events'),
+        where('status', '==', 'published'),
+        where('end_datetime', '<', now)
+      );
+      
+      const eventsSnap = await getDocs(eventsQuery);
+      
+      if (eventsSnap.empty) {
+        console.log('✅ No events need to be marked as finished');
+        return { updated: 0 };
+      }
+      
+      const batch = writeBatch(db);
+      let updatedCount = 0;
+      
+      eventsSnap.forEach((doc) => {
+        batch.update(doc.ref, {
+          status: 'finished',
+          updatedAt: now
+        });
+        updatedCount++;
+        console.log(`🔄 Marking event as finished: ${doc.id}`);
+      });
+      
+      await batch.commit();
+      console.log(`✅ Updated ${updatedCount} events to finished status`);
+      
+      return { updated: updatedCount };
+      
+    } catch (error) {
+      console.error('❌ Error updating finished events:', error);
+      return { updated: 0 };
+    }
+  }
+
   async createUser(userData: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User> {
     const userRef = doc(db, 'users', userData.uid);
     const user: User = {

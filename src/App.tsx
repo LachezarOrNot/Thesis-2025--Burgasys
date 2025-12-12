@@ -23,6 +23,7 @@ const Calendar = React.lazy(() => import('./pages/Calendar'));
 const PastEvents = React.lazy(() => import('./pages/PastEvents'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 const Admin = React.lazy(() => import('./pages/Admin'));
+const UsersManagement = React.lazy(() => import('./pages/UsersManagement'));
 const AdminUserApprovals = React.lazy(() => import('./pages/AdminUserApprovals'));
 const Organization = React.lazy(() => import('./pages/Organization'));
 const CreateOrganization = React.lazy(() => import('./pages/CreateOrganization'));
@@ -126,6 +127,11 @@ function App() {
                   <Route path="/admin" element={
                     <ProtectedRoute requiredRole="admin">
                       <Admin />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/users" element={
+                    <ProtectedRoute requiredRole="admin">
+                       <UsersManagement />
                     </ProtectedRoute>
                   } />
                   <Route path="/admin/user-approvals" element={
