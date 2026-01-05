@@ -1,3 +1,4 @@
+// src/components/ChatRoom.tsx - Full Component with Video Call Integration
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatMessage } from '../types';
@@ -17,14 +18,15 @@ import {
   Shield, 
   Sparkles,
   Image as ImageIcon,
-  Upload,
   Download,
   ZoomIn,
-  Smile
+  Smile,
+  Video
 } from 'lucide-react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTranslation } from 'react-i18next';
+import VideoCall from './VideoCall';
 
 interface ChatRoomProps {
   eventId: string;
@@ -32,6 +34,9 @@ interface ChatRoomProps {
 }
 
 type ChatTheme = 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'dark';
+
+// IMPORTANT: Replace with your Agora App ID from console.agora.io
+const AGORA_APP_ID = '8e054c516d084a4a96903f7114649d9d';
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const { user } = useAuth();
@@ -47,6 +52,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showVideoCall, setShowVideoCall] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -398,6 +404,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     );
   }
 
+  // Show video call if active
+  if (showVideoCall) {
+    return (
+      <VideoCall 
+        eventId={eventId}
+        appId={AGORA_APP_ID}
+        onClose={() => setShowVideoCall(false)}
+      />
+    );
+  }
+
   return (
     <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-gray-200/50 dark:border-gray-700/50 h-[650px] flex flex-col overflow-hidden">
       {/* Animated background gradients */}
@@ -406,14 +423,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
         <div className={`absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr ${currentTheme.gradient} opacity-5 blur-3xl animate-pulse`} style={{ animationDelay: '1s' }}></div>
       </div>
 
-      {/* Ultra-modern Chat Header */}
+      {/* Ultra-modern Chat Header with Video Call Button */}
       <div className={`relative ${currentTheme.primary} text-white p-6 shadow-2xl overflow-hidden`}>
-        {/* Animated shine effect - FIXED HERE */}
+        {/* Animated shine effect */}
         <div 
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
-          style={{ 
-            animation: 'shimmer 3s infinite'
-          }}
+          style={{ animation: 'shimmer 3s infinite' }}
         ></div>
         
         <div className="relative z-10 flex items-center justify-between">
@@ -448,6 +463,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                 {t('chat.connectionIssue')}
               </div>
             )}
+
+            {/* Video Call Button */}
+            <button
+              onClick={() => setShowVideoCall(true)}
+              className="group relative p-3.5 bg-white/20 hover:bg-white/30 backdrop-blur-xl rounded-[0.875rem] transition-all duration-300 shadow-xl border border-white/30 hover:scale-110"
+              title="Start Video Call"
+            >
+              <Video className="w-5 h-5" />
+              <div className="absolute inset-0 bg-white/20 rounded-[0.875rem] opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white">
+                <div className="absolute inset-0 bg-green-400 rounded-full animate-ping"></div>
+              </div>
+            </button>
             
             {/* Ultra-modern Theme Picker */}
             <div className="relative">
@@ -847,7 +875,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
         </form>
       </div>
 
-      {/* Removed the problematic <style jsx> block */}
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 };

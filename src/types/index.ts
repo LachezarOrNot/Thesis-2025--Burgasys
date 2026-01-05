@@ -150,3 +150,29 @@ export interface UserApprovalRequest {
     description?: string;
   };
 }
+
+export interface CallSession {
+  id: string;
+  channelName: string;
+  callerId: string;
+  callerName: string;
+  receiverId: string;
+  receiverName: string;
+  eventId?: string;
+  callType: 'audio' | 'video';
+  status: 'ringing' | 'ongoing' | 'ended' | 'missed' | 'rejected';
+  startedAt: Date;
+  endedAt?: Date;
+  duration?: number; 
+  agoraTokens?: {
+    callerToken: string;
+    receiverToken: string;
+  };
+}
+
+export interface CallStatus {
+  userId: string;
+  isInCall: boolean;
+  currentCallId?: string;
+  lastSeen: Date;
+}

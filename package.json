@@ -13,6 +13,9 @@
   "dependencies": {
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.10.99",
+    "agora-access-token": "^2.0.4",
+    "agora-rtc-sdk-ng": "^4.24.2",
+    "agora-rtm-sdk": "^2.2.3-1",
     "date-fns": "^2.30.0",
     "firebase": "^10.14.1",
     "framer-motion": "^12.23.24",

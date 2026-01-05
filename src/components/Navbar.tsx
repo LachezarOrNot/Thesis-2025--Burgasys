@@ -319,14 +319,6 @@ const Navbar: React.FC = () => {
                           <Users className="w-4 h-4" />
                           User Management
                         </Link>
-                        <Link
-                          to="/admin/user-approvals"
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          User Approvals
-                        </Link>
                       </>
                     )}
 
