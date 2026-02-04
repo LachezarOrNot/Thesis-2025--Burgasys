@@ -1,14 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import AgoraRTC, {
-  IAgoraRTCClient,
-  ICameraVideoTrack,
-  IMicrophoneAudioTrack,
-  IAgoraRTCRemoteUser,
-  UID,
-  IRemoteVideoTrack,
-  IRemoteAudioTrack,
-  ILocalVideoTrack
-} from 'agora-rtc-sdk-ng';
 import {
   Video,
   VideoOff,
@@ -20,254 +10,298 @@ import {
   Users,
   Maximize2,
   Minimize2,
-  VolumeX,
-  Camera,
   X,
-  User
+  WifiOff,
+  Copy,
+  Link
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 
 interface VideoCallProps {
   eventId: string;
   onClose: () => void;
-  appId: string;
-  token?: string;
+  userName?: string;
 }
 
-interface RemoteUser {
-  uid: UID;
-  videoTrack?: IRemoteVideoTrack;
-  audioTrack?: IRemoteAudioTrack;
-  hasVideo: boolean;
-  hasAudio: boolean;
+// Declare Jitsi types
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI: any;
+  }
 }
 
-const VideoCall: React.FC<VideoCallProps> = ({ eventId, onClose, appId, token }) => {
-  const { user } = useAuth();
-  const [client] = useState<IAgoraRTCClient>(() => AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' }));
-  
-  const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
-  const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
-  const [remoteUsers, setRemoteUsers] = useState<Map<UID, RemoteUser>>(new Map());
-  
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(false);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
+const VideoCall: React.FC<VideoCallProps> = ({ 
+  eventId, 
+  onClose, 
+  userName = 'Guest'
+}) => {
+  const jitsiContainerRef = useRef<HTMLDivElement>(null);
+  const apiRef = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [showJoinOptions, setShowJoinOptions] = useState(true);
-  
-  const localVideoRef = useRef<HTMLDivElement>(null);
-  const screenShareTrackRef = useRef<ILocalVideoTrack | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [participantCount, setParticipantCount] = useState(1);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const initializingRef = useRef(false);
 
-  // Join the channel immediately on mount
+  // Generate a clean room name
+  const roomName = `eventbeta-${eventId.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${Date.now().toString(36)}`;
+
   useEffect(() => {
-    const joinChannel = async () => {
-      try {
-        setIsConnecting(true);
-        
-        // Setup event listeners
-        client.on('user-published', handleUserPublished);
-        client.on('user-unpublished', handleUserUnpublished);
-        client.on('user-left', handleUserLeft);
-        
-        // Join the channel
-        await client.join(appId, eventId, token || null, user?.uid || null);
-        
-        console.log('Joined channel successfully');
-        setIsConnecting(false);
-        
-      } catch (err) {
-        console.error('Failed to join channel:', err);
-        setError('Failed to join the call. Please try again.');
-        setIsConnecting(false);
-      }
-    };
+    let mounted = true;
+    let loadTimeout: NodeJS.Timeout;
 
-    joinChannel();
+    const loadJitsiScript = (): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        // Check if script already exists
+        if (window.JitsiMeetExternalAPI) {
+          resolve();
+          return;
+        }
 
-    return () => {
-      cleanup();
-    };
-  }, []);
+        // Check if script is already being loaded
+        const existingScript = document.querySelector('script[src*="external_api.js"]');
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve());
+          existingScript.addEventListener('error', () => reject(new Error('Script load failed')));
+          return;
+        }
 
-  // Handle remote user published
-  const handleUserPublished = async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
-    try {
-      await client.subscribe(user, mediaType);
-      
-      setRemoteUsers(prev => {
-        const newMap = new Map(prev);
-        const existingUser = newMap.get(user.uid) || {
-          uid: user.uid,
-          hasVideo: false,
-          hasAudio: false
+        const script = document.createElement('script');
+        script.src = 'https://meet.jit.si/external_api.js';
+        script.async = true;
+        
+        script.onload = () => {
+          if (window.JitsiMeetExternalAPI) {
+            resolve();
+          } else {
+            reject(new Error('JitsiMeetExternalAPI not available after script load'));
+          }
         };
         
-        if (mediaType === 'video' && user.videoTrack) {
-          existingUser.videoTrack = user.videoTrack as IRemoteVideoTrack;
-          existingUser.hasVideo = true;
-          
-          setTimeout(() => {
-            const container = document.getElementById(`remote-${user.uid}`);
-            if (container && user.videoTrack) {
-              user.videoTrack.play(container);
-            }
-          }, 100);
-        }
+        script.onerror = () => {
+          reject(new Error('Failed to load Jitsi script'));
+        };
         
-        if (mediaType === 'audio' && user.audioTrack) {
-          existingUser.audioTrack = user.audioTrack as IRemoteAudioTrack;
-          existingUser.hasAudio = true;
-          user.audioTrack?.play();
-        }
-        
-        newMap.set(user.uid, existingUser);
-        return newMap;
+        document.head.appendChild(script);
       });
-    } catch (err) {
-      console.error('Error handling user published:', err);
-    }
-  };
+    };
 
-  // Handle remote user unpublished
-  const handleUserUnpublished = (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
-    setRemoteUsers(prev => {
-      const newMap = new Map(prev);
-      const existingUser = newMap.get(user.uid);
-      
-      if (existingUser) {
-        if (mediaType === 'video') {
-          existingUser.hasVideo = false;
-          existingUser.videoTrack = undefined;
-        }
-        if (mediaType === 'audio') {
-          existingUser.hasAudio = false;
-          existingUser.audioTrack = undefined;
-        }
-        newMap.set(user.uid, existingUser);
+    const createJitsiMeeting = async () => {
+      if (!mounted || !jitsiContainerRef.current || initializingRef.current) {
+        return;
       }
-      
-      return newMap;
-    });
-  };
 
-  // Handle user left
-  const handleUserLeft = (user: IAgoraRTCRemoteUser) => {
-    setRemoteUsers(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(user.uid);
-      return newMap;
-    });
-  };
+      initializingRef.current = true;
 
-  // Join without media (listen only) - DEFAULT OPTION
-  const joinWithoutMedia = () => {
-    setShowJoinOptions(false);
-    // User joins as listener without any tracks
-  };
-
-  // Try to enable audio
-  const enableAudio = async () => {
-    try {
-      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-      setLocalAudioTrack(audioTrack);
-      await client.publish(audioTrack);
-      setIsAudioEnabled(true);
-    } catch (err) {
-      console.error('Failed to enable audio:', err);
-      setError('Could not access microphone. You can still listen to the call.');
-    }
-  };
-
-  // Try to enable video
-  const enableVideo = async () => {
-    try {
-      const videoTrack = await AgoraRTC.createCameraVideoTrack();
-      setLocalVideoTrack(videoTrack);
-      
-      if (localVideoRef.current) {
-        videoTrack.play(localVideoRef.current);
-      }
-      
-      await client.publish(videoTrack);
-      setIsVideoEnabled(true);
-    } catch (err) {
-      console.error('Failed to enable video:', err);
-      setError('Could not access camera. You can still listen to the call.');
-    }
-  };
-
-  // Toggle video
-  const toggleVideo = async () => {
-    if (isVideoEnabled) {
-      // Disable video
-      if (localVideoTrack) {
-        await localVideoTrack.setEnabled(false);
-      }
-      setIsVideoEnabled(false);
-    } else {
-      // Enable video
-      await enableVideo();
-    }
-  };
-
-  // Toggle audio
-  const toggleAudio = async () => {
-    if (isAudioEnabled) {
-      // Disable audio
-      if (localAudioTrack) {
-        await localAudioTrack.setEnabled(false);
-      }
-      setIsAudioEnabled(false);
-    } else {
-      // Enable audio
-      await enableAudio();
-    }
-  };
-
-  // Toggle screen share
-  const toggleScreenShare = async () => {
-    if (isScreenSharing) {
       try {
-        if (screenShareTrackRef.current) {
-          await client.unpublish(screenShareTrackRef.current);
-          screenShareTrackRef.current.stop();
-          screenShareTrackRef.current.close();
-          screenShareTrackRef.current = null;
+        // Clear container
+        if (jitsiContainerRef.current) {
+          jitsiContainerRef.current.innerHTML = '';
         }
+
+        const domain = 'meet.jit.si';
+        const options = {
+          roomName: roomName,
+          width: '100%',
+          height: '100%',
+          parentNode: jitsiContainerRef.current,
+          configOverwrite: {
+            startWithAudioMuted: false,
+            startWithVideoMuted: false,
+            prejoinPageEnabled: false,
+            disableDeepLinking: true,
+            enableWelcomePage: false,
+            enableClosePage: false,
+            disableInviteFunctions: false,
+            hideConferenceSubject: false,
+            resolution: 720,
+            constraints: {
+              video: {
+                height: {
+                  ideal: 720,
+                  max: 1080,
+                  min: 240
+                }
+              }
+            }
+          },
+          interfaceConfigOverwrite: {
+            DISABLE_JOIN_LEAVE_NOTIFICATIONS: false,
+            SHOW_JITSI_WATERMARK: false,
+            SHOW_WATERMARK_FOR_GUESTS: false,
+            SHOW_BRAND_WATERMARK: false,
+            SHOW_POWERED_BY: false,
+            APP_NAME: 'EventBeta',
+            NATIVE_APP_NAME: 'EventBeta',
+            PROVIDER_NAME: 'EventBeta',
+            MOBILE_APP_PROMO: false
+          },
+          userInfo: {
+            displayName: userName
+          }
+        };
+
+        const api = new window.JitsiMeetExternalAPI(domain, options);
+        apiRef.current = api;
         
-        if (localVideoTrack) {
-          await client.publish(localVideoTrack);
+        if (mounted) {
+          setInviteLink(`https://meet.jit.si/${roomName}`);
         }
-        
-        setIsScreenSharing(false);
-      } catch (err) {
-        console.error('Error stopping screen share:', err);
+
+        // Set loading timeout
+        loadTimeout = setTimeout(() => {
+          if (mounted && isLoading) {
+            setIsLoading(false);
+          }
+        }, 5000);
+
+        // Event listeners
+        api.addEventListeners({
+          readyToClose: () => {
+            if (mounted) {
+              console.log('Ready to close');
+              onClose();
+            }
+          },
+          participantJoined: (participant: any) => {
+            if (mounted) {
+              console.log('Participant joined:', participant);
+              setParticipantCount(prev => prev + 1);
+            }
+          },
+          participantLeft: (participant: any) => {
+            if (mounted) {
+              console.log('Participant left:', participant);
+              setParticipantCount(prev => Math.max(1, prev - 1));
+            }
+          },
+          audioMuteStatusChanged: (data: any) => {
+            if (mounted) {
+              setIsAudioMuted(data.muted);
+            }
+          },
+          videoMuteStatusChanged: (data: any) => {
+            if (mounted) {
+              setIsVideoMuted(data.muted);
+            }
+          },
+          screenSharingStatusChanged: (data: any) => {
+            if (mounted) {
+              setIsScreenSharing(data.on);
+            }
+          },
+          videoConferenceJoined: (data: any) => {
+            if (mounted) {
+              console.log('Video conference joined:', data);
+              setIsLoading(false);
+              setHasError(false);
+              clearTimeout(loadTimeout);
+            }
+          },
+          videoConferenceLeft: () => {
+            if (mounted) {
+              console.log('Video conference left');
+              onClose();
+            }
+          },
+          errorOccurred: (error: any) => {
+            if (mounted) {
+              console.error('Jitsi error:', error);
+              setErrorMessage(error?.message || 'Unknown error occurred');
+              setHasError(true);
+              setIsLoading(false);
+            }
+          }
+        });
+
+        // Get initial participant count after a delay
+        setTimeout(() => {
+          if (mounted && api) {
+            api.getNumberOfParticipants().then((count: number) => {
+              if (mounted) {
+                setParticipantCount(count > 0 ? count : 1);
+              }
+            }).catch((err: any) => {
+              console.error('Error getting participant count:', err);
+            });
+          }
+        }, 2000);
+
+      } catch (error: any) {
+        console.error('Failed to create Jitsi meeting:', error);
+        if (mounted) {
+          setErrorMessage(error?.message || 'Failed to initialize video call');
+          setHasError(true);
+          setIsLoading(false);
+        }
+      } finally {
+        initializingRef.current = false;
       }
-    } else {
+    };
+
+    const initializeJitsi = async () => {
+      if (!mounted) return;
+
+      setIsLoading(true);
+      setHasError(false);
+      setErrorMessage('');
+
       try {
-        const screenTrack = await AgoraRTC.createScreenVideoTrack({}, 'disable') as ILocalVideoTrack;
-        screenShareTrackRef.current = screenTrack;
-        
-        if (localVideoTrack) {
-          await client.unpublish(localVideoTrack);
+        await loadJitsiScript();
+        if (mounted) {
+          await createJitsiMeeting();
         }
-        
-        await client.publish(screenTrack);
-        setIsScreenSharing(true);
-      } catch (err) {
-        console.error('Error starting screen share:', err);
+      } catch (error: any) {
+        console.error('Jitsi initialization error:', error);
+        if (mounted) {
+          setErrorMessage(error?.message || 'Failed to load video call');
+          setHasError(true);
+          setIsLoading(false);
+        }
       }
+    };
+
+    initializeJitsi();
+
+    return () => {
+      mounted = false;
+      clearTimeout(loadTimeout);
+      if (apiRef.current) {
+        try {
+          apiRef.current.dispose();
+        } catch (err) {
+          console.error('Error disposing Jitsi API:', err);
+        }
+        apiRef.current = null;
+      }
+    };
+  }, [eventId, userName, roomName, onClose]);
+
+  const toggleAudio = () => {
+    if (apiRef.current) {
+      apiRef.current.executeCommand('toggleAudio');
     }
   };
 
-  // Toggle fullscreen
+  const toggleVideo = () => {
+    if (apiRef.current) {
+      apiRef.current.executeCommand('toggleVideo');
+    }
+  };
+
+  const toggleScreenShare = () => {
+    if (apiRef.current) {
+      apiRef.current.executeCommand('toggleShareScreen');
+    }
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
+      jitsiContainerRef.current?.requestFullscreen();
       setIsFullscreen(true);
     } else {
       document.exitFullscreen();
@@ -275,313 +309,293 @@ const VideoCall: React.FC<VideoCallProps> = ({ eventId, onClose, appId, token })
     }
   };
 
-  // Leave call
-  const leaveCall = async () => {
-    await cleanup();
-    onClose();
-  };
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
 
-  // Cleanup function
-  const cleanup = async () => {
-    try {
-      if (localAudioTrack) {
-        localAudioTrack.stop();
-        localAudioTrack.close();
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const leaveCall = () => {
+    if (apiRef.current) {
+      try {
+        apiRef.current.executeCommand('hangup');
+        setTimeout(() => {
+          if (apiRef.current) {
+            apiRef.current.dispose();
+            apiRef.current = null;
+          }
+          onClose();
+        }, 100);
+      } catch (err) {
+        console.error('Error leaving call:', err);
+        onClose();
       }
-      if (localVideoTrack) {
-        localVideoTrack.stop();
-        localVideoTrack.close();
-      }
-      if (screenShareTrackRef.current) {
-        screenShareTrackRef.current.stop();
-        screenShareTrackRef.current.close();
-      }
-      
-      client.removeAllListeners();
-      await client.leave();
-    } catch (err) {
-      console.error('Error during cleanup:', err);
+    } else {
+      onClose();
     }
   };
 
-  // Calculate grid layout
-  const getGridClass = () => {
-    const totalUsers = remoteUsers.size + (localVideoTrack || localAudioTrack ? 1 : 0);
-    if (totalUsers === 0) return 'grid-cols-1';
-    if (totalUsers === 1) return 'grid-cols-1';
-    if (totalUsers === 2) return 'grid-cols-2';
-    if (totalUsers <= 4) return 'grid-cols-2 grid-rows-2';
-    return 'grid-cols-2 grid-rows-2';
+  const copyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      // Could add a toast notification here instead of alert
+      const button = document.activeElement as HTMLButtonElement;
+      const originalText = button?.textContent;
+      if (button) {
+        button.textContent = '✓ Copied!';
+        setTimeout(() => {
+          if (button.textContent === '✓ Copied!') {
+            button.textContent = originalText;
+          }
+        }, 2000);
+      }
+    } catch (err) {
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = inviteLink;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        alert('Invite link copied!');
+      } catch (e) {
+        alert('Failed to copy link');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const openInviteLink = () => {
+    window.open(inviteLink, '_blank', 'noopener,noreferrer');
+  };
+
+  const retryConnection = () => {
+    setHasError(false);
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    if (apiRef.current) {
+      try {
+        apiRef.current.dispose();
+      } catch (err) {
+        console.error('Error disposing API during retry:', err);
+      }
+      apiRef.current = null;
+    }
+    
+    // Force re-render to trigger useEffect
+    window.location.reload();
   };
 
   return (
-    <div 
-      ref={containerRef}
-      className="fixed inset-0 z-50 bg-black"
-    >
+    <div className="fixed inset-0 z-50 bg-black">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-black/80 p-4">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/95 to-transparent p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <span className="text-white font-bold">Live Call</span>
             </div>
-            <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-lg">
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-lg backdrop-blur-sm">
               <Users className="w-4 h-4 text-white" />
-              <span className="text-white">{remoteUsers.size + (localVideoTrack || localAudioTrack ? 1 : 0)}</span>
+              <span className="text-white">{participantCount}</span>
             </div>
+            {inviteLink && !isLoading && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={copyInviteLink}
+                  className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
+                  title="Copy invite link"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Copy Link
+                </button>
+                <button
+                  onClick={openInviteLink}
+                  className="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
+                  title="Open invite link in new tab"
+                >
+                  <Link className="w-3.5 h-3.5" />
+                  Share
+                </button>
+              </div>
+            )}
           </div>
           
           <button
             onClick={leaveCall}
-            className="p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-all"
+            className="p-2 bg-red-500 hover:bg-red-600 rounded-lg transition-all hover:scale-105"
+            title="Close"
           >
             <X className="w-5 h-5 text-white" />
           </button>
         </div>
       </div>
 
-      {/* Video Grid */}
-      <div className={`h-full w-full grid ${getGridClass()} gap-2 p-4 pt-16`}>
-        {/* Local Video - Only show if enabled */}
-        {(localVideoTrack || localAudioTrack) && (
-          <div className="relative bg-gray-900 rounded-xl overflow-hidden">
-            <div ref={localVideoRef} className="w-full h-full"></div>
-            
-            {!isVideoEnabled && localVideoTrack && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-white">Camera Off</p>
-                  <p className="text-gray-400 text-sm">{user?.displayName || 'You'}</p>
-                </div>
-              </div>
-            )}
-            
-            <div className="absolute bottom-2 left-2 bg-black/50 px-3 py-1 rounded-lg">
-              <p className="text-white text-sm">{user?.displayName || 'You'}</p>
-            </div>
-            
-            {!isAudioEnabled && localAudioTrack && (
-              <div className="absolute top-2 right-2 bg-red-500 p-1 rounded">
-                <MicOff className="w-4 h-4 text-white" />
-              </div>
-            )}
-          </div>
-        )}
+      {/* Jitsi Container */}
+      <div 
+        ref={jitsiContainerRef} 
+        className="w-full h-full"
+        style={{ paddingTop: '72px', paddingBottom: '96px' }}
+      />
 
-        {/* Remote Videos */}
-        {Array.from(remoteUsers.values()).map((remoteUser) => (
-          <div
-            key={remoteUser.uid}
-            className="relative bg-gray-900 rounded-xl overflow-hidden"
-          >
-            <div id={`remote-${remoteUser.uid}`} className="w-full h-full"></div>
+      {/* Custom Controls Overlay */}
+      {!isLoading && !hasError && (
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/95 to-transparent p-6">
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {/* Audio toggle */}
+            <button
+              onClick={toggleAudio}
+              className={`p-4 rounded-full transition-all hover:scale-105 ${
+                !isAudioMuted 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-red-500 hover:bg-red-600'
+              }`}
+              title={isAudioMuted ? 'Unmute' : 'Mute'}
+            >
+              {!isAudioMuted ? (
+                <Mic className="w-6 h-6 text-white" />
+              ) : (
+                <MicOff className="w-6 h-6 text-white" />
+              )}
+            </button>
             
-            {!remoteUser.hasVideo && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-white">
-                    {remoteUser.hasAudio ? 'Audio Only' : 'Listening'}
-                  </p>
-                  <p className="text-gray-400 text-sm">User {remoteUser.uid}</p>
-                </div>
-              </div>
-            )}
+            {/* Video toggle */}
+            <button
+              onClick={toggleVideo}
+              className={`p-4 rounded-full transition-all hover:scale-105 ${
+                !isVideoMuted 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-red-500 hover:bg-red-600'
+              }`}
+              title={isVideoMuted ? 'Start Video' : 'Stop Video'}
+            >
+              {!isVideoMuted ? (
+                <Video className="w-6 h-6 text-white" />
+              ) : (
+                <VideoOff className="w-6 h-6 text-white" />
+              )}
+            </button>
             
-            <div className="absolute bottom-2 left-2 bg-black/50 px-3 py-1 rounded-lg">
-              <p className="text-white text-sm">User {remoteUser.uid}</p>
-            </div>
+            {/* Leave call */}
+            <button
+              onClick={leaveCall}
+              className="p-5 bg-red-500 hover:bg-red-600 rounded-full transition-all hover:scale-105 shadow-lg"
+              title="Leave Call"
+            >
+              <PhoneOff className="w-6 h-6 text-white" />
+            </button>
             
-            {!remoteUser.hasAudio && (
-              <div className="absolute top-2 right-2 bg-red-500 p-1 rounded">
-                <VolumeX className="w-4 h-4 text-white" />
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Empty state - no users */}
-        {remoteUsers.size === 0 && !localVideoTrack && !localAudioTrack && !showJoinOptions && (
-          <div className="flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-12 h-12 text-gray-400" />
-              </div>
-              <h3 className="text-white text-xl font-bold mb-2">Waiting for others to join</h3>
-              <p className="text-gray-400">You're the first one here. Others will appear when they join.</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Join Options Overlay */}
-      {showJoinOptions && !isConnecting && (
-        <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-20">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full mx-4">
-            <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white text-center mb-2">Join the Call</h2>
-            <p className="text-gray-300 text-center mb-8">
-              You can join now and enable your camera/microphone later
-            </p>
+            {/* Screen share */}
+            <button
+              onClick={toggleScreenShare}
+              className={`p-4 rounded-full transition-all hover:scale-105 ${
+                isScreenSharing 
+                  ? 'bg-blue-500 hover:bg-blue-600' 
+                  : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+              title={isScreenSharing ? 'Stop Sharing' : 'Share Screen'}
+            >
+              {isScreenSharing ? (
+                <MonitorOff className="w-6 h-6 text-white" />
+              ) : (
+                <Monitor className="w-6 h-6 text-white" />
+              )}
+            </button>
             
-            <div className="space-y-4">
-              <button
-                onClick={joinWithoutMedia}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-colors"
-              >
-                Join Now (Listen Only)
-              </button>
-              
-              <div className="flex gap-4">
-                <button
-                  onClick={async () => {
-                    setShowJoinOptions(false);
-                    await enableAudio();
-                  }}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors"
-                >
-                  With Mic
-                </button>
-                
-                <button
-                  onClick={async () => {
-                    setShowJoinOptions(false);
-                    await enableVideo();
-                  }}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-medium transition-colors"
-                >
-                  With Camera
-                </button>
-              </div>
-              
-              <button
-                onClick={async () => {
-                  setShowJoinOptions(false);
-                  await enableAudio();
-                  await enableVideo();
-                }}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-4 rounded-xl font-bold text-lg transition-colors"
-              >
-                Join with Camera & Mic
-              </button>
-            </div>
-            
-            <p className="text-gray-400 text-sm text-center mt-6">
-              You can always enable your camera or microphone later during the call
-            </p>
+            {/* Fullscreen */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-4 bg-gray-700 hover:bg-gray-600 rounded-full transition-all hover:scale-105"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-6 h-6 text-white" />
+              ) : (
+                <Maximize2 className="w-6 h-6 text-white" />
+              )}
+            </button>
           </div>
         </div>
       )}
 
-      {/* Controls */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/80 p-4">
-        <div className="flex items-center justify-center gap-3">
-          {/* Audio toggle */}
-          <button
-            onClick={toggleAudio}
-            className={`p-3 rounded-lg ${
-              isAudioEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'
-            }`}
-          >
-            {isAudioEnabled ? (
-              <Mic className="w-5 h-5 text-white" />
-            ) : (
-              <MicOff className="w-5 h-5 text-white" />
-            )}
-          </button>
-          
-          {/* Video toggle */}
-          <button
-            onClick={toggleVideo}
-            className={`p-3 rounded-lg ${
-              isVideoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500 hover:bg-red-600'
-            }`}
-          >
-            {isVideoEnabled ? (
-              <Video className="w-5 h-5 text-white" />
-            ) : (
-              <VideoOff className="w-5 h-5 text-white" />
-            )}
-          </button>
-          
-          {/* Leave call */}
-          <button
-            onClick={leaveCall}
-            className="p-3 bg-red-500 hover:bg-red-600 rounded-lg"
-          >
-            <PhoneOff className="w-5 h-5 text-white" />
-          </button>
-          
-          {/* Screen share (only if video is enabled) */}
-          {isVideoEnabled && (
-            <button
-              onClick={toggleScreenShare}
-              className={`p-3 rounded-lg ${
-                isScreenSharing ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
-              }`}
-            >
-              {isScreenSharing ? (
-                <MonitorOff className="w-5 h-5 text-white" />
-              ) : (
-                <Monitor className="w-5 h-5 text-white" />
-              )}
-            </button>
-          )}
-          
-          {/* Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-3 bg-gray-700 hover:bg-gray-600 rounded-lg"
-          >
-            {isFullscreen ? (
-              <Minimize2 className="w-5 h-5 text-white" />
-            ) : (
-              <Maximize2 className="w-5 h-5 text-white" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Connecting State */}
-      {isConnecting && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-30">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white font-bold">Joining call...</p>
+      {/* Loading State */}
+      {isLoading && !hasError && (
+        <div className="absolute inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-30">
+          <div className="text-center max-w-md mx-4">
+            <div className="w-20 h-20 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 className="text-white font-bold text-2xl mb-2">Starting Video Call</h2>
+            <p className="text-gray-400 text-sm mb-6">Please allow camera and microphone access</p>
+            <div className="bg-gray-900/50 rounded-lg p-4 mb-4 text-left">
+              <p className="text-gray-300 text-sm mb-2">Connecting to room:</p>
+              <p className="text-gray-500 text-xs font-mono break-all">{roomName}</p>
+            </div>
+            <p className="text-gray-500 text-xs">Powered by Jitsi Meet</p>
           </div>
         </div>
       )}
 
       {/* Error State */}
-      {error && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-30">
-          <div className="bg-gray-900 rounded-xl p-6 max-w-md mx-4">
-            <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <X className="w-6 h-6 text-white" />
+      {hasError && (
+        <div className="absolute inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-30 p-4">
+          <div className="bg-gray-900 rounded-2xl p-8 max-w-lg w-full border border-gray-800 shadow-2xl">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <WifiOff className="w-8 h-8 text-red-500" />
             </div>
-            <h3 className="text-white font-bold text-lg mb-2">Error</h3>
-            <p className="text-gray-300 mb-6">{error}</p>
-            <div className="flex gap-3">
+            <h3 className="text-white font-bold text-2xl mb-3 text-center">Connection Error</h3>
+            <p className="text-gray-300 mb-6 text-center">
+              Unable to start the video call. Please check the following:
+            </p>
+            
+            {errorMessage && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-6">
+                <p className="text-red-400 text-sm font-mono">{errorMessage}</p>
+              </div>
+            )}
+            
+            <div className="bg-gray-800/70 rounded-xl p-5 mb-8 space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-red-400 text-xl">•</span>
+                <span className="text-gray-300 text-sm">Camera and microphone permissions are allowed</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-400 text-xl">•</span>
+                <span className="text-gray-300 text-sm">Your network firewall isn't blocking WebRTC</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-400 text-xl">•</span>
+                <span className="text-gray-300 text-sm">Ad blockers or privacy extensions are disabled</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-400 text-xl">•</span>
+                <span className="text-gray-300 text-sm">Your browser supports WebRTC (Chrome, Firefox, Safari, Edge)</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
               <button
-                onClick={() => setError('')}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg"
+                onClick={retryConnection}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold transition-all hover:scale-[1.02]"
               >
-                Continue
+                Try Again
+              </button>
+              <button
+                onClick={() => window.open(`https://meet.jit.si/${roomName}`, '_blank')}
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3.5 rounded-xl font-semibold transition-all hover:scale-[1.02]"
+              >
+                Open in Jitsi Directly
               </button>
               <button
                 onClick={leaveCall}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg"
+                className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 py-3.5 rounded-xl font-semibold transition-all"
               >
-                Leave
+                Close
               </button>
             </div>
           </div>

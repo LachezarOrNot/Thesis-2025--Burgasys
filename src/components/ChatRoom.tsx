@@ -1,4 +1,4 @@
-// src/components/ChatRoom.tsx - Full Component with Video Call Integration
+// src/components/ChatRoom.tsx - Only VideoCall import changed
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatMessage } from '../types';
@@ -21,12 +21,13 @@ import {
   Download,
   ZoomIn,
   Smile,
-  Video
+  Video,
+  Key
 } from 'lucide-react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTranslation } from 'react-i18next';
-import VideoCall from './VideoCall';
+import VideoCall from './VideoCall'; // This now uses Jitsi
 
 interface ChatRoomProps {
   eventId: string;
@@ -35,8 +36,16 @@ interface ChatRoomProps {
 
 type ChatTheme = 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'dark';
 
-// IMPORTANT: Replace with your Agora App ID from console.agora.io
-const AGORA_APP_ID = '8e054c516d084a4a96903f7114649d9d';
+// REMOVED: AGORA_APP_ID and AGORA_PRIMARY_CERTIFICATE
+// Jitsi doesn't need API keys
+
+// Helper function to safely get substring
+const safeSubstring = (str: any, start: number, end?: number): string => {
+  if (typeof str === 'string' && str.length > 0) {
+    return str.substring(start, end);
+  }
+  return 'not-set';
+};
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const { user } = useAuth();
@@ -382,6 +391,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     setSelectedImage(null);
   };
 
+  // Handle Video Call button click - Jitsi doesn't need configuration
+  const handleStartVideoCall = () => {
+    console.log('Starting Jitsi video call for event:', eventId);
+    setShowVideoCall(true);
+  };
+
   if (!isChatActive) {
     return (
       <div className="relative bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 rounded-[2rem] p-16 text-center shadow-2xl border border-orange-200/30 dark:border-gray-700/30 overflow-hidden">
@@ -409,8 +424,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     return (
       <VideoCall 
         eventId={eventId}
-        appId={AGORA_APP_ID}
         onClose={() => setShowVideoCall(false)}
+        userName={user?.displayName || 'Guest'}
       />
     );
   }
@@ -453,6 +468,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                   <span>{user?.displayName}</span>
                 </div>
+                {/* Removed certificate badge since Jitsi doesn't need it */}
               </div>
             </div>
           </div>
@@ -466,7 +482,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
 
             {/* Video Call Button */}
             <button
-              onClick={() => setShowVideoCall(true)}
+              onClick={handleStartVideoCall}
               className="group relative p-3.5 bg-white/20 hover:bg-white/30 backdrop-blur-xl rounded-[0.875rem] transition-all duration-300 shadow-xl border border-white/30 hover:scale-110"
               title="Start Video Call"
             >
@@ -521,6 +537,21 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                       </button>
                     ))}
                   </div>
+                  {/* Removed Agora Configuration Info since we're using Jitsi */}
+                  <div className="mt-6 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+                    <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest">
+                      Video Call Info
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="flex items-center gap-2">
+                        <Video className="w-3.5 h-3.5" />
+                        Powered by Jitsi Meet
+                      </p>
+                      <p className="text-green-500 font-medium mt-1">
+                        ✓ No configuration needed
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -556,6 +587,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
               </div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t('chat.noMessages')}</p>
               <p className="text-base text-gray-500 dark:text-gray-400 leading-relaxed">{t('chat.noMessagesDescription')}</p>
+              {/* Removed Agora warning since we're using Jitsi */}
             </div>
           </div>
         ) : (
