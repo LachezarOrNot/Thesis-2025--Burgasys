@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building, MapPin, Phone } from 'lucide-react';
@@ -23,7 +24,15 @@ const Auth: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const { t } = useTranslation();
 
-  const { signUp, signIn, signInWithGoogle } = useAuth();
+  const { signUp, signIn, signInWithGoogle, user } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to home if user is already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +43,7 @@ const Auth: React.FC = () => {
     try {
       if (isLogin) {
         await signIn(formData.email, formData.password);
+        // User will be redirected by the useEffect above when user state updates
       } else {
         const requiresApproval = ['school', 'university', 'firm'].includes(formData.role);
         
@@ -87,8 +97,10 @@ const Auth: React.FC = () => {
         // Show appropriate success message
         if (requiresApproval) {
           setSuccessMessage(t('auth.success.organization'));
+          // Don't redirect for organization accounts - they need approval
         } else {
           setSuccessMessage(t('auth.success.regular'));
+          // User will be redirected by the useEffect above when user state updates
         }
       }
     } catch (error: any) {
@@ -105,6 +117,7 @@ const Auth: React.FC = () => {
     
     try {
       await signInWithGoogle();
+      // User will be redirected by the useEffect above when user state updates
     } catch (error: any) {
       setError(error.message || 'Google sign in failed');
     } finally {

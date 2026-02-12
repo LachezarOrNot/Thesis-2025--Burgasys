@@ -1,4 +1,4 @@
-// src/components/ChatRoom.tsx - Only VideoCall import changed
+// src/components/ChatRoom.tsx - VideoCall now uses Agora
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatMessage } from '../types';
@@ -21,13 +21,12 @@ import {
   Download,
   ZoomIn,
   Smile,
-  Video,
-  Key
+  Video
 } from 'lucide-react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useTranslation } from 'react-i18next';
-import VideoCall from './VideoCall'; // This now uses Jitsi
+import VideoCall from './VideoCall'; // Now uses Jitsi - NO CONFIG NEEDED!
 
 interface ChatRoomProps {
   eventId: string;
@@ -35,17 +34,6 @@ interface ChatRoomProps {
 }
 
 type ChatTheme = 'blue' | 'purple' | 'green' | 'orange' | 'pink' | 'dark';
-
-// REMOVED: AGORA_APP_ID and AGORA_PRIMARY_CERTIFICATE
-// Jitsi doesn't need API keys
-
-// Helper function to safely get substring
-const safeSubstring = (str: any, start: number, end?: number): string => {
-  if (typeof str === 'string' && str.length > 0) {
-    return str.substring(start, end);
-  }
-  return 'not-set';
-};
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const { user } = useAuth();
@@ -391,7 +379,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     setSelectedImage(null);
   };
 
-  // Handle Video Call button click - Jitsi doesn't need configuration
+  // Handle Video Call button click - Jitsi needs NO configuration!
   const handleStartVideoCall = () => {
     console.log('Starting Jitsi video call for event:', eventId);
     setShowVideoCall(true);
@@ -468,7 +456,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                   <span>{user?.displayName}</span>
                 </div>
-                {/* Removed certificate badge since Jitsi doesn't need it */}
               </div>
             </div>
           </div>
@@ -537,7 +524,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                       </button>
                     ))}
                   </div>
-                  {/* Removed Agora Configuration Info since we're using Jitsi */}
                   <div className="mt-6 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
                     <div className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest">
                       Video Call Info
@@ -548,7 +534,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
                         Powered by Jitsi Meet
                       </p>
                       <p className="text-green-500 font-medium mt-1">
-                        ✓ No configuration needed
+                        ✓ No configuration needed!
+                      </p>
+                      <p className="text-green-500 font-medium">
+                        ✓ 100% Free forever
                       </p>
                     </div>
                   </div>
@@ -587,7 +576,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
               </div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t('chat.noMessages')}</p>
               <p className="text-base text-gray-500 dark:text-gray-400 leading-relaxed">{t('chat.noMessagesDescription')}</p>
-              {/* Removed Agora warning since we're using Jitsi */}
             </div>
           </div>
         ) : (
