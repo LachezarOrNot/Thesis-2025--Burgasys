@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_BACKEND_URL?: string
   readonly VITE_AGORA_APP_ID: string;
   readonly VITE_AGORA_APP_CERTIFICATE?: string;
+  readonly VITE_DAILY_API_KEY?: string;
+  readonly VITE_DAILY_DOMAIN?: string;
 }
 
 interface ImportMeta {

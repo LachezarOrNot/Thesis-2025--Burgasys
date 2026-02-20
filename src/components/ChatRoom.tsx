@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ChatMessage } from '../types';
 import { databaseService } from '../services/database';
@@ -8,7 +8,6 @@ import {
   Phone,
   Smile,
   Image as ImageIcon,
-  MoreVertical,
   X,
   Check,
   Edit,
@@ -44,14 +43,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showVideoCall, setShowVideoCall] = useState(false);
-  const [isCallMinimized, setIsCallMinimized] = useState(false);
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
   const [showCallNotification, setShowCallNotification] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   
-  // Theme with localStorage persistence
   const [selectedTheme, setSelectedTheme] = useState<ChatTheme>(() => {
     const saved = localStorage.getItem('chatTheme');
     return (saved as ChatTheme) || 'blue';
@@ -61,7 +58,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isChatActive = eventStatus === 'published';
 
-  // Theme configurations
   const themes = {
     blue: {
       primary: 'bg-blue-500',
@@ -109,13 +105,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
 
   const currentTheme = themes[selectedTheme];
 
-  // Save theme to localStorage when changed
   const changeTheme = (theme: ChatTheme) => {
     setSelectedTheme(theme);
     localStorage.setItem('chatTheme', theme);
   };
 
-  // Listen for active calls
   useEffect(() => {
     if (!eventId) return;
 
@@ -137,7 +131,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     return () => unsubscribe();
   }, [eventId, showVideoCall, user?.uid]);
 
-  // Subscribe to chat messages
   useEffect(() => {
     if (!eventId || !isChatActive) return;
 
@@ -270,16 +263,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   };
 
   const startCall = async () => {
-    if (!user) return;
-
     try {
       const callRef = doc(db, 'activeCalls', eventId);
       await setDoc(callRef, {
         eventId,
-        startedBy: user.uid,
-        startedByName: user.displayName || 'Someone',
+        startedBy: user?.uid ?? `anon-${Date.now()}`,
+        startedByName: user?.displayName || 'Guest',
         startedAt: Date.now(),
-        participants: [user.uid]
+        participants: user?.uid ? [user.uid] : []
       });
 
       setShowVideoCall(true);
@@ -294,11 +285,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
     setShowCallNotification(false);
   };
 
-  const endCall = async () => {
+  const endCall = useCallback(async () => {
     setShowVideoCall(false);
-    setIsCallMinimized(false);
 
-    if (activeCall && activeCall.startedBy === user?.uid) {
+    if (activeCall && user && activeCall.startedBy === user.uid) {
       try {
         const callRef = doc(db, 'activeCalls', eventId);
         await deleteDoc(callRef);
@@ -306,7 +296,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
         console.error('Error ending call:', error);
       }
     }
-  };
+  }, [eventId, activeCall, user?.uid]);
 
   const formatTime = (timestamp: Date) => {
     return new Date(timestamp).toLocaleTimeString([], {
@@ -341,8 +331,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
         eventId={eventId}
         onClose={endCall}
         userName={user?.displayName || 'Guest'}
-        isMinimized={isCallMinimized}
-        onToggleMinimize={() => setIsCallMinimized(!isCallMinimized)}
       />
     );
   }
