@@ -6,7 +6,8 @@ import { Event } from '../types';
 import { databaseService } from '../services/database';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { isToday, isThisWeek, isThisMonth } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import ToastNotification from '../components/ToastNotification';
 
 const Events: React.FC = () => {
   const { t } = useTranslation();
@@ -22,6 +23,9 @@ const Events: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('date');
+  const location = useLocation() as { state?: any };
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     loadEvents();
@@ -33,6 +37,13 @@ const Events: React.FC = () => {
     
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (location.state?.toast?.message) {
+      setToastMessage(location.state.toast.message);
+      setShowToast(true);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     applyFilters();
@@ -272,7 +283,13 @@ const Events: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-primary-900 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-primary-900 py-8 relative">
+      <ToastNotification
+        message={toastMessage}
+        type="success"
+        visible={showToast}
+        onClose={() => setShowToast(false)}
+      />
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in">

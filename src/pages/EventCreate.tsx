@@ -17,6 +17,7 @@ import {
   Globe
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ToastNotification from '../components/ToastNotification';
 import MapLocationPicker from '../components/MapLocationPicker';
 
 const EventCreate: React.FC = () => {
@@ -26,6 +27,8 @@ const EventCreate: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -200,8 +203,16 @@ const EventCreate: React.FC = () => {
 
       if (isAdmin) {
         await databaseService.createEvent(preparedEventData);
-        alert(t('eventCreate.success.event'));
-        navigate('/events');
+        setToastMessage(t('eventCreate.success.event'));
+        setShowToast(true);
+        navigate('/events', {
+          state: {
+            toast: {
+              type: 'success',
+              message: t('eventCreate.success.event'),
+            },
+          },
+        });
       } else if (canRequestEvents) {
         // Event request for school/university/firm
         const eventRequestData: Omit<EventCreationRequest, 'id' | 'submittedAt'> = {
@@ -220,8 +231,16 @@ const EventCreate: React.FC = () => {
         // Prepare the entire request data for Firestore (just handles top-level nulls)
         const preparedRequestData = prepareDataForFirestore(eventRequestData);
         await databaseService.createEventRequest(preparedRequestData);
-        alert(t('eventCreate.success.request'));
-        navigate('/events');
+        setToastMessage(t('eventCreate.success.request'));
+        setShowToast(true);
+        navigate('/events', {
+          state: {
+            toast: {
+              type: 'success',
+              message: t('eventCreate.success.request'),
+            },
+          },
+        });
       }
       
     } catch (error) {
@@ -402,7 +421,13 @@ const fileToBase64 = (file: File): Promise<string> => {
   const organizationInfo = getOrganizationInfo();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 relative">
+      <ToastNotification
+        message={toastMessage}
+        type="success"
+        visible={showToast}
+        onClose={() => setShowToast(false)}
+      />
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">

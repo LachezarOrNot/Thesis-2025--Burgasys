@@ -15,9 +15,13 @@ import {
   X,
   Plus,
   AlertCircle,
-  Globe
+  Globe,
+  Clock,
 } from 'lucide-react';
 import MapLocationPicker from '../components/MapLocationPicker';
+import ToastNotification from '../components/ToastNotification';
+import UnsavedChangesModal from '../components/UnsavedChangesModal';
+import DateTimePicker from '../components/DateTimePicker';
 import { useTranslation } from 'react-i18next';
 
 const EventEdit: React.FC = () => {
@@ -27,9 +31,16 @@ const EventEdit: React.FC = () => {
   const { t } = useTranslation();
 
   const [event, setEvent] = useState<Event | null>(null);
+  const [organizerName, setOrganizerName] = useState<string | null>(null);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -77,6 +88,30 @@ const EventEdit: React.FC = () => {
       }
 
       setEvent(eventData);
+
+      // Load related display names
+      try {
+        if (eventData.organiser_org_id) {
+          const org = await databaseService.getOrganization(eventData.organiser_org_id);
+          setOrganizerName(org?.name || null);
+        } else {
+          setOrganizerName(null);
+        }
+
+        if (eventData.createdBy) {
+          const creator = await databaseService.getUser(eventData.createdBy);
+          setCreatorName(creator?.displayName || null);
+        } else {
+          setCreatorName(null);
+        }
+      } catch (relatedError) {
+        console.error('Error loading related event info:', relatedError);
+        setOrganizerName(null);
+        setCreatorName(null);
+      }
+
+      // After initial load, form is clean
+      setIsDirty(false);
 
       // Helper function to convert Date to local ISO string for datetime-local input
       const toLocalISOString = (date: Date | null): string => {
@@ -176,9 +211,17 @@ const EventEdit: React.FC = () => {
       };
 
       await databaseService.updateEvent(id, updates);
-
-      alert('Event updated successfully!');
-      navigate(`/events/${id}`);
+      setIsDirty(false);
+      setToastMessage('Event updated successfully.');
+      setShowToast(true);
+      navigate(`/events/${id}`, {
+        state: {
+          toast: {
+            type: 'success',
+            message: 'Event updated successfully.',
+          },
+        },
+      });
 
     } catch (error) {
       console.error('Error updating event:', error);
@@ -188,7 +231,24 @@ const EventEdit: React.FC = () => {
     }
   };
 
+  const markDirty = () => {
+    if (!isDirty) {
+      setIsDirty(true);
+    }
+  };
+
+  const handleBackClick = () => {
+    const target = `/events/${id}`;
+    if (isDirty) {
+      setPendingNavigation(target);
+      setShowLeaveModal(true);
+    } else {
+      navigate(target);
+    }
+  };
+
   const handleLocationSelect = (lat: number, lng: number, address?: string) => {
+    markDirty();
     setFormData(prev => ({
       ...prev,
       lat,
@@ -277,6 +337,7 @@ const EventEdit: React.FC = () => {
           const base64String = await fileToBase64(optimizedFile);
 
           // Add to images array
+          markDirty();
           setFormData(prev => ({
             ...prev,
             images: [...prev.images, base64String]
@@ -299,6 +360,7 @@ const EventEdit: React.FC = () => {
   };
 
   const handleRemoveImage = (index: number) => {
+    markDirty();
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
@@ -307,6 +369,7 @@ const EventEdit: React.FC = () => {
 
   const handleAddTag = () => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+      markDirty();
       setFormData(prev => ({
         ...prev,
         tags: [...prev.tags, newTag.trim()]
@@ -316,6 +379,7 @@ const EventEdit: React.FC = () => {
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
+    markDirty();
     setFormData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
@@ -372,13 +436,34 @@ const EventEdit: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 relative">
+      <ToastNotification
+        message={toastMessage}
+        type="success"
+        visible={showToast}
+        onClose={() => setShowToast(false)}
+      />
+      <UnsavedChangesModal
+        open={showLeaveModal}
+        onCancel={() => {
+          setShowLeaveModal(false);
+          setPendingNavigation(null);
+        }}
+        onConfirm={() => {
+          setShowLeaveModal(false);
+          setIsDirty(false);
+          if (pendingNavigation) {
+            navigate(pendingNavigation);
+            setPendingNavigation(null);
+          }
+        }}
+      />
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(`/events/${id}`)}
+              onClick={handleBackClick}
               className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -428,7 +513,10 @@ const EventEdit: React.FC = () => {
                     type="text"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => {
+                      markDirty();
+                      setFormData(prev => ({ ...prev, name: e.target.value }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Enter event name"
                   />
@@ -441,7 +529,10 @@ const EventEdit: React.FC = () => {
                   <input
                     type="text"
                     value={formData.subtitle}
-                    onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                    onChange={(e) => {
+                      markDirty();
+                      setFormData(prev => ({ ...prev, subtitle: e.target.value }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Enter a brief subtitle"
                   />
@@ -454,7 +545,10 @@ const EventEdit: React.FC = () => {
                   <textarea
                     rows={4}
                     value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) => {
+                      markDirty();
+                      setFormData(prev => ({ ...prev, description: e.target.value }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Describe your event..."
                   />
@@ -543,37 +637,39 @@ const EventEdit: React.FC = () => {
 
             {/* Date & Time */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Date & Time
-              </h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Date &amp; Time
+                </h2>
+                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Local time
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-5">
+                Choose when your event starts and ends. Times are saved in your local timezone.
+              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Start Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={formData.start_datetime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, start_datetime: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    End Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={formData.end_datetime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, end_datetime: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+                <DateTimePicker
+                  label="Start Date & Time"
+                  required
+                  value={formData.start_datetime}
+                  onChange={(val) => {
+                    markDirty();
+                    setFormData(prev => ({ ...prev, start_datetime: val }));
+                  }}
+                />
+                <DateTimePicker
+                  label="End Date & Time"
+                  required
+                  value={formData.end_datetime}
+                  onChange={(val) => {
+                    markDirty();
+                    setFormData(prev => ({ ...prev, end_datetime: val }));
+                  }}
+                />
               </div>
             </div>
 
@@ -604,65 +700,30 @@ const EventEdit: React.FC = () => {
                     locationName={formData.location}
                   />
                 ) : (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Location *
-                      </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Location / Address *
+                    </label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         type="text"
                         required
                         value={formData.location}
-                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="Enter event location"
+                        onChange={(e) => {
+                          markDirty();
+                          setFormData(prev => ({ ...prev, location: e.target.value }));
+                        }}
+                        className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="e.g. Burgas High School, 24 Main St, Burgas"
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Click "Use Map" above to select location on an interactive map
-                      </p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Latitude
-                        </label>
-                        <input
-                          type="number"
-                          step="0.000001"
-                          value={formData.lat || ''}
-                          onChange={(e) => setFormData(prev => ({ ...prev, lat: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="Enter latitude"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Longitude
-                        </label>
-                        <input
-                          type="number"
-                          step="0.000001"
-                          value={formData.lng || ''}
-                          onChange={(e) => setFormData(prev => ({ ...prev, lng: parseFloat(e.target.value) || 0 }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="Enter longitude"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {(formData.lat !== 0 || formData.lng !== 0) && (
-                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-green-500" />
-                      <div>
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          Location coordinates set: {formData.lat.toFixed(6)}, {formData.lng.toFixed(6)}
-                        </p>
-                      </div>
-                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Add a clear venue name and address so attendees can easily find the location.
+                    </p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                      For precise map pinning, click <span className="font-medium">"Use Map"</span> above.
+                    </p>
                   </div>
                 )}
               </div>
@@ -684,7 +745,10 @@ const EventEdit: React.FC = () => {
                   </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as EventStatus }))}
+                    onChange={(e) => {
+                      markDirty();
+                      setFormData(prev => ({ ...prev, status: e.target.value as EventStatus }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="published">Published</option>
@@ -703,7 +767,10 @@ const EventEdit: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.capacity}
-                    onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
+                    onChange={(e) => {
+                      markDirty();
+                      setFormData(prev => ({ ...prev, capacity: e.target.value }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                     placeholder="No limit if empty"
                   />
@@ -714,7 +781,10 @@ const EventEdit: React.FC = () => {
                     type="checkbox"
                     id="allow_registration"
                     checked={formData.allow_registration}
-                    onChange={(e) => setFormData(prev => ({ ...prev, allow_registration: e.target.checked }))}
+                    onChange={(e) => {
+                      markDirty();
+                      setFormData(prev => ({ ...prev, allow_registration: e.target.checked }));
+                    }}
                     className="rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                   />
                   <label htmlFor="allow_registration" className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -778,18 +848,24 @@ const EventEdit: React.FC = () => {
               
               <div className="space-y-3 text-sm">
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Event ID</p>
-                  <p className="font-mono text-gray-700 dark:text-gray-300">{id}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Event</p>
+                  <p className="text-gray-700 dark:text-gray-300 font-medium">
+                    {event?.name || 'Untitled event'}
+                  </p>
                 </div>
                 
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Created By</p>
-                  <p className="text-gray-700 dark:text-gray-300">{event?.createdBy}</p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {creatorName || event?.createdBy || 'Unknown user'}
+                  </p>
                 </div>
                 
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400">Organization ID</p>
-                  <p className="text-gray-700 dark:text-gray-300">{event?.organiser_org_id || 'None'}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Organization</p>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {organizerName || (event?.organiser_org_id ? 'Unknown organization' : 'None')}
+                  </p>
                 </div>
                 
                 <div>

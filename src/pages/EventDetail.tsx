@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
@@ -9,6 +9,7 @@ import { format, isValid } from 'date-fns';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from 'react-i18next';
 import EventMap from '../components/EventMap';
+import ToastNotification from '../components/ToastNotification';
 
 // --- START: DATE FIX & HELPER ---
 const processDate = (date: any): Date | null => {
@@ -53,18 +54,30 @@ const EventDetail: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const location = useLocation() as { state?: any };
 
   const [event, setEvent] = useState<Event | null>(null);
+  const [organizerName, setOrganizerName] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('details');
   const [loading, setLoading] = useState(true);
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [isRegistered, setIsRegistered] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadEvent();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (location.state?.toast?.message) {
+      setToastMessage(location.state.toast.message);
+      setShowToast(true);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (event && user) {
@@ -78,6 +91,19 @@ const EventDetail: React.FC = () => {
       setLoading(true);
       const eventData = await databaseService.getEvent(id!);
       setEvent(eventData);
+
+      // Load organizer name if organization is linked
+      if (eventData?.organiser_org_id) {
+        try {
+          const org = await databaseService.getOrganization(eventData.organiser_org_id);
+          setOrganizerName(org?.name || null);
+        } catch (orgError) {
+          console.error('Error loading organizer:', orgError);
+          setOrganizerName(null);
+        }
+      } else {
+        setOrganizerName(null);
+      }
     } catch (error) {
       console.error('Error loading event:', error);
     } finally {
@@ -155,7 +181,13 @@ const EventDetail: React.FC = () => {
   const hasValidLocation = event.lat && event.lng && event.lat !== 0 && event.lng !== 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 relative">
+      <ToastNotification
+        message={toastMessage}
+        type="success"
+        visible={showToast}
+        onClose={() => setShowToast(false)}
+      />
       {/* Header Image Area */}
       <div className="relative h-64 md:h-96 w-full bg-gray-200 dark:bg-gray-800">
         {event.images && event.images.length > 0 ? (
@@ -316,7 +348,18 @@ const EventDetail: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 dark:text-white">Organizer</p>
-                        <p className="text-gray-600 dark:text-gray-400">Organization ID: {event.organiser_org_id}</p>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          {organizerName ? (
+                            <Link
+                              to={`/organizations/${event.organiser_org_id}`}
+                              className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                            >
+                              {organizerName}
+                            </Link>
+                          ) : (
+                            'Unknown organization'
+                          )}
+                        </p>
                       </div>
                     </div>
                   )}
