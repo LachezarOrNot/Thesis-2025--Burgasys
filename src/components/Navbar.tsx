@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx - Updated version with Admin link
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LogOut, Moon, Sun, User, ChevronDown, Menu, X, 
   Building, Plus, Users, Globe, Calendar, History, 
@@ -17,6 +17,7 @@ const Navbar: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const location = useLocation();
   const [isEventsOpen, setIsEventsOpen] = useState(false);
   const [isOrganizationsOpen, setIsOrganizationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,6 +25,14 @@ const Navbar: React.FC = () => {
   const eventsDropdownRef = useRef<HTMLDivElement>(null);
   const organizationsDropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const currentPath = location.pathname;
+  const isInEventsSection =
+    currentPath.startsWith('/events') ||
+    currentPath.startsWith('/calendar') ||
+    currentPath.startsWith('/map') ||
+    currentPath.startsWith('/past-events');
+  const isInOrganizationsSection = currentPath.startsWith('/organizations');
 
   const handleSignOut = async () => {
     try {
@@ -53,8 +62,9 @@ const Navbar: React.FC = () => {
   }, []);
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
-      <div className="container mx-auto px-4">
+    <nav className="sticky top-0 z-50 border-b border-gray-200/70 dark:border-gray-800/80 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 via-transparent to-purple-500/5 pointer-events-none" />
+      <div className="relative w-full px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link 
@@ -79,7 +89,11 @@ const Navbar: React.FC = () => {
                 <div className="relative" ref={eventsDropdownRef}>
                   <button
                     onClick={() => setIsEventsOpen(!isEventsOpen)}
-                    className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors group"
+                    className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors group ${
+                      isInEventsSection
+                        ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
                   >
                     <span>{t('navbar.eventsDropdown.title')}</span>
                     <ChevronDown 
@@ -160,7 +174,11 @@ const Navbar: React.FC = () => {
                 <div className="relative" ref={organizationsDropdownRef}>
                   <button
                     onClick={() => setIsOrganizationsOpen(!isOrganizationsOpen)}
-                    className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors group"
+                    className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors group ${
+                      isInOrganizationsSection
+                        ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/40 dark:text-primary-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
                   >
                     <Building className="w-4 h-4" />
                     <span>{t('navigation.organizations')}</span>
@@ -338,7 +356,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Link
                 to="/auth"
-                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-5 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-5 py-2.5 rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 <User className="w-4 h-4" />
                 {t('navigation.signIn')}
