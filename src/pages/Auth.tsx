@@ -11,6 +11,7 @@ const Auth: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     displayName: '',
     role: 'user' as UserRole,
     organizationName: '',
@@ -34,6 +35,10 @@ const Auth: React.FC = () => {
     }
   }, [user, navigate]);
 
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -41,10 +46,23 @@ const Auth: React.FC = () => {
     setSuccessMessage('');
 
     try {
+      if (!isValidEmail(formData.email)) {
+        throw new Error('Please enter a valid email address.');
+      }
+
       if (isLogin) {
         await signIn(formData.email, formData.password);
         // User will be redirected by the useEffect above when user state updates
       } else {
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Passwords do not match.');
+        }
+
+        const trimmedName = formData.displayName.trim();
+        if (trimmedName.length === 0 || trimmedName.length > 35) {
+          throw new Error('Full name must be between 1 and 35 characters.');
+        }
+
         const requiresApproval = ['school', 'university', 'firm'].includes(formData.role);
         
         let organizationInfo = undefined;
@@ -131,6 +149,7 @@ const Auth: React.FC = () => {
     setFormData({
       email: '',
       password: '',
+      confirmPassword: '',
       displayName: '',
       role: 'user',
       organizationName: '',
@@ -189,12 +208,16 @@ const Auth: React.FC = () => {
                     name="displayName"
                     type="text"
                     required
+                    maxLength={35}
                     value={formData.displayName}
                     onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
                     className="relative block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
                     placeholder={t('auth.fullNamePlaceholder')}
                   />
                 </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Maximum 35 characters.
+                </p>
               </div>
 
               <div>
@@ -357,6 +380,29 @@ const Auth: React.FC = () => {
               </p>
             )}
           </div>
+
+          {!isLogin && (
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Confirm Password *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  className="relative block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
+                  placeholder="Re-enter your password"
+                  minLength={6}
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <button

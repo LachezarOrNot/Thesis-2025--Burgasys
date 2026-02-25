@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../contexts/AuthContext";
 
 const Footer: React.FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   return (
     <footer className="relative overflow-hidden bg-black text-gray-300 py-14">
@@ -93,15 +95,17 @@ const Footer: React.FC = () => {
                   <span>{t('footer.explore.eventCalendar')}</span>
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/auth"
-                  className="group flex items-center space-x-2 hover:text-indigo-400 transition-all duration-300"
-                >
-                  <LogIn className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>{t('footer.explore.signIn')}</span>
-                </Link>
-              </li>
+              {!user && (
+                <li>
+                  <Link
+                    to="/auth"
+                    className="group flex items-center space-x-2 hover:text-indigo-400 transition-all duration-300"
+                  >
+                    <LogIn className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    <span>{t('footer.explore.signIn')}</span>
+                  </Link>
+                </li>
+              )}
             </ul>
           </motion.div>
 

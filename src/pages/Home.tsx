@@ -6,6 +6,7 @@ import { Event } from '../types';
 import { databaseService } from '../services/database';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 
 const Home: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -13,6 +14,7 @@ const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadEvents();
@@ -36,6 +38,41 @@ const Home: React.FC = () => {
   const featuredEvents = events
     .filter(event => new Date(event.start_datetime) > new Date())
     .slice(0, 6);
+
+  // Derived dynamic stats for CTA section
+  const uniqueRegisteredUsers = new Set<string>();
+  events.forEach(event => {
+    event.registeredUsers?.forEach(uid => uniqueRegisteredUsers.add(uid));
+  });
+  const activeParticipants = uniqueRegisteredUsers.size;
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const monthlyEvents = events.filter(event => {
+    try {
+      const d = new Date(event.start_datetime);
+      return d >= startOfMonth && d <= endOfMonth;
+    } catch {
+      return false;
+    }
+  }).length;
+
+  const uniqueOrganisers = new Set<string>();
+  events.forEach(event => {
+    if (event.organiser_org_id) {
+      uniqueOrganisers.add(event.organiser_org_id);
+    }
+  });
+  const activeOrganisers = uniqueOrganisers.size;
+
+  const formatStatNumber = (value: number) => {
+    if (value >= 1000) {
+      const short = value / 1000;
+      return `${short.toFixed(short % 1 === 0 ? 0 : 1)}K+`;
+    }
+    return value.toString();
+  };
 
   const stats = [
     { icon: Calendar, label: t('home.stats.events'), value: events.length, color: 'from-blue-500 to-cyan-500' },
@@ -495,7 +532,9 @@ const Home: React.FC = () => {
           <div className="max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-full mb-8">
               <Sparkles className="w-4 h-4 text-white animate-pulse-slow" />
-              <span className="text-sm font-bold text-white">Join thousands of happy event-goers</span>
+              <span className="text-sm font-bold text-white">
+                {t('home.cta.tagline') || 'Join our growing event community'}
+              </span>
             </div>
             
             <h2 className="text-4xl md:text-6xl lg:text-7xl font-black mb-8 text-white leading-tight">
@@ -507,15 +546,17 @@ const Home: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
-              <Link 
-                to="/auth"
-                className="group bg-white hover:bg-slate-50 text-purple-600 px-10 py-5 rounded-2xl font-black text-lg transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 hover-lift"
-              >
-                <span className="flex items-center gap-2">
-                  {t('home.cta.signUp')}
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Link>
+              {!user && (
+                <Link 
+                  to="/auth"
+                  className="group bg-white hover:bg-slate-50 text-purple-600 px-10 py-5 rounded-2xl font-black text-lg transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 hover-lift"
+                >
+                  <span className="flex items-center gap-2">
+                    {t('home.cta.signUp')}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </Link>
+              )}
               <Link 
                 to="/events"
                 className="group glass-morphism border-2 border-white/30 text-white hover:bg-white/10 px-10 py-5 rounded-2xl font-black text-lg transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 hover-lift"
@@ -527,18 +568,24 @@ const Home: React.FC = () => {
             {/* Trust Indicators */}
             <div className="flex flex-wrap items-center justify-center gap-8 mt-16 pt-16 border-t border-white/20">
               <div className="text-center">
-                <div className="text-3xl font-black text-white mb-1">10K+</div>
+                <div className="text-3xl font-black text-white mb-1">
+                  {formatStatNumber(activeParticipants)}
+                </div>
                 <div className="text-sm text-white/80">Active Users</div>
               </div>
               <div className="w-px h-12 bg-white/20 hidden sm:block"></div>
               <div className="text-center">
-                <div className="text-3xl font-black text-white mb-1">500+</div>
-                <div className="text-sm text-white/80">Events Monthly</div>
+                <div className="text-3xl font-black text-white mb-1">
+                  {formatStatNumber(monthlyEvents)}
+                </div>
+                <div className="text-sm text-white/80">Events This Month</div>
               </div>
               <div className="w-px h-12 bg-white/20 hidden sm:block"></div>
               <div className="text-center">
-                <div className="text-3xl font-black text-white mb-1">4.9★</div>
-                <div className="text-sm text-white/80">User Rating</div>
+                <div className="text-3xl font-black text-white mb-1">
+                  {formatStatNumber(activeOrganisers)}
+                </div>
+                <div className="text-sm text-white/80">Active Organizers</div>
               </div>
             </div>
           </div>
