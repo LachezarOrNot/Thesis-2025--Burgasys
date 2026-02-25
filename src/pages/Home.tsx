@@ -81,9 +81,21 @@ const Home: React.FC = () => {
   ];
 
   const features = [
-    { icon: Star, title: 'Curated Events', description: 'Hand-picked experiences just for you' },
-    { icon: TrendingUp, title: 'Real-time Updates', description: 'Stay informed with live notifications' },
-    { icon: Zap, title: 'Instant Booking', description: 'Reserve your spot in seconds' },
+    { 
+      icon: Star, 
+      title: t('home.features.curated.title'), 
+      description: t('home.features.curated.description') 
+    },
+    { 
+      icon: TrendingUp, 
+      title: t('home.features.realtime.title'), 
+      description: t('home.features.realtime.description') 
+    },
+    { 
+      icon: Zap, 
+      title: t('home.features.instant.title'), 
+      description: t('home.features.instant.description') 
+    },
   ];
 
   return (
@@ -316,7 +328,7 @@ const Home: React.FC = () => {
 
               {/* Feature Pills */}
               <div className={`flex flex-wrap gap-3 justify-center lg:justify-start mt-8 ${isVisible ? 'animate-fadeIn delay-400' : 'opacity-0'}`}>
-                {['Free Events', 'Instant Booking', 'Verified Organizers'].map((feature, index) => (
+                {[t('home.pills.freeEvents'), t('home.pills.instantBooking'), t('home.pills.verifiedOrganizers')].map((feature, index) => (
                   <div key={index} className="flex items-center gap-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700">
                     <div className="w-2 h-2 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"></div>
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{feature}</span>
@@ -429,14 +441,14 @@ const Home: React.FC = () => {
       {/* Features Section */}
       <section className="relative py-20">
         <div className="container mx-auto px-4">
-          <div className={`text-center mb-16 ${isVisible ? 'animate-fadeInUp delay-900' : 'opacity-0'}`}>
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
-              Why Choose <span className="text-gradient">EventHub</span>
-            </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              Experience the future of event discovery and management
-            </p>
-          </div>
+            <div className={`text-center mb-16 ${isVisible ? 'animate-fadeInUp delay-900' : 'opacity-0'}`}>
+              <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+                {t('home.whyChoose.title')}
+              </h2>
+              <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                {t('home.whyChoose.subtitle')}
+              </p>
+            </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
@@ -571,21 +583,27 @@ const Home: React.FC = () => {
                 <div className="text-3xl font-black text-white mb-1">
                   {formatStatNumber(activeParticipants)}
                 </div>
-                <div className="text-sm text-white/80">Active Users</div>
+                <div className="text-sm text-white/80">
+                  {t('home.cta.stats.activeUsers')}
+                </div>
               </div>
               <div className="w-px h-12 bg-white/20 hidden sm:block"></div>
               <div className="text-center">
                 <div className="text-3xl font-black text-white mb-1">
                   {formatStatNumber(monthlyEvents)}
                 </div>
-                <div className="text-sm text-white/80">Events This Month</div>
+                <div className="text-sm text-white/80">
+                  {t('home.cta.stats.eventsThisMonth')}
+                </div>
               </div>
               <div className="w-px h-12 bg-white/20 hidden sm:block"></div>
               <div className="text-center">
                 <div className="text-3xl font-black text-white mb-1">
                   {formatStatNumber(activeOrganisers)}
                 </div>
-                <div className="text-sm text-white/80">Active Organizers</div>
+                <div className="text-sm text-white/80">
+                  {t('home.cta.stats.activeOrganizers')}
+                </div>
               </div>
             </div>
           </div>

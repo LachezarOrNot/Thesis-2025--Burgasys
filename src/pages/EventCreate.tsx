@@ -128,7 +128,7 @@ const EventCreate: React.FC = () => {
 
       // Validate location coordinates
       if (!formData.lat || !formData.lng || formData.lat === 0 || formData.lng === 0) {
-        setError('Please select a valid location on the map');
+        setError(t('eventCreate.errors.invalidMapLocation'));
         return;
       }
 

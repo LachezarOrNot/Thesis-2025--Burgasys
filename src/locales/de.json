@@ -170,6 +170,8 @@
       "title": "Veranstaltungen",
       "browseEvents": "Veranstaltungen durchsuchen",
       "browseDescription": "Entdecke bevorstehende Veranstaltungen",
+      "mapExplorer": "Karten-Explorer",
+      "mapDescription": "Veranstaltungen auf der Karte entdecken",
       "calendarView": "Kalenderansicht",
       "calendarDescription": "Veranstaltungen im Kalender ansehen",
       "pastEvents": "Vergangene Veranstaltungen",
@@ -184,7 +186,10 @@
     "userMenu": {
       "dashboard": "Dashboard",
       "profile": "Profil",
-      "adminPanel": "Admin-Bereich"
+      "adminPanel": "Admin-Bereich",
+      "userManagement": "Benutzerverwaltung",
+      "userApprovals": "Benutzerfreigaben",
+      "adminDashboard": "Admin-Dashboard"
     },
     "themeToggle": {
       "lightMode": "Zum Hellmodus wechseln",
@@ -286,8 +291,12 @@
     "errors": {
       "loginRequired": "Sie müssen angemeldet sein, um eine Veranstaltung zu erstellen",
       "nameRequired": "Veranstaltungsname ist erforderlich",
-      "datetimeRequired": "Start- und End-Datetime sind erforderlich",
-      "dateValidation": "Enddatum muss nach Startdatum liegen",
+      "datetimeRequired": "Start- und Enddatum/-uhrzeit sind erforderlich",
+      "invalidDate": "Bitte geben Sie gültige Start- und Enddaten ein",
+      "dateInPast": "Startdatum muss in der Zukunft liegen",
+      "dateValidation": "Enddatum muss nach dem Startdatum liegen",
+      "locationRequired": "Ort ist erforderlich",
+      "invalidMapLocation": "Bitte wählen Sie einen gültigen Ort auf der Karte",
       "organizationRequired": "Sie müssen einer Organisation angehören, um Veranstaltungen anzufordern",
       "general": "Veranstaltung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
       "invalidImageType": "Bitte laden Sie nur Bilddateien hoch",
@@ -460,7 +469,16 @@
       "regular": "Konto erfolgreich erstellt! Sie können jetzt auf alle Funktionen zugreifen."
     },
     "errors": {
-      "organizationCreation": "Organisation konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+      "organizationCreation": "Organisation konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+      "passwordsMismatch": "Passwörter stimmen nicht überein.",
+      "fullNameLength": "Vollständiger Name muss zwischen 1 und 35 Zeichen lang sein.",
+      "authenticationFailed": "Authentifizierung fehlgeschlagen",
+      "googleSignInFailed": "Google-Anmeldung fehlgeschlagen"
+    },
+    "validation": {
+      "confirmPassword": "Passwort bestätigen",
+      "confirmPasswordPlaceholder": "Passwort erneut eingeben"
     }
   },
   "profile": {
@@ -544,12 +562,64 @@
         "description": "Schau später wieder vorbei für neue Veranstaltungen"
       }
     },
+    "features": {
+      "curated": {
+        "title": "Kuratierte Veranstaltungen",
+        "description": "Sorgfältig ausgewählte Erlebnisse nur für dich"
+      },
+      "realtime": {
+        "title": "Echtzeit-Updates",
+        "description": "Bleib mit Live-Benachrichtigungen auf dem Laufenden"
+      },
+      "instant": {
+        "title": "Sofortige Buchung",
+        "description": "Reserviere deinen Platz in Sekunden"
+      }
+    },
+    "pills": {
+      "freeEvents": "Kostenlose Veranstaltungen",
+      "instantBooking": "Schnellbuchung",
+      "verifiedOrganizers": "Verifizierte Veranstalter"
+    },
+    "whyChoose": {
+      "title": "Warum EventHub wählen",
+      "subtitle": "Erlebe die Zukunft von Event-Entdeckung und -Management"
+    },
     "cta": {
       "title": "Bereit zu starten?",
       "description": "Schließe dich Tausenden von Nutzern an, die erstaunliche Veranstaltungen entdecken und erstellen",
       "signUp": "Kostenlos registrieren",
-      "browseEvents": "Veranstaltungen durchsuchen"
+      "browseEvents": "Veranstaltungen durchsuchen",
+      "stats": {
+        "activeUsers": "Aktive Nutzer",
+        "eventsThisMonth": "Veranstaltungen in diesem Monat",
+        "activeOrganizers": "Aktive Veranstalter"
+      }
     }
+  },
+  "mapExplorer": {
+    "title": "Veranstaltungs-Kartenexplorer",
+    "subtitle": "Entdecke Veranstaltungen auf einer interaktiven Karte. Klicke auf Marker für Details.",
+    "searchPlaceholder": "Veranstaltungen nach Name, Ort oder Tags suchen...",
+    "filters": {
+      "allEvents": "Alle Veranstaltungen"
+    },
+    "showingWithLocation": "Zeige {{count}} von {{total}} Veranstaltungen mit Standortdaten",
+    "noEventsWithLocation": "Keine Veranstaltungen mit Standortdaten gefunden",
+    "yourLocation": "Dein Standort",
+    "directions": "Route",
+    "sidebarTitle": "Veranstaltungen auf der Karte ({{count}})",
+    "loading": "Veranstaltungen werden geladen...",
+    "noEventsMatchFilters": "Keine Veranstaltungen entsprechen deinen Filtern",
+    "legend": {
+      "title": "Kartenlegende",
+      "published": "Veröffentlichte Veranstaltungen",
+      "pending": "Ausstehende Genehmigung",
+      "draft": "Entwürfe",
+      "finished": "Beendete Veranstaltungen",
+      "yourLocation": "Dein Standort"
+    },
+    "refresh": "Kartendaten aktualisieren"
   },
   "footer": {
     "brand": {

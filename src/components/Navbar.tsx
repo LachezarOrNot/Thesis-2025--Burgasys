@@ -133,9 +133,9 @@ const Navbar: React.FC = () => {
                     >
                       <Globe className="w-4 h-4" />
                       <div>
-                        <div className="font-medium">Map Explorer</div>
+                        <div className="font-medium">{t('navbar.eventsDropdown.mapExplorer')}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          Explore events on map
+                          {t('navbar.eventsDropdown.mapDescription')}
                         </div>
                       </div>
                     </Link>
@@ -268,7 +268,7 @@ const Navbar: React.FC = () => {
                     className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-primary-500 dark:hover:text-primary-400 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
                     <Shield className="w-4 h-4" />
-                    <span>Admin</span>
+                    <span>{t('navigation.admin')}</span>
                   </Link>
                 )}
                 
@@ -335,7 +335,7 @@ const Navbar: React.FC = () => {
                           className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                         >
                           <Users className="w-4 h-4" />
-                          User Management
+                          {t('navbar.userMenu.userManagement')}
                         </Link>
                       </>
                     )}
@@ -389,7 +389,7 @@ const Navbar: React.FC = () => {
               {user.role === 'admin' && (
                 <>
                   <div className="px-4 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    Admin Panel
+                    {t('navigation.adminPanel')}
                   </div>
                   <Link
                     to="/users"
@@ -397,7 +397,7 @@ const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <Shield className="w-4 h-4" />
-                    User Management
+                    {t('navbar.userMenu.userManagement')}
                   </Link>
                   <Link
                     to="/admin/user-approvals"
@@ -405,7 +405,7 @@ const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <UserCheck className="w-4 h-4" />
-                    User Approvals
+                    {t('navbar.userMenu.userApprovals')}
                   </Link>
                   <Link
                     to="/admin"
@@ -413,7 +413,7 @@ const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <Shield className="w-4 h-4" />
-                    Admin Dashboard
+                    {t('navbar.userMenu.adminDashboard')}
                   </Link>
                 </>
               )}
@@ -437,7 +437,7 @@ const Navbar: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <Globe className="w-4 h-4" />
-                Map Explorer
+                {t('navbar.eventsDropdown.mapExplorer')}
               </Link>
               
               <Link

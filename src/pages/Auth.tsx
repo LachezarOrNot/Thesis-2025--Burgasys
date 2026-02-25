@@ -47,7 +47,7 @@ const Auth: React.FC = () => {
 
     try {
       if (!isValidEmail(formData.email)) {
-        throw new Error('Please enter a valid email address.');
+        throw new Error(t('auth.errors.invalidEmail'));
       }
 
       if (isLogin) {
@@ -55,12 +55,12 @@ const Auth: React.FC = () => {
         // User will be redirected by the useEffect above when user state updates
       } else {
         if (formData.password !== formData.confirmPassword) {
-          throw new Error('Passwords do not match.');
+          throw new Error(t('auth.errors.passwordsMismatch'));
         }
 
         const trimmedName = formData.displayName.trim();
         if (trimmedName.length === 0 || trimmedName.length > 35) {
-          throw new Error('Full name must be between 1 and 35 characters.');
+          throw new Error(t('auth.errors.fullNameLength'));
         }
 
         const requiresApproval = ['school', 'university', 'firm'].includes(formData.role);
@@ -122,7 +122,7 @@ const Auth: React.FC = () => {
         }
       }
     } catch (error: any) {
-      setError(error.message || 'Authentication failed');
+      setError(error.message || t('auth.errors.authenticationFailed'));
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,7 @@ const Auth: React.FC = () => {
       await signInWithGoogle();
       // User will be redirected by the useEffect above when user state updates
     } catch (error: any) {
-      setError(error.message || 'Google sign in failed');
+      setError(error.message || t('auth.errors.googleSignInFailed'));
     } finally {
       setLoading(false);
     }
@@ -384,7 +384,7 @@ const Auth: React.FC = () => {
           {!isLogin && (
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Confirm Password *
+                {t('auth.validation.confirmPassword')} *
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -397,7 +397,7 @@ const Auth: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                   className="relative block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
-                  placeholder="Re-enter your password"
+                  placeholder={t('auth.validation.confirmPasswordPlaceholder')}
                   minLength={6}
                 />
               </div>

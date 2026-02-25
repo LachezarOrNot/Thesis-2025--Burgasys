@@ -7,6 +7,7 @@ import { MapPin, Filter, Search, Calendar, Users, Navigation } from 'lucide-reac
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { useTranslation } from 'react-i18next';
 
 // Fix for default markers in Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -65,6 +66,7 @@ const createEventIcon = (status: string) => {
 const MapExplorer: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,10 +164,10 @@ const MapExplorer: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Event Map Explorer
+            {t('mapExplorer.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Explore events on an interactive map. Click on markers for details.
+            {t('mapExplorer.subtitle')}
           </p>
         </div>
 
@@ -179,7 +181,7 @@ const MapExplorer: React.FC = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search events by name, location, or tags..."
+                  placeholder={t('mapExplorer.searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -193,11 +195,11 @@ const MapExplorer: React.FC = () => {
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="all">All Events</option>
-                  <option value="published">Published</option>
-                  <option value="draft">Draft</option>
-                  <option value="pending_approval">Pending Approval</option>
-                  <option value="finished">Finished</option>
+                  <option value="all">{t('mapExplorer.filters.allEvents')}</option>
+                  <option value="published">{t('status.published')}</option>
+                  <option value="draft">{t('status.draft')}</option>
+                  <option value="pending_approval">{t('status.pending_approval')}</option>
+                  <option value="finished">{t('status.finished')}</option>
                 </select>
               </div>
               
@@ -205,13 +207,16 @@ const MapExplorer: React.FC = () => {
                 onClick={() => setSelectedStatus('all')}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
-                Clear Filters
+                {t('events.clearAllFilters')}
               </button>
             </div>
           </div>
           
           <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            Showing {filteredEvents.length} of {events.length} events with location data
+            {t('mapExplorer.showingWithLocation', {
+              count: filteredEvents.length,
+              total: events.length,
+            })}
           </div>
         </div>
 
@@ -227,7 +232,9 @@ const MapExplorer: React.FC = () => {
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">No events found with location data</p>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {t('mapExplorer.noEventsWithLocation')}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -247,7 +254,9 @@ const MapExplorer: React.FC = () => {
                     <Marker position={userLocation}>
                       <Popup>
                         <div className="p-2">
-                          <div className="font-semibold text-gray-900">Your Location</div>
+                          <div className="font-semibold text-gray-900">
+                            {t('mapExplorer.yourLocation')}
+                          </div>
                           <div className="text-sm text-gray-600">
                             {userLocation[0].toFixed(6)}, {userLocation[1].toFixed(6)}
                           </div>
@@ -315,7 +324,7 @@ const MapExplorer: React.FC = () => {
                               onClick={() => navigate(`/events/${event.id}`)}
                               className="flex-1 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-xs rounded text-center"
                             >
-                              View Details
+                              {t('eventCard.viewDetails')}
                             </button>
                             <a
                               href={`https://www.google.com/maps/dir/?api=1&destination=${event.lat},${event.lng}`}
@@ -323,7 +332,7 @@ const MapExplorer: React.FC = () => {
                               rel="noopener noreferrer"
                               className="px-3 py-1.5 border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs rounded"
                             >
-                              Directions
+                              {t('mapExplorer.directions')}
                             </a>
                           </div>
                         </div>
@@ -339,21 +348,25 @@ const MapExplorer: React.FC = () => {
           <div className="space-y-4">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                Events on Map ({filteredEvents.length})
+                {t('mapExplorer.sidebarTitle', { count: filteredEvents.length })}
               </h3>
               
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {loading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading events...</p>
-                  </div>
-                ) : filteredEvents.length === 0 ? (
-                  <div className="text-center py-8">
-                    <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400">No events match your filters</p>
-                  </div>
-                ) : (
+                    <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    {t('mapExplorer.loading')}
+                  </p>
+                </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {t('mapExplorer.noEventsMatchFilters')}
+                  </p>
+                </div>
+              ) : (
                   filteredEvents.map((event) => (
                     <div
                       key={event.id}
@@ -393,46 +406,60 @@ const MapExplorer: React.FC = () => {
 
             {/* Map Legend */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Map Legend</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                {t('mapExplorer.legend.title')}
+              </h3>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Published Events</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('mapExplorer.legend.published')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Pending Approval</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('mapExplorer.legend.pending')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Draft Events</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('mapExplorer.legend.draft')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-purple-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Finished Events</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('mapExplorer.legend.finished')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-gray-400 border border-white"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Your Location</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('mapExplorer.legend.yourLocation')}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Quick Actions</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                {t('dashboard.quickActions.title')}
+              </h3>
               <div className="space-y-2">
                 <button
                   onClick={() => navigate('/events/create')}
                   className="w-full px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg text-sm font-medium"
                 >
-                  Create New Event
+                  {t('navigation.createEvent')}
                 </button>
                 <button
                   onClick={loadEvents}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium"
                 >
-                  Refresh Map Data
+                  {t('mapExplorer.refresh')}
                 </button>
               </div>
             </div>

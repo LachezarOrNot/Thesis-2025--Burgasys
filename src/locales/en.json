@@ -170,6 +170,8 @@
       "title": "Events",
       "browseEvents": "Browse Events",
       "browseDescription": "Discover upcoming events",
+      "mapExplorer": "Map Explorer",
+      "mapDescription": "Explore events on the map",
       "calendarView": "Calendar View",
       "calendarDescription": "See events in calendar",
       "pastEvents": "Past Events",
@@ -184,7 +186,10 @@
     "userMenu": {
       "dashboard": "Dashboard",
       "profile": "Profile",
-      "adminPanel": "Admin Panel"
+      "adminPanel": "Admin Panel",
+      "userManagement": "User Management",
+      "userApprovals": "User Approvals",
+      "adminDashboard": "Admin Dashboard"
     },
     "themeToggle": {
       "lightMode": "Switch to light mode",
@@ -287,7 +292,11 @@
       "loginRequired": "You must be logged in to create an event",
       "nameRequired": "Event name is required",
       "datetimeRequired": "Start and end datetime are required",
+      "invalidDate": "Please enter valid start and end dates",
+      "dateInPast": "Start date must be in the future",
       "dateValidation": "End date must be after start date",
+      "locationRequired": "Location is required",
+      "invalidMapLocation": "Please select a valid location on the map",
       "organizationRequired": "You must be affiliated with an organization to request events",
       "general": "Failed to create event. Please try again.",
       "invalidImageType": "Please upload only image files",
@@ -460,7 +469,16 @@
       "regular": "Account created successfully! You can now access all features."
     },
     "errors": {
-      "organizationCreation": "Failed to create organization. Please try again."
+      "organizationCreation": "Failed to create organization. Please try again.",
+      "invalidEmail": "Please enter a valid email address.",
+      "passwordsMismatch": "Passwords do not match.",
+      "fullNameLength": "Full name must be between 1 and 35 characters.",
+      "authenticationFailed": "Authentication failed",
+      "googleSignInFailed": "Google sign in failed"
+    },
+    "validation": {
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password"
     }
   },
   "profile": {
@@ -544,12 +562,64 @@
         "description": "Check back later for new events"
       }
     },
+    "features": {
+      "curated": {
+        "title": "Curated Events",
+        "description": "Hand-picked experiences just for you"
+      },
+      "realtime": {
+        "title": "Real-time Updates",
+        "description": "Stay informed with live notifications"
+      },
+      "instant": {
+        "title": "Instant Booking",
+        "description": "Reserve your spot in seconds"
+      }
+    },
+    "pills": {
+      "freeEvents": "Free Events",
+      "instantBooking": "Instant Booking",
+      "verifiedOrganizers": "Verified Organizers"
+    },
+    "whyChoose": {
+      "title": "Why Choose EventHub",
+      "subtitle": "Experience the future of event discovery and management"
+    },
     "cta": {
       "title": "Ready to Get Started?",
       "description": "Join thousands of users discovering and creating amazing events",
       "signUp": "Sign Up Free",
-      "browseEvents": "Browse Events"
+      "browseEvents": "Browse Events",
+      "stats": {
+        "activeUsers": "Active Users",
+        "eventsThisMonth": "Events This Month",
+        "activeOrganizers": "Active Organizers"
+      }
     }
+  },
+  "mapExplorer": {
+    "title": "Event Map Explorer",
+    "subtitle": "Explore events on an interactive map. Click on markers for details.",
+    "searchPlaceholder": "Search events by name, location, or tags...",
+    "filters": {
+      "allEvents": "All Events"
+    },
+    "showingWithLocation": "Showing {{count}} of {{total}} events with location data",
+    "noEventsWithLocation": "No events found with location data",
+    "yourLocation": "Your Location",
+    "directions": "Directions",
+    "sidebarTitle": "Events on Map ({{count}})",
+    "loading": "Loading events...",
+    "noEventsMatchFilters": "No events match your filters",
+    "legend": {
+      "title": "Map Legend",
+      "published": "Published Events",
+      "pending": "Pending Approval",
+      "draft": "Draft Events",
+      "finished": "Finished Events",
+      "yourLocation": "Your Location"
+    },
+    "refresh": "Refresh Map Data"
   },
   "footer": {
     "brand": {

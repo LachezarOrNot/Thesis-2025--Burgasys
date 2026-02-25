@@ -2,13 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { databaseService } from '../services/database';
 import { Event } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { format, isToday, isThisWeek, isThisMonth, parseISO } from 'date-fns';
+import { 
+  format, 
+  isToday, 
+  isThisWeek, 
+  isThisMonth, 
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  addMonths,
+  isSameMonth
+} from 'date-fns';
 import { Calendar as CalendarIcon, MapPin, Clock, Users, Filter, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const Calendar: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +30,7 @@ const Calendar: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
   useEffect(() => {
     loadEvents();
@@ -29,19 +44,9 @@ const Calendar: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const eventsData = await databaseService.getEvents();
-      
-      const upcomingEvents = eventsData.filter(event => {
-        try {
-          const eventDate = new Date(event.start_datetime);
-          const isValidDate = !isNaN(eventDate.getTime());
-          return event.status === 'published' && isValidDate && eventDate >= new Date();
-        } catch {
-          return false;
-        }
-      });
-      
-      setEvents(upcomingEvents);
+      // Load all published events; date-based filtering is handled client-side
+      const eventsData = await databaseService.getEvents({ status: 'published' });
+      setEvents(eventsData);
     } catch (error) {
       console.error('Error loading events:', error);
       setError(t('events.errorLoading') || 'Failed to load events. Please try again.');
@@ -122,6 +127,31 @@ const Calendar: React.FC = () => {
 
   const hasActiveFilters = dateFilter !== 'all' || locationFilter !== 'all';
 
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prev => addMonths(prev, -1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(prev => addMonths(prev, 1));
+  };
+
+  const goToCurrentMonth = () => {
+    setCurrentMonth(new Date());
+  };
+
+  const scrollToDateSection = (dateKey: string) => {
+    const el = document.getElementById(`calendar-date-${dateKey}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -144,8 +174,24 @@ const Calendar: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
+    <div
+      className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+      style={{
+        // Larger, more colorful grid similar to Home
+        backgroundImage: `linear-gradient(to bottom right, rgba(129,140,248,0.20), rgba(244,114,182,0.22)),
+          linear-gradient(rgba(129,140,248,0.18) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(129,140,248,0.18) 1px, transparent 1px)`,
+        backgroundSize: '100% 100%, 64px 64px, 64px 64px',
+        backgroundPosition: '0 0, -1px -1px, -1px -1px',
+      }}
+    >
+      {/* subtle radial glow behind main content */}
+      <div className="pointer-events-none absolute inset-0 opacity-60 mix-blend-soft-light">
+        <div className="absolute -top-32 -left-32 w-80 h-80 bg-primary-400/30 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 right-0 w-96 h-96 bg-indigo-500/25 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative container mx-auto max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {t('navigation.calendarView')}
@@ -153,6 +199,121 @@ const Calendar: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">
             {t('calendar.subtitle', 'Browse and filter upcoming events by date and location')}
           </p>
+        </div>
+
+        {/* Month switcher + visual calendar */}
+        <div className="mb-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 dark:border-gray-700/80 overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-primary-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-primary-950">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-primary-600 dark:text-primary-300 font-semibold">
+                {t('navigation.calendarView')}
+              </p>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white">
+                {format(currentMonth, 'MMMM yyyy')}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToPreviousMonth}
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                ‹
+              </button>
+              <button
+                onClick={goToCurrentMonth}
+                className="px-3 py-1.5 text-xs font-semibold rounded-full bg-primary-500 text-white hover:bg-primary-600 transition-colors"
+              >
+                {t('events.today')}
+              </button>
+              <button
+                onClick={goToNextMonth}
+                className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4">
+            {/* Weekday header */}
+            <div className="grid grid-cols-7 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                <div key={idx} className="text-center uppercase tracking-wide">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+              {calendarDays.map(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayEvents = groupedEvents[dateKey] || [];
+                const inCurrentMonth = isSameMonth(day, currentMonth);
+                const today = isToday(day);
+
+                return (
+                  <div
+                    key={dateKey}
+                    className={`relative flex flex-col rounded-xl border text-xs sm:text-sm p-1.5 sm:p-2 min-h-[68px] sm:min-h-[88px] transition-all
+                      ${inCurrentMonth
+                        ? 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                        : 'bg-gray-50 dark:bg-gray-900/60 border-gray-200/60 dark:border-gray-800 text-gray-400'
+                      }
+                      ${today ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-transparent' : ''}
+                    `}
+                    onClick={() => scrollToDateSection(dateKey)}
+                    role="button"
+                    aria-label={format(day, 'PPP')}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold
+                          ${today
+                            ? 'bg-primary-500 text-white'
+                            : inCurrentMonth
+                              ? 'text-gray-900 dark:text-gray-100'
+                              : 'text-gray-400'
+                          }
+                        `}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {dayEvents.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-semibold">
+                          {dayEvents.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Event dots */}
+                    {dayEvents.length > 0 && (
+                      <div className="flex flex-col gap-0.5 mt-0.5 overflow-hidden">
+                        {dayEvents.slice(0, 3).map(ev => (
+                          <button
+                            key={ev.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/events/${ev.id}`);
+                            }}
+                            className="group flex items-center gap-1 rounded-md px-1 py-0.5 bg-primary-50/70 dark:bg-primary-900/40 hover:bg-primary-100 dark:hover:bg-primary-800/70 text-[10px] sm:text-[11px] text-primary-800 dark:text-primary-100 truncate"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+                            <span className="truncate">{ev.name}</span>
+                          </button>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                            +{dayEvents.length - 3} {t('common.more')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -305,7 +466,11 @@ const Calendar: React.FC = () => {
         ) : (
           <div className="space-y-8">
             {sortedDates.map(date => (
-              <div key={date} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              <div
+                key={date}
+                id={`calendar-date-${date}`}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+              >
                 <div className="bg-primary-500 text-white px-6 py-4">
                   <h3 className="text-xl font-semibold">
                     {format(parseISO(date), 'EEEE, MMMM do, yyyy')}
