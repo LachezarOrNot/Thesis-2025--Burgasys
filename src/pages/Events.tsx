@@ -39,6 +39,10 @@ const Events: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (location.state?.search) {
+      setSearchTerm(location.state.search);
+    }
+
     if (location.state?.toast?.message) {
       setToastMessage(location.state.toast.message);
       setShowToast(true);

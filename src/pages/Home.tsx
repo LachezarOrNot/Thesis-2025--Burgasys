@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Calendar, Users, MapPin, ArrowRight, Sparkles, Star, TrendingUp, Zap } from 'lucide-react';
 import EventCard from '../components/EventCard';
 import { Event } from '../types';
@@ -15,6 +15,7 @@ const Home: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadEvents();
@@ -312,11 +313,16 @@ const Home: React.FC = () => {
                         placeholder={t('home.hero.searchPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            navigate('/events', { state: { search: searchTerm } });
+                          }
+                        }}
                         className="w-full pl-12 pr-4 py-4 text-slate-900 dark:text-white bg-white/50 dark:bg-slate-800/50 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder:text-slate-400"
                       />
                     </div>
                     <button
-                      onClick={loadEvents}
+                      onClick={() => navigate('/events', { state: { search: searchTerm } })}
                       className="group relative bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-700 hover:via-pink-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl overflow-hidden"
                     >
                       <span className="relative z-10">{t('home.hero.searchButton')}</span>
@@ -545,7 +551,7 @@ const Home: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-full mb-8">
               <Sparkles className="w-4 h-4 text-white animate-pulse-slow" />
               <span className="text-sm font-bold text-white">
-                {t('home.cta.tagline') || 'Join our growing event community'}
+                {t('home.hero.tagline')}
               </span>
             </div>
             

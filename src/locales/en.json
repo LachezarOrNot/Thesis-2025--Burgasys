@@ -582,10 +582,11 @@
       "verifiedOrganizers": "Verified Organizers"
     },
     "whyChoose": {
-      "title": "Why Choose EventHub",
+      "title": "Why Choose Burgasys",
       "subtitle": "Experience the future of event discovery and management"
     },
     "cta": {
+      "tagline": "Join our growing event community",
       "title": "Ready to Get Started?",
       "description": "Join thousands of users discovering and creating amazing events",
       "signUp": "Sign Up Free",

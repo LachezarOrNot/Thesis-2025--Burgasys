@@ -18,6 +18,8 @@ import { doc, setDoc, onSnapshot, deleteDoc, updateDoc } from 'firebase/firestor
 import { db } from '../services/firebase';
 import { useTranslation } from 'react-i18next';
 import VideoCall from './VideoCall';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 interface ChatRoomProps {
   eventId: string;
@@ -48,6 +50,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   
   const [selectedTheme, setSelectedTheme] = useState<ChatTheme>(() => {
     const saved = localStorage.getItem('chatTheme');
@@ -306,6 +309,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
   };
 
   const isOwnMessage = (message: ChatMessage) => message.senderUid === user?.uid;
+
+  const handleAddEmoji = (emoji: any) => {
+    if (!emoji) return;
+    const symbol = emoji.native || emoji.colons || '';
+    if (!symbol) return;
+    setNewMessage(prev => `${prev}${symbol}`);
+    setShowEmojiPicker(false);
+  };
 
   if (!isChatActive) {
     return (
@@ -586,12 +597,27 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ eventId, eventStatus }) => {
             )}
           </div>
 
-          <button
-            type="button"
-            className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all"
-          >
-            <Smile className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(prev => !prev)}
+              className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all"
+            >
+              <Smile className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 right-0 z-40">
+                <Picker
+                  data={data}
+                  onEmojiSelect={handleAddEmoji}
+                  theme="auto"
+                  previewPosition="none"
+                  emojiButtonSize={30}
+                  emojiSize={18}
+                />
+              </div>
+            )}
+          </div>
         </form>
       </div>
 

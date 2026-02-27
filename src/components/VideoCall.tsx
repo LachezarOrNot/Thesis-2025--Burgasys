@@ -328,17 +328,23 @@ const VideoCall: React.FC<VideoCallProps> = ({ eventId, onClose, userName = 'Gue
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Soft background grid / glow */}
+      <div className="pointer-events-none absolute inset-0 opacity-60 mix-blend-screen">
+        <div className="absolute -top-32 -left-32 w-80 h-80 bg-purple-500/25 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 right-0 w-96 h-96 bg-blue-500/25 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.15),transparent_60%)]" />
+      </div>
       {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent p-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-slate-950/90 to-transparent p-4">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-white font-semibold text-sm md:text-base">Live Call</span>
-            <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full backdrop-blur-sm">
+            <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+            <span className="text-white font-semibold text-sm md:text-base">Live call</span>
+            <div className="hidden sm:flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/10">
               <Users className="w-3.5 h-3.5 text-white" />
               <span className="text-white text-xs font-medium">
-                {channelName} • {userName || 'Guest'}
+                {channelName}
               </span>
             </div>
           </div>
