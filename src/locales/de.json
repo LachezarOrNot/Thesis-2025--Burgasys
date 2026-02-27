@@ -241,7 +241,37 @@
     "details": "Details",
     "chat": "Chat",
     "tabDetails": "Details",
-    "tabChat": "Chat"
+    "tabChat": "Chat",
+    "capacity": "Kapazität",
+    "capacityRegistered": "registriert",
+    "unlimitedCapacity": "Unbegrenzte Kapazität",
+    "registrationClosed": "Registrierung geschlossen",
+    "organizer": "Veranstalter",
+    "unknownOrganization": "Unbekannte Organisation",
+    "noDescription": "Keine Beschreibung vorhanden.",
+    "eventLocation": "Veranstaltungsort",
+    "photos": "Veranstaltungsfotos",
+    "tags": "Tags",
+    "getDirections": "Route",
+    "openInMaps": "In Karten öffnen",
+    "registration": {
+      "title": "Registrierung",
+      "registered": "Sie sind registriert!",
+      "registeredDescription": "Wir sehen uns bei der Veranstaltung. Prüfen Sie den Tab „Chat“ für aktuelle Informationen.",
+      "pastTitle": "Veranstaltung beendet",
+      "pastDescription": "Diese Veranstaltung liegt in der Vergangenheit. Eine Registrierung ist nicht mehr möglich.",
+      "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+      "fullTitle": "Veranstaltung ausgebucht",
+      "joinWaitlist": "Auf Warteliste setzen",
+      "closedTitle": "Registrierung geschlossen",
+      "closedDescription": "Für diese Veranstaltung ist keine Registrierung möglich.",
+      "disclaimer": "Mit der Registrierung stimmen Sie zu, Ihre grundlegenden Profildaten mit den Veranstaltern zu teilen."
+    },
+    "infoTitle": "Veranstaltungsinformationen",
+    "infoStatus": "Status:",
+    "infoCreated": "Erstellt:",
+    "infoCoordinates": "Koordinaten:",
+    "share": "Veranstaltung teilen"
   },
   "eventCreate": {
     "title": "Neue Veranstaltung erstellen",
@@ -637,7 +667,86 @@
       "title": "Verbinden",
       "description": "Bleibe mit den neuesten Updates, Veranstaltungstipps und Community-Geschichten verbunden."
     },
+    "legal": {
+      "legal": "Rechtliche Hinweise",
+      "terms": "Nutzungsbedingungen",
+      "privacy": "Datenschutzerklärung"
+    },
     "copyright": "© {{year}} Burgasys · Mit Integrität für die Gemeinschaft gebaut."
+  },
+  "legal": {
+    "title": "Rechtliche Hinweise",
+    "intro": "Auf dieser Seite findest du allgemeine rechtliche Informationen zu Burgasys. Sie stellt keine Rechtsberatung dar.",
+    "badge": "Transparenz & Compliance",
+    "lastUpdated": "Zuletzt aktualisiert",
+    "quickLinks": "Schnellzugriff",
+    "note": "Wenn du Burgasys kommerziell in einer bestimmten Rechtsordnung betreibst, solltest du diesen Beispieltext durch von einem Rechtsbeistand geprüfte Inhalte ersetzen.",
+    "company": {
+      "title": "Anbieter des Dienstes",
+      "description": "Burgasys ist eine Online-Plattform zum Entdecken und Verwalten von Veranstaltungen. Hier können konkrete Unternehmens- und Kontaktdaten ergänzt werden."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Bei Fragen zu Nutzungsbedingungen, Datenschutz oder rechtlichen Themen wende dich bitte an support@burgasys.com."
+    },
+    "disclaimer": {
+      "title": "Haftungsausschluss",
+      "description": "Wir bemühen uns, Informationen aktuell und korrekt zu halten, dennoch wird Burgasys ohne jegliche Gewährleistung „wie besehen“ bereitgestellt."
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "intro": "Durch die Nutzung von Burgasys stimmst du diesen Bedingungen zu. Bitte lies sie sorgfältig, bevor du die Plattform verwendest.",
+      "badge": "Nutzung von Burgasys",
+      "use": {
+        "title": "Nutzung des Dienstes",
+        "description": "Du verpflichtest dich, Burgasys nur für rechtmäßige Zwecke und im Einklang mit den jeweils geltenden Gesetzen zu nutzen."
+      },
+      "accounts": {
+        "title": "Benutzerkonten",
+        "description": "Du bist für die Vertraulichkeit deines Kontos und aller Aktivitäten, die darüber erfolgen, verantwortlich."
+      },
+      "content": {
+        "title": "Inhalte und Veranstaltungen",
+        "description": "Veranstalter sind für die Richtigkeit und Rechtmäßigkeit der von ihnen erstellten Veranstaltungen verantwortlich. Burgasys kann Inhalte entfernen, die gegen diese Bedingungen verstoßen."
+      },
+      "changes": {
+        "title": "Änderungen dieser Bedingungen",
+        "description": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren. Die weitere Nutzung der Plattform nach Änderungen bedeutet, dass du die aktualisierten Bedingungen akzeptierst."
+      },
+      "summary": {
+        "title": "Kurz gesagt",
+        "point1": "Nutze Burgasys verantwortungsvoll und im Einklang mit den lokalen Gesetzen.",
+        "point2": "Du trägst Verantwortung für dein Konto und die Inhalte, die du erstellst.",
+        "point3": "Wir können diese Bedingungen im Zuge der Weiterentwicklung des Produkts anpassen."
+      }
+    },
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "intro": "Diese Richtlinie erklärt, wie Burgasys deine personenbezogenen Daten erhebt, verwendet und schützt, wenn du die Plattform nutzt.",
+      "badge": "Deine Daten & Privatsphäre",
+      "data": {
+        "title": "Welche Daten wir erheben",
+        "description": "Wir können Informationen erfassen, die du direkt bereitstellst (z. B. Kontodaten), sowie technische Daten wie Nutzungs- und Geräteinformationen."
+      },
+      "usage": {
+        "title": "Wie wir Daten verwenden",
+        "description": "Deine Daten werden verwendet, um die Plattform zu betreiben, Funktionen zu verbessern, Support zu leisten und die Sicherheit deines Kontos zu gewährleisten."
+      },
+      "sharing": {
+        "title": "Weitergabe von Daten",
+        "description": "Wir verkaufen deine personenbezogenen Daten nicht. Eine begrenzte Weitergabe kann an Dienstleister oder wenn gesetzlich vorgeschrieben erfolgen."
+      },
+      "rights": {
+        "title": "Deine Rechte",
+        "description": "Abhängig von deinem Wohnsitz kannst du Rechte auf Auskunft, Berichtigung oder Löschung deiner Daten sowie auf Widerspruch gegen bestimmte Verarbeitungen haben."
+      },
+      "summary": {
+        "title": "Wesentliche Punkte",
+        "point1": "Wir erheben nur die Daten, die wir für den Betrieb von Burgasys wirklich benötigen.",
+        "point2": "Wir verkaufen deine personenbezogenen Daten niemals an Dritte.",
+        "point3": "Du kannst uns kontaktieren, wenn du auf deine Daten zugreifen oder sie löschen lassen möchtest."
+      }
+    }
   },
   "status": {
     "draft": "Entwurf",

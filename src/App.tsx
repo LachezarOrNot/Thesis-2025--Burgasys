@@ -29,6 +29,9 @@ const Organization = React.lazy(() => import('./pages/Organization'));
 const CreateOrganization = React.lazy(() => import('./pages/CreateOrganization'));
 const EditEvent = React.lazy(() => import('./pages/EventEdit'));
 const MapExplorer = React.lazy(() => import('./pages/MapExplorer'));
+const Legal = React.lazy(() => import('./pages/Legal'));
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -99,6 +102,9 @@ function App() {
                       <MapExplorer />
                     </ProtectedRoute>
                   } />
+                  <Route path="/legal" element={<Legal />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/organizations" element={
                     <ProtectedRoute>
                       <Organization />

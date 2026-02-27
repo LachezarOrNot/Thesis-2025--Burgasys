@@ -164,12 +164,14 @@ const EventDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Event not found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {t('eventDetail.eventNotFound')}
+          </h2>
           <button
             onClick={() => navigate('/events')}
             className="mt-4 text-primary-500 hover:text-primary-600 font-medium"
           >
-            Return to Events
+            {t('eventDetail.backToEvents')}
           </button>
         </div>
       </div>
@@ -179,6 +181,8 @@ const EventDetail: React.FC = () => {
   const isOwner = user?.uid === event.createdBy;
   const capacityReached = event.capacity ? (event.registeredUsers?.length || 0) >= event.capacity : false;
   const hasValidLocation = event.lat && event.lng && event.lat !== 0 && event.lng !== 0;
+  const eventEndDate = processDate(event.end_datetime);
+  const isPastEvent = event.status === 'finished' || (eventEndDate !== null && eventEndDate < new Date());
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 relative">
@@ -287,7 +291,9 @@ const EventDetail: React.FC = () => {
                       <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Date</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {t('eventDetail.date')}
+                      </p>
                       <p className="text-gray-600 dark:text-gray-400">
                         {formatDateSafe(event.start_datetime)}
                         {formatDateSafe(event.start_datetime) !== formatDateSafe(event.end_datetime) &&
@@ -304,7 +310,9 @@ const EventDetail: React.FC = () => {
                       <MapPin className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900 dark:text-white">Location</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {t('eventDetail.location')}
+                      </p>
                       <p className="text-gray-600 dark:text-gray-400">{event.location}</p>
                       
                       {hasValidLocation && (
@@ -313,7 +321,7 @@ const EventDetail: React.FC = () => {
                           className="mt-2 text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
                         >
                           <Navigation className="w-4 h-4" />
-                          Get Directions
+                          {t('eventDetail.getDirections', 'Get Directions')}
                         </button>
                       )}
                     </div>
@@ -324,19 +332,28 @@ const EventDetail: React.FC = () => {
                       <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Capacity</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        {t('eventDetail.capacity', 'Capacity')}
+                      </p>
                       <p className="text-gray-600 dark:text-gray-400">
                         {event.capacity ? (
                           <>
-                            {event.registeredUsers?.length || 0} / {event.capacity} registered
-                            {capacityReached && <span className="text-red-500 ml-2 text-sm">(Full)</span>}
+                            {event.registeredUsers?.length || 0} / {event.capacity}{' '}
+                            {t('eventDetail.capacityRegistered', 'registered')}
+                            {capacityReached && (
+                              <span className="text-red-500 ml-2 text-sm">
+                                ({t('eventDetail.full', 'Full')})
+                              </span>
+                            )}
                           </>
                         ) : (
-                          'Unlimited capacity'
+                          t('eventDetail.unlimitedCapacity', 'Unlimited capacity')
                         )}
                       </p>
                       {event.allow_registration === false && (
-                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">Registration closed</p>
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">
+                          {t('eventDetail.registrationClosed', 'Registration closed')}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -347,7 +364,9 @@ const EventDetail: React.FC = () => {
                         <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">Organizer</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {t('eventDetail.organizer', 'Organizer')}
+                        </p>
                         <p className="text-gray-600 dark:text-gray-400">
                           {organizerName ? (
                             <Link
@@ -357,7 +376,7 @@ const EventDetail: React.FC = () => {
                               {organizerName}
                             </Link>
                           ) : (
-                            'Unknown organization'
+                            t('eventDetail.unknownOrganization', 'Unknown organization')
                           )}
                         </p>
                       </div>
@@ -378,7 +397,7 @@ const EventDetail: React.FC = () => {
                     >
                       <div className="flex items-center gap-2">
                         <Info className="w-4 h-4" />
-                        About
+                        {t('eventDetail.tabDetails', 'Details')}
                       </div>
                     </button>
                     {isRegistered && (
@@ -392,7 +411,7 @@ const EventDetail: React.FC = () => {
                       >
                         <div className="flex items-center gap-2">
                           <MessageCircle className="w-4 h-4" />
-                          Discussion
+                          {t('eventDetail.tabChat', 'Chat')}
                         </div>
                       </button>
                     )}
@@ -405,16 +424,20 @@ const EventDetail: React.FC = () => {
                     <div className="space-y-8">
                       {/* Description */}
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                          {t('eventDetail.aboutEvent')}
+                        </h3>
                         <p className="text-gray-600 dark:text-gray-400 whitespace-pre-line leading-relaxed">
-                          {event.description || 'No description provided.'}
+                          {event.description || t('eventDetail.noDescription', 'No description provided.')}
                         </p>
                       </div>
 
                       {/* Location Map - Full Width in Main Content */}
                       {hasValidLocation && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Event Location</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            {t('eventDetail.eventLocation', 'Event Location')}
+                          </h3>
                           <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
                             <EventMap
                               latitude={event.lat}
@@ -434,7 +457,7 @@ const EventDetail: React.FC = () => {
                               className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
                             >
                               <Navigation className="w-4 h-4" />
-                              Open in Maps
+                              {t('eventDetail.openInMaps', 'Open in Maps')}
                             </button>
                           </div>
                         </div>
@@ -443,7 +466,9 @@ const EventDetail: React.FC = () => {
                       {/* Event Images */}
                       {event.images && event.images.length > 1 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Event Photos</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            {t('eventDetail.photos', 'Event Photos')}
+                          </h3>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {event.images.slice(1).map((image, index) => (
                               <div key={index} className="relative group">
@@ -461,7 +486,9 @@ const EventDetail: React.FC = () => {
                       {/* Tags */}
                       {event.tags && event.tags.length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Tags</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                            {t('eventDetail.tags', 'Tags')}
+                          </h3>
                           <div className="flex flex-wrap gap-2">
                             {event.tags.map(tag => (
                               <span
@@ -489,15 +516,33 @@ const EventDetail: React.FC = () => {
               <div className="w-full lg:w-80 xl:w-96 shrink-0">
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 sticky top-24">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                    Registration
+                    {t('eventDetail.registration.title', 'Registration')}
                   </h3>
 
                   {isRegistered ? (
                     <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center mb-4">
                       <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
-                      <p className="text-green-800 dark:text-green-200 font-medium">You are registered!</p>
+                      <p className="text-green-800 dark:text-green-200 font-medium">
+                        {t('eventDetail.registration.registered', 'You are registered!')}
+                      </p>
                       <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                        See you at the event. Check the Discussion tab for updates.
+                        {t(
+                          'eventDetail.registration.registeredDescription',
+                          'See you at the event. Check the Discussion tab for updates.'
+                        )}
+                      </p>
+                    </div>
+                  ) : isPastEvent ? (
+                    <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center mb-4">
+                      <AlertCircle className="w-10 h-10 text-gray-500 mx-auto mb-2" />
+                      <p className="text-gray-900 dark:text-gray-100 font-medium">
+                        {t('eventDetail.registration.pastTitle', 'Event has ended')}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {t(
+                          'eventDetail.registration.pastDescription',
+                          'This event is in the past. Registration is no longer available.'
+                        )}
                       </p>
                     </div>
                   ) : (
@@ -505,24 +550,34 @@ const EventDetail: React.FC = () => {
                       {registrationStatus === 'error' && (
                         <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-sm flex items-center gap-2">
                           <AlertCircle className="w-4 h-4" />
-                          Something went wrong. Please try again.
+                          {t(
+                            'eventDetail.registration.error',
+                            'Something went wrong. Please try again.'
+                          )}
                         </div>
                       )}
 
                       {capacityReached ? (
                         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-center">
                           <AlertCircle className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                          <p className="text-yellow-800 dark:text-yellow-200 font-medium">Event is Full</p>
+                          <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+                            {t('eventDetail.registration.fullTitle', 'Event is Full')}
+                          </p>
                           <button className="mt-4 w-full py-2 px-4 border border-yellow-500 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-colors">
-                            Join Waitlist
+                            {t('eventDetail.registration.joinWaitlist', 'Join Waitlist')}
                           </button>
                         </div>
                       ) : !event.allow_registration ? (
                         <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-4 text-center">
                           <AlertCircle className="w-8 h-8 text-gray-500 mx-auto mb-2" />
-                          <p className="text-gray-800 dark:text-gray-200 font-medium">Registration Closed</p>
+                          <p className="text-gray-800 dark:text-gray-200 font-medium">
+                            {t('eventDetail.registration.closedTitle', 'Registration Closed')}
+                          </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Registration is not available for this event.
+                            {t(
+                              'eventDetail.registration.closedDescription',
+                              'Registration is not available for this event.'
+                            )}
                           </p>
                         </div>
                       ) : (
@@ -534,35 +589,42 @@ const EventDetail: React.FC = () => {
                           {registrationStatus === 'loading' ? (
                             <div className="flex items-center justify-center gap-2">
                               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                              Registering...
+                              {t('eventDetail.registering')}
                             </div>
                           ) : (
-                            'Register Now'
+                            t('eventDetail.registerForEvent')
                           )}
                         </button>
                       )}
 
                       <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-4">
-                        By registering, you agree to share your basic profile info with the organizers.
+                        {t(
+                          'eventDetail.registration.disclaimer',
+                          'By registering, you agree to share your basic profile info with the organizers.'
+                        )}
                       </p>
                     </>
                   )}
 
                   {/* Additional Info */}
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">Event Information</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                      {t('eventDetail.infoTitle', 'Event Information')}
+                    </h4>
                     <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                       <li className="flex justify-between">
-                        <span>Status:</span>
+                        <span>{t('eventDetail.infoStatus', 'Status:')}</span>
                         <span className="font-medium capitalize">{event.status.replace('_', ' ')}</span>
                       </li>
                       <li className="flex justify-between">
-                        <span>Created:</span>
+                        <span>{t('eventDetail.infoCreated', 'Created:')}</span>
                         <span>{formatDateSafe(event.createdAt)}</span>
                       </li>
                       {hasValidLocation && (
                         <li className="flex flex-col gap-1 pt-2">
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Coordinates:</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                            {t('eventDetail.infoCoordinates', 'Coordinates:')}
+                          </span>
                           <span className="font-mono text-xs text-gray-500 dark:text-gray-400">
                             {event.lat.toFixed(6)}, {event.lng.toFixed(6)}
                           </span>
@@ -578,7 +640,7 @@ const EventDetail: React.FC = () => {
                       className="w-full py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 font-medium"
                     >
                       <Share2 className="w-4 h-4" />
-                      Share Event
+                      {t('eventDetail.share', 'Share Event')}
                     </button>
 
                     {hasValidLocation && (
@@ -587,7 +649,7 @@ const EventDetail: React.FC = () => {
                         className="w-full py-2.5 px-4 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
                       >
                         <Navigation className="w-4 h-4" />
-                        Get Directions
+                        {t('eventDetail.getDirections', 'Get Directions')}
                       </button>
                     )}
                   </div>

@@ -151,11 +151,26 @@ const Footer: React.FC = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="mt-14 border-t border-gray-800 pt-6 text-center text-sm text-gray-500"
+          className="mt-14 border-t border-gray-800 pt-6 text-center text-xs sm:text-sm text-gray-500"
         >
-          <p>
-            {t('footer.copyright', { year: new Date().getFullYear() })}
-          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+            <p>
+              {t('footer.copyright', { year: new Date().getFullYear() })}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-gray-400">
+              <Link to="/legal" className="hover:text-gray-200 transition-colors duration-200">
+                {t('footer.legal.legal', 'Legal information')}
+              </Link>
+              <span className="hidden sm:inline-block text-gray-600">•</span>
+              <Link to="/terms" className="hover:text-gray-200 transition-colors duration-200">
+                {t('footer.legal.terms', 'Terms of service')}
+              </Link>
+              <span className="hidden sm:inline-block text-gray-600">•</span>
+              <Link to="/privacy" className="hover:text-gray-200 transition-colors duration-200">
+                {t('footer.legal.privacy', 'Privacy policy')}
+              </Link>
+            </div>
+          </div>
         </motion.div>
       </div>
     </footer>
