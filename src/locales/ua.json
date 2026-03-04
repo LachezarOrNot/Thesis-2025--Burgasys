@@ -41,6 +41,7 @@
     "searchPlaceholder": "Пошук подій, тем, місць або категорій...",
     "filters": "Фільтри",
     "filterEvents": "Фільтрувати події",
+    "filterSubtitle": "Пошук за назвою, місцем або категорією",
     "clearAll": "Очистити все",
     "hideFilters": "Сховати фільтри",
     "activeFilters": "Активні фільтри",
@@ -462,7 +463,190 @@
       "title": "Доступ заборонено",
       "message": "Вам потрібні права адміністратора для доступу до цієї сторінки."
     },
-    "loading": "Завантаження панелі адміністратора..."
+    "loading": "Завантаження панелі адміністратора...",
+    "users": {
+      "subtitle": "Керуйте та відстежуйте всіх зареєстрованих користувачів у системі",
+      "header": {
+        "refresh": "Оновити",
+        "export": "Експортувати дані"
+      },
+      "stats": {
+        "totalUsers": "Усього користувачів",
+        "activeUsers": "Активні користувачі",
+        "pendingApproval": "Очікують схвалення",
+        "students": "Студенти",
+        "organizationsLabel": "{{count}} організацій",
+        "last30Days": "за останні 30 днів",
+        "ofTotal": "від загальної кількості"
+      },
+      "charts": {
+        "roleDistribution": "Розподіл за ролями",
+        "registrationTrend": "Тренд реєстрацій",
+        "activity": "Активність користувачів",
+        "topOrganizations": "Топ організацій",
+        "systemOverview": "Огляд системи",
+        "systemHealthGood": "Добрий",
+        "period": {
+          "all": "За весь час",
+          "days30": "Останні 30 днів",
+          "days90": "Останні 90 днів",
+          "year": "За останній рік"
+        },
+        "trendType": {
+          "monthly": "Щомісяця",
+          "weekly": "Щотижня",
+          "daily": "Щодня"
+        },
+        "activityLabels": {
+          "activeToday": "Активні сьогодні",
+          "activeWeek": "Активні цього тижня",
+          "activeMonth": "Активні цього місяця",
+          "inactive": "Неактивні"
+        },
+        "tooltips": {
+          "users": "користувачі",
+          "registrations": "Реєстрації",
+          "count": "Кількість"
+        }
+      },
+      "filters": {
+        "searchPlaceholder": "Пошук користувачів за ім'ям, email або ID...",
+        "roles": {
+          "all": "Усі ролі",
+          "admin": "Адміністратор",
+          "student": "Студент",
+          "school": "Школа",
+          "firm": "Компанія",
+          "university": "Університет",
+          "user": "Користувач"
+        },
+        "status": {
+          "all": "Усі статуси",
+          "active": "Активні",
+          "inactive": "Неактивні",
+          "approved": "Схвалені",
+          "pending": "Очікують",
+          "rejected": "Відхилені"
+        },
+        "dateRange": {
+          "all": "За весь час",
+          "today": "Сьогодні",
+          "week": "Останній тиждень",
+          "month": "Останній місяць",
+          "year": "Останній рік"
+        },
+        "sort": {
+          "newest": "Спочатку нові",
+          "oldest": "Спочатку старі",
+          "name": "Ім'я A–Z",
+          "email": "Email A–Z"
+        },
+        "pageSize": {
+          "perPage": "{{count}} на сторінку"
+        }
+      },
+      "bulk": {
+        "usersSelected": "Вибрано користувачів: {{count}}",
+        "actions": "Масові дії",
+        "clearSelection": "Очистити вибір",
+        "approveSelected": "Схвалити вибраних",
+        "rejectSelected": "Відхилити вибраних",
+        "activateSelected": "Активувати вибраних",
+        "deactivateSelected": "Деактивувати вибраних",
+        "deleteSelected": "Видалити вибраних"
+      },
+      "table": {
+        "user": "Користувач",
+        "role": "Роль",
+        "joined": "Дата реєстрації",
+        "status": "Статус",
+        "organization": "Організація",
+        "actions": "Дії",
+        "emptyTitle": "Користувачів не знайдено",
+        "emptySearch": "Спробуйте змінити параметри пошуку або фільтри",
+        "emptyNoUsers": "У системі ще немає користувачів"
+      },
+      "pagination": {
+        "showing": "Показано",
+        "to": "по",
+        "of": "з",
+        "users": "користувачів",
+        "previous": "Назад",
+        "next": "Далі"
+      },
+      "system": {
+        "noOrgsWithMembers": "Поки немає організацій з учасниками",
+        "organizationFallback": "Організація",
+        "members": "{{count}} учасник",
+        "members_plural": "{{count}} учасників",
+        "shareOfUsers": "{{percent}}% прив'язаних користувачів",
+        "pendingApprovals": "Запити, що очікують схвалення",
+        "systemHealth": "Стан системи"
+      },
+      "details": {
+        "editTitle": "Редагування користувача",
+        "viewTitle": "Деталі користувача",
+        "userId": "ID користувача",
+        "accountStatus": "Статус облікового запису",
+        "status": "Статус",
+        "approval": "Схвалення",
+        "approvalNone": "Немає запиту",
+        "approvalPending": "Очікує",
+        "approvalApproved": "Схвалено",
+        "created": "Створено",
+        "lastUpdated": "Останнє оновлення",
+        "contactAndDetails": "Контакти та деталі",
+        "displayName": "Відображуване ім'я",
+        "email": "Email",
+        "phoneNumber": "Номер телефону",
+        "phonePlaceholder": "+380 67 123 45 67",
+        "studentId": "Студентський квиток (за наявності)",
+        "studentIdLabel": "Студентський номер",
+        "studentIdPlaceholder": "STU123456",
+        "bio": "Біографія",
+        "bioPlaceholder": "Короткий опис користувача...",
+        "phoneLabel": "Телефон",
+        "phoneNotProvided": "Не вказано",
+        "organization": "Організація",
+        "role": "Роль",
+        "affiliatedOrganization": "Пов'язана організація",
+        "affiliationNone": "Немає",
+        "affiliationLabel": "Зв'язок",
+        "affiliationUnknown": "Невідома організація",
+        "affiliationNotAffiliated": "Немає пов'язаної організації",
+        "userType": "Тип користувача",
+        "cancel": "Скасувати",
+        "save": "Зберегти зміни",
+        "saving": "Збереження..."
+      },
+      "statusLabels": {
+        "approved": "Схвалений",
+        "inactive": "Неактивний",
+        "active": "Активний",
+        "pending": "Очікує",
+        "basic": "Базовий"
+      },
+      "toasts": {
+        "updateSuccess": "Користувача успішно оновлено",
+        "updateError": "Не вдалося оновити користувача",
+        "loadError": "Не вдалося завантажити дані",
+        "bulkNoneSelected": "Не вибрано жодного користувача",
+        "bulkApproved": "Схвалено користувачів: {{count}}",
+        "bulkRejected": "Відхилено користувачів: {{count}}",
+        "bulkActivated": "Активовано користувачів: {{count}}",
+        "bulkDeactivated": "Деактивовано користувачів: {{count}}",
+        "bulkDeleted": "Видалено користувачів: {{count}}",
+        "bulkFailed": "Не вдалося виконати дію",
+        "approveSuccess": "Користувача {{name}} схвалено",
+        "approveError": "Не вдалося схвалити користувача",
+        "deleteConfirm": "Ви впевнені, що хочете видалити {{name}}? Цю дію не можна скасувати.",
+        "deleteBulkConfirm": "Ви впевнені, що хочете видалити {{count}} користувачів?",
+        "deleteSuccess": "Користувача {{name}} видалено",
+        "deleteError": "Не вдалося видалити користувача",
+        "exportSuccess": "Експортовано {{count}} користувачів у CSV",
+        "exportError": "Не вдалося експортувати дані"
+      }
+    }
   },
   "auth": {
     "signIn": "Увійдіть у свій обліковий запис",

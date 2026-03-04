@@ -7,6 +7,7 @@ import en from '../locales/en.json';
 import bg from '../locales/bg.json';
 import de from '../locales/de.json';
 import ru from '../locales/ru.json';
+import ua from '../locales/ua.json';
 
 const resources = {
   en: {
@@ -20,7 +21,10 @@ const resources = {
   },
     ru: {
     translation: ru
-}
+  },
+  ua: {
+    translation: ua
+  }
 };
 
 i18n

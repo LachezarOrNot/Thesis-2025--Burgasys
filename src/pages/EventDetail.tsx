@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
 import ChatRoom from '../components/ChatRoom';
+import EventParticipants from '../components/EventParticipants';
 import { MapPin, Calendar, Users, Clock, ArrowLeft, Share2, MessageCircle, Info, CheckCircle, AlertCircle, Edit, Globe, Navigation } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -415,6 +416,21 @@ const EventDetail: React.FC = () => {
                         </div>
                       </button>
                     )}
+                    {isRegistered && (
+                      <button
+                        onClick={() => setActiveTab('participants')}
+                        className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                          activeTab === 'participants'
+                            ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          {t('eventDetail.participants.tab', 'Participants')}
+                        </div>
+                      </button>
+                    )}
                   </nav>
                 </div>
 
@@ -507,6 +523,12 @@ const EventDetail: React.FC = () => {
                   {activeTab === 'chat' && isRegistered && (
                     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 h-[600px]">
                       <ChatRoom eventId={event.id} eventStatus={event.status} />
+                    </div>
+                  )}
+
+                  {activeTab === 'participants' && isRegistered && (
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                      <EventParticipants eventId={event.id} />
                     </div>
                   )}
                 </div>

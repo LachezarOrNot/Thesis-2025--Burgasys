@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { format, subMonths, startOfDay, subDays, subWeeks, subYears } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 // User Details Modal Component
 const UserDetailsModal: React.FC<{
@@ -459,6 +460,7 @@ const UserDetailsModal: React.FC<{
 
 const AdminUsersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserType[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -505,7 +507,7 @@ const AdminUsersManagement: React.FC = () => {
       calculateStats(allUsers);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load data');
+      toast.error(t('admin.users.toasts.loadError'));
     } finally {
       setLoading(false);
     }
@@ -657,7 +659,7 @@ const AdminUsersManagement: React.FC = () => {
   // Bulk actions
   const handleBulkAction = async (action: string) => {
     if (selectedUsers.length === 0) {
-      toast.error('No users selected');
+      toast.error(t('admin.users.toasts.bulkNoneSelected'));
       return;
     }
 
@@ -667,32 +669,32 @@ const AdminUsersManagement: React.FC = () => {
           await Promise.all(selectedUsers.map(uid =>
             databaseService.updateUser(uid, { approved: true, approvalRequested: false })
           ));
-          toast.success(`${selectedUsers.length} users approved`);
+          toast.success(t('admin.users.toasts.bulkApproved', { count: selectedUsers.length }));
           break;
         case 'reject':
           await Promise.all(selectedUsers.map(uid =>
             databaseService.updateUser(uid, { approved: false, approvalRequested: false })
           ));
-          toast.success(`${selectedUsers.length} users rejected`);
+          toast.success(t('admin.users.toasts.bulkRejected', { count: selectedUsers.length }));
           break;
         case 'activate':
           await Promise.all(selectedUsers.map(uid =>
             databaseService.updateUser(uid, { isActive: true })
           ));
-          toast.success(`${selectedUsers.length} users activated`);
+          toast.success(t('admin.users.toasts.bulkActivated', { count: selectedUsers.length }));
           break;
         case 'deactivate':
           await Promise.all(selectedUsers.map(uid =>
             databaseService.updateUser(uid, { isActive: false })
           ));
-          toast.success(`${selectedUsers.length} users deactivated`);
+          toast.success(t('admin.users.toasts.bulkDeactivated', { count: selectedUsers.length }));
           break;
         case 'delete':
-          if (!confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) return;
+          if (!confirm(t('admin.users.toasts.deleteBulkConfirm', { count: selectedUsers.length }))) return;
           await Promise.all(selectedUsers.map(uid =>
             databaseService.deleteUserData(uid)
           ));
-          toast.success(`${selectedUsers.length} users deleted`);
+          toast.success(t('admin.users.toasts.bulkDeleted', { count: selectedUsers.length }));
           break;
       }
       
@@ -701,7 +703,7 @@ const AdminUsersManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error performing bulk action:', error);
-      toast.error('Failed to perform action');
+      toast.error(t('admin.users.toasts.bulkFailed'));
     }
   };
 
@@ -868,25 +870,33 @@ const AdminUsersManagement: React.FC = () => {
     }).length;
     
     return [
-      { period: 'Active Today', users: activeToday },
-      { period: 'Active Week', users: activeWeek },
-      { period: 'Active Month', users: activeMonth },
-      { period: 'Inactive', users: inactive }
+      { period: t('admin.users.charts.activityLabels.activeToday'), users: activeToday },
+      { period: t('admin.users.charts.activityLabels.activeWeek'), users: activeWeek },
+      { period: t('admin.users.charts.activityLabels.activeMonth'), users: activeMonth },
+      { period: t('admin.users.charts.activityLabels.inactive'), users: inactive }
     ];
   };
 
   // Export data to CSV
   const exportToCSV = () => {
     try {
-      const headers = ['Name', 'Email', 'Role', 'Status', 'Joined Date', 'Approved', 'Active'];
+      const headers = [
+        t('common.name', 'Name'),
+        t('common.email', 'Email'),
+        t('admin.users.table.role'),
+        t('admin.users.table.status'),
+        t('admin.users.table.joined'),
+        t('admin.users.csv.approved', 'Approved'),
+        t('admin.users.csv.active', 'Active')
+      ];
       const csvData = filteredUsers.map(user => [
         user.displayName || '',
         user.email,
         user.role,
-        user.isActive === false ? 'Inactive' : 'Active',
+        user.isActive === false ? t('admin.users.statusLabels.inactive') : t('admin.users.statusLabels.active'),
         format(new Date(user.createdAt), 'yyyy-MM-dd'),
-        user.approved ? 'Yes' : 'No',
-        user.isActive !== false ? 'Yes' : 'No'
+        user.approved ? t('common.yes', 'Yes') : t('common.no', 'No'),
+        user.isActive !== false ? t('common.yes', 'Yes') : t('common.no', 'No')
       ]);
       
       const csvContent = [
@@ -902,10 +912,10 @@ const AdminUsersManagement: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       
-      toast.success(`Exported ${filteredUsers.length} users to CSV`);
+      toast.success(t('admin.users.toasts.exportSuccess', { count: filteredUsers.length }));
     } catch (error) {
       console.error('Error exporting data:', error);
-      toast.error('Failed to export data');
+      toast.error(t('admin.users.toasts.exportError'));
     }
   };
 
@@ -916,33 +926,33 @@ const AdminUsersManagement: React.FC = () => {
         approved: true, 
         approvalRequested: false 
       });
-      toast.success(`User ${user.displayName} approved`);
+      toast.success(t('admin.users.toasts.approveSuccess', { name: user.displayName || user.email }));
       fetchUsers();
     } catch (error) {
-      toast.error('Failed to approve user');
+      toast.error(t('admin.users.toasts.approveError'));
     }
   };
 
   // Delete user
   const deleteUser = async (user: UserType) => {
-    if (!confirm(`Are you sure you want to delete ${user.displayName}? This action cannot be undone.`)) {
+    if (!confirm(t('admin.users.toasts.deleteConfirm', { name: user.displayName || user.email }))) {
       return;
     }
     
     try {
       await databaseService.deleteUserData(user.uid);
-      toast.success(`User ${user.displayName} deleted`);
+      toast.success(t('admin.users.toasts.deleteSuccess', { name: user.displayName || user.email }));
       fetchUsers();
     } catch (error) {
-      toast.error('Failed to delete user');
+      toast.error(t('admin.users.toasts.deleteError'));
     }
   };
 
   // Get organization name
   const getOrganizationName = (orgId: string | undefined): string => {
-    if (!orgId) return 'None';
+    if (!orgId) return t('admin.users.details.affiliationNone');
     const org = organizations.find(o => o.id === orgId);
-    return org?.name || `Org ${orgId.substring(0, 8)}...`;
+    return org?.name || `${t('admin.users.system.organizationFallback')} ${orgId.substring(0, 8)}...`;
   };
 
   // Render user row
@@ -1120,10 +1130,10 @@ const AdminUsersManagement: React.FC = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
                 <Shield className="h-8 w-8 text-primary-500" />
-                User Management
+                {t('navbar.userMenu.userManagement')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Manage and monitor all registered users in the system
+                {t('admin.users.subtitle')}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -1132,14 +1142,14 @@ const AdminUsersManagement: React.FC = () => {
                 className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
+                {t('admin.users.header.refresh')}
               </button>
               <button 
                 onClick={exportToCSV}
                 className="inline-flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export Data
+                {t('admin.users.header.export')}
               </button>
             </div>
           </div>
@@ -1152,7 +1162,9 @@ const AdminUsersManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {t('admin.users.stats.totalUsers')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.total}</p>
               </div>
               <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
@@ -1165,7 +1177,9 @@ const AdminUsersManagement: React.FC = () => {
                 <span className="text-green-600 dark:text-green-400 font-medium">
                   +{stats.recentGrowth.toFixed(1)}%
                 </span>
-                <span className="text-gray-500 dark:text-gray-400 ml-2">last 30 days</span>
+                  <span className="text-gray-500 dark:text-gray-400 ml-2">
+                    {t('admin.users.stats.last30Days')}
+                  </span>
               </div>
             </div>
           </div>
@@ -1173,7 +1187,9 @@ const AdminUsersManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {t('admin.users.stats.activeUsers')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.active}</p>
               </div>
               <div className="h-12 w-12 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
@@ -1182,7 +1198,7 @@ const AdminUsersManagement: React.FC = () => {
             </div>
             <div className="mt-4">
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {((stats.active / stats.total) * 100).toFixed(1)}% of total
+                  {((stats.active / stats.total) * 100).toFixed(1)}% {t('admin.users.stats.ofTotal')}
               </div>
             </div>
           </div>
@@ -1190,7 +1206,9 @@ const AdminUsersManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Approval</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {t('admin.users.stats.pendingApproval')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.pendingApproval}</p>
               </div>
               <div className="h-12 w-12 rounded-lg bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
@@ -1210,7 +1228,9 @@ const AdminUsersManagement: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Students</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {t('admin.users.stats.students')}
+                </p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.students}</p>
               </div>
               <div className="h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
@@ -1219,7 +1239,7 @@ const AdminUsersManagement: React.FC = () => {
             </div>
             <div className="mt-4">
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                {stats.organizations} organizations
+                {t('admin.users.stats.organizationsLabel', { count: stats.organizations })}
               </div>
             </div>
           </div>
@@ -1232,17 +1252,17 @@ const AdminUsersManagement: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <PieChart className="h-5 w-5 text-primary-500" />
-                Role Distribution
+                {t('admin.users.charts.roleDistribution')}
               </h3>
               <select 
                 value={chartPeriod}
                 onChange={(e) => setChartPeriod(e.target.value)}
                 className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="all">All Time</option>
-                <option value="30days">Last 30 Days</option>
-                <option value="90days">Last 90 Days</option>
-                <option value="year">Last Year</option>
+                <option value="all">{t('admin.users.charts.period.all')}</option>
+                <option value="30days">{t('admin.users.charts.period.days30')}</option>
+                <option value="90days">{t('admin.users.charts.period.days90')}</option>
+                <option value="year">{t('admin.users.charts.period.year')}</option>
               </select>
             </div>
             <div className="h-80">
@@ -1263,6 +1283,7 @@ const AdminUsersManagement: React.FC = () => {
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => [`${value} users`, 'Count']} />
+                  {/* Tooltip labels are translated via charts.tooltips if needed */}
                   <Legend />
                 </RechartsPieChart>
               </ResponsiveContainer>
@@ -1274,16 +1295,16 @@ const AdminUsersManagement: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary-500" />
-                Registration Trend
+                {t('admin.users.charts.registrationTrend')}
               </h3>
               <select 
                 value={chartType}
                 onChange={(e) => setChartType(e.target.value)}
                 className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-                <option value="daily">Daily</option>
+                <option value="monthly">{t('admin.users.charts.trendType.monthly')}</option>
+                <option value="weekly">{t('admin.users.charts.trendType.weekly')}</option>
+                <option value="daily">{t('admin.users.charts.trendType.daily')}</option>
               </select>
             </div>
             <div className="h-80">
@@ -1318,7 +1339,7 @@ const AdminUsersManagement: React.FC = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search users by name, email, or ID..."
+                    placeholder={t('admin.users.filters.searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -1332,13 +1353,13 @@ const AdminUsersManagement: React.FC = () => {
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="all">All Roles</option>
-                  <option value="admin">Admin</option>
-                  <option value="student">Student</option>
-                  <option value="school">School</option>
-                  <option value="firm">Firm</option>
-                  <option value="university">University</option>
-                  <option value="user">User</option>
+                  <option value="all">{t('admin.users.filters.roles.all')}</option>
+                  <option value="admin">{t('admin.users.filters.roles.admin')}</option>
+                  <option value="student">{t('admin.users.filters.roles.student')}</option>
+                  <option value="school">{t('admin.users.filters.roles.school')}</option>
+                  <option value="firm">{t('admin.users.filters.roles.firm')}</option>
+                  <option value="university">{t('admin.users.filters.roles.university')}</option>
+                  <option value="user">{t('admin.users.filters.roles.user')}</option>
                 </select>
 
                 <select
@@ -1346,12 +1367,12 @@ const AdminUsersManagement: React.FC = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="approved">Approved</option>
-                  <option value="pending">Pending</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="all">{t('admin.users.filters.status.all')}</option>
+                  <option value="active">{t('admin.users.filters.status.active')}</option>
+                  <option value="inactive">{t('admin.users.filters.status.inactive')}</option>
+                  <option value="approved">{t('admin.users.filters.status.approved')}</option>
+                  <option value="pending">{t('admin.users.filters.status.pending')}</option>
+                  <option value="rejected">{t('admin.users.filters.status.rejected')}</option>
                 </select>
 
                 <select
@@ -1359,11 +1380,11 @@ const AdminUsersManagement: React.FC = () => {
                   onChange={(e) => setDateRange(e.target.value)}
                   className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">Last Week</option>
-                  <option value="month">Last Month</option>
-                  <option value="year">Last Year</option>
+                  <option value="all">{t('admin.users.filters.dateRange.all')}</option>
+                  <option value="today">{t('admin.users.filters.dateRange.today')}</option>
+                  <option value="week">{t('admin.users.filters.dateRange.week')}</option>
+                  <option value="month">{t('admin.users.filters.dateRange.month')}</option>
+                  <option value="year">{t('admin.users.filters.dateRange.year')}</option>
                 </select>
 
                 <select
@@ -1371,10 +1392,10 @@ const AdminUsersManagement: React.FC = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="name">Name A-Z</option>
-                  <option value="email">Email A-Z</option>
+                  <option value="newest">{t('admin.users.filters.sort.newest')}</option>
+                  <option value="oldest">{t('admin.users.filters.sort.oldest')}</option>
+                  <option value="name">{t('admin.users.filters.sort.name')}</option>
+                  <option value="email">{t('admin.users.filters.sort.email')}</option>
                 </select>
 
                 <select
@@ -1382,10 +1403,10 @@ const AdminUsersManagement: React.FC = () => {
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
                   className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
-                  <option value="10">10 per page</option>
-                  <option value="25">25 per page</option>
-                  <option value="50">50 per page</option>
-                  <option value="100">100 per page</option>
+                  <option value="10">{t('admin.users.filters.pageSize.perPage', { count: 10 })}</option>
+                  <option value="25">{t('admin.users.filters.pageSize.perPage', { count: 25 })}</option>
+                  <option value="50">{t('admin.users.filters.pageSize.perPage', { count: 50 })}</option>
+                  <option value="100">{t('admin.users.filters.pageSize.perPage', { count: 100 })}</option>
                 </select>
               </div>
             </div>
@@ -1404,7 +1425,7 @@ const AdminUsersManagement: React.FC = () => {
                       className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
                     />
                     <span className="ml-3 text-sm font-medium text-gray-900 dark:text-white">
-                      {selectedUsers.length} users selected
+                      {t('admin.users.bulk.usersSelected', { count: selectedUsers.length })}
                     </span>
                   </div>
                   
@@ -1413,7 +1434,7 @@ const AdminUsersManagement: React.FC = () => {
                       onClick={() => setIsBulkActionsOpen(!isBulkActionsOpen)}
                       className="inline-flex items-center px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors"
                     >
-                      Bulk Actions
+                      {t('admin.users.bulk.actions')}
                       <ChevronDown className="ml-2 h-4 w-4" />
                     </button>
                     
@@ -1426,7 +1447,7 @@ const AdminUsersManagement: React.FC = () => {
                           >
                             <div className="flex items-center">
                               <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                              Approve Selected
+                              {t('admin.users.bulk.approveSelected')}
                             </div>
                           </button>
                           <button
@@ -1435,7 +1456,7 @@ const AdminUsersManagement: React.FC = () => {
                           >
                             <div className="flex items-center">
                               <XCircle className="h-4 w-4 mr-2 text-red-500" />
-                              Reject Selected
+                              {t('admin.users.bulk.rejectSelected')}
                             </div>
                           </button>
                           <button
@@ -1444,7 +1465,7 @@ const AdminUsersManagement: React.FC = () => {
                           >
                             <div className="flex items-center">
                               <UserCheck className="h-4 w-4 mr-2 text-blue-500" />
-                              Activate Selected
+                              {t('admin.users.bulk.activateSelected')}
                             </div>
                           </button>
                           <button
@@ -1453,7 +1474,7 @@ const AdminUsersManagement: React.FC = () => {
                           >
                             <div className="flex items-center">
                               <UserX className="h-4 w-4 mr-2 text-yellow-500" />
-                              Deactivate Selected
+                              {t('admin.users.bulk.deactivateSelected')}
                             </div>
                           </button>
                           <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
@@ -1463,7 +1484,7 @@ const AdminUsersManagement: React.FC = () => {
                           >
                             <div className="flex items-center">
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Selected
+                              {t('admin.users.bulk.deleteSelected')}
                             </div>
                           </button>
                         </div>
@@ -1476,7 +1497,7 @@ const AdminUsersManagement: React.FC = () => {
                   onClick={() => setSelectedUsers([])}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 >
-                  Clear selection
+                  {t('admin.users.bulk.clearSelection')}
                 </button>
               </div>
             </div>
@@ -1496,22 +1517,22 @@ const AdminUsersManagement: React.FC = () => {
                     />
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    User
+                    {t('admin.users.table.user')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Role
+                    {t('admin.users.table.role')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Joined
+                    {t('admin.users.table.joined')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
+                    {t('admin.users.table.status')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Organization
+                    {t('admin.users.table.organization')}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                    {t('admin.users.table.actions')}
                   </th>
                 </tr>
               </thead>
@@ -1522,10 +1543,12 @@ const AdminUsersManagement: React.FC = () => {
                       <div className="flex flex-col items-center justify-center">
                         <Users className="h-12 w-12 text-gray-400 mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                          No users found
+                          {t('admin.users.table.emptyTitle')}
                         </h3>
                         <p className="text-gray-500 dark:text-gray-400">
-                          {searchTerm ? 'Try adjusting your search or filters' : 'No users in the system'}
+                          {searchTerm
+                            ? t('admin.users.table.emptySearch')
+                            : t('admin.users.table.emptyNoUsers')}
                         </p>
                       </div>
                     </td>
@@ -1542,9 +1565,15 @@ const AdminUsersManagement: React.FC = () => {
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="text-sm text-gray-700 dark:text-gray-400">
-                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> of{' '}
-                  <span className="font-medium">{filteredUsers.length}</span> users
+                  {t('admin.users.pagination.showing')}{' '}
+                  <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span>{' '}
+                  {t('admin.users.pagination.to')}{' '}
+                  <span className="font-medium">
+                    {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
+                  </span>{' '}
+                  {t('admin.users.pagination.of')}{' '}
+                  <span className="font-medium">{filteredUsers.length}</span>{' '}
+                  {t('admin.users.pagination.users')}
                 </div>
                 <div className="flex items-center space-x-2">
                   <button 
@@ -1553,7 +1582,7 @@ const AdminUsersManagement: React.FC = () => {
                     className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
+                    {t('admin.users.pagination.previous')}
                   </button>
                   
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -1600,7 +1629,7 @@ const AdminUsersManagement: React.FC = () => {
                     disabled={currentPage === totalPages}
                     className="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('admin.users.pagination.next')}
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </button>
                 </div>
@@ -1612,7 +1641,9 @@ const AdminUsersManagement: React.FC = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">User Activity</h4>
+            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">
+              {t('admin.users.charts.activity')}
+            </h4>
             <div className="space-y-4">
               {getActivityData().map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
@@ -1624,7 +1655,9 @@ const AdminUsersManagement: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">Top Organizations</h4>
+            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">
+              {t('admin.users.charts.topOrganizations')}
+            </h4>
             <div className="space-y-4">
               {(() => {
                 // Get organizations with most affiliated students
@@ -1660,7 +1693,7 @@ const AdminUsersManagement: React.FC = () => {
                     <div className="text-center py-4">
                       <Building className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        No organizations with members yet
+                        {t('admin.users.system.noOrgsWithMembers')}
                       </p>
                     </div>
                   );
@@ -1677,16 +1710,20 @@ const AdminUsersManagement: React.FC = () => {
                           {org.name}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {org.type || 'Organization'} • {org.orgId.substring(0, 8)}...
+                          {(org.type || t('admin.users.system.organizationFallback'))} • {org.orgId.substring(0, 8)}...
                         </span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {org.count} member{org.count !== 1 ? 's' : ''}
+                        {org.count === 1
+                          ? t('admin.users.system.members', { count: org.count })
+                          : t('admin.users.system.members_plural', { count: org.count })}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {orgUsers.length > 0 ? ((org.count / orgUsers.length) * 100).toFixed(1) : 0}%
+                        {t('admin.users.system.shareOfUsers', {
+                          percent: orgUsers.length > 0 ? ((org.count / orgUsers.length) * 100).toFixed(1) : 0
+                        })}
                       </span>
                     </div>
                   </div>
@@ -1696,25 +1733,37 @@ const AdminUsersManagement: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">System Overview</h4>
+            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">
+              {t('admin.users.charts.systemOverview')}
+            </h4>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Total Users</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t('admin.users.stats.totalUsers')}
+                </span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">{stats.total}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Active Today</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t('admin.users.charts.activityLabels.activeToday')}
+                </span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {getActivityData().find(d => d.period === 'Active Today')?.users || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Pending Approvals</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t('admin.users.system.pendingApprovals')}
+                </span>
                 <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">{stats.pendingApproval}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">System Health</span>
-                <span className="text-sm font-medium text-green-600 dark:text-green-400">Good</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {t('admin.users.system.systemHealth')}
+                </span>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                  {t('admin.users.charts.systemHealthGood')}
+                </span>
               </div>
             </div>
           </div>

@@ -142,7 +142,7 @@ const Admin: React.FC = () => {
 
   const handleRejectEventRequest = async (requestId: string) => {
     if (!rejectReason.trim()) {
-      alert('Please provide a reason for rejection');
+      alert(t('admin.eventRequests.rejectionPlaceholder'));
       return;
     }
 
@@ -246,7 +246,7 @@ const Admin: React.FC = () => {
 
   const handleRejectUser = async (requestId: string) => {
     if (!userRejectReason.trim()) {
-      alert('Please provide a reason for rejection');
+      alert(t('admin.userApprovals.rejectionPlaceholder'));
       return;
     }
 

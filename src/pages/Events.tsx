@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, SlidersHorizontal, X, Calendar, MapPin, Users, Clock, Sparkles } from 'lucide-react';
+import { Search, X, Calendar, MapPin, Users, Clock, Sparkles } from 'lucide-react';
 import EventCard from '../components/EventCard';
+import FilterBar from '../components/FilterBar';
 import { Event } from '../types';
 import { databaseService } from '../services/database';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -16,7 +17,6 @@ const Events: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   
   // Filter states
   const [dateFilter, setDateFilter] = useState<string>('all');
@@ -241,6 +241,14 @@ const Events: React.FC = () => {
 
   const hasActiveFilters = searchTerm || dateFilter !== 'all' || categoryFilter !== 'all' || locationFilter !== 'all';
 
+  const handleFilterChange = (updates: Partial<{ searchTerm: string; dateFilter: string; categoryFilter: string; locationFilter: string; sortBy: string }>) => {
+    if (updates.searchTerm !== undefined) setSearchTerm(updates.searchTerm);
+    if (updates.dateFilter !== undefined) setDateFilter(updates.dateFilter);
+    if (updates.categoryFilter !== undefined) setCategoryFilter(updates.categoryFilter);
+    if (updates.locationFilter !== undefined) setLocationFilter(updates.locationFilter);
+    if (updates.sortBy !== undefined) setSortBy(updates.sortBy);
+  };
+
   // Helper function to check if an event date is in a specific timeframe
   const isEventInTimeframe = (event: Event, timeframe: string): boolean => {
     try {
@@ -392,187 +400,18 @@ const Events: React.FC = () => {
         </div>
 
         {/* Search and Filter Section */}
-        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-primary-100 dark:border-primary-700 mb-10 overflow-hidden animate-fade-in-up">
-          <div className="p-8">
-            {/* Search Bar */}
-            <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-              <div className="flex-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder={t('events.searchPlaceholder')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl text-lg focus:outline-none focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 dark:text-white transition-all duration-300"
-                />
-              </div>
-              
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-3"
-              >
-                <SlidersHorizontal className="w-5 h-5" />
-                {t('events.filters')}
-                {hasActiveFilters && (
-                  <span className="bg-white text-primary-500 rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
-                    !
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Advanced Filters */}
-            {showFilters && (
-              <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-600 animate-slide-down">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                    <SlidersHorizontal className="w-5 h-5 text-primary-500" />
-                    {t('events.filterEvents')}
-                  </h3>
-                  <div className="flex gap-3">
-                    {hasActiveFilters && (
-                      <button
-                        onClick={clearFilters}
-                        className="text-primary-500 hover:text-primary-600 font-semibold flex items-center gap-2 transition-colors duration-200"
-                      >
-                        <X className="w-4 h-4" />
-                        {t('events.clearAll')}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 font-medium transition-colors duration-200"
-                    >
-                      {t('events.hideFilters')}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      📅 {t('events.date')}
-                    </label>
-                    <select
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value)}
-                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                    >
-                      <option value="all">{t('events.anyDate')}</option>
-                      <option value="today">{t('events.today')}</option>
-                      <option value="week">{t('events.thisWeek')}</option>
-                      <option value="month">{t('events.thisMonth')}</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      🏷️ {t('events.category')}
-                    </label>
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                    >
-                      <option value="all">{t('events.allCategories')}</option>
-                      <option value="technology">{t('events.technology')}</option>
-                      <option value="business">{t('events.business')}</option>
-                      <option value="education">{t('events.education')}</option>
-                      <option value="social">{t('events.social')}</option>
-                      <option value="sports">{t('events.sports')}</option>
-                      <option value="arts">{t('events.arts')}</option>
-                      <option value="science">{t('events.science')}</option>
-                      <option value="health">{t('events.health')}</option>
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      📍 {t('events.location')}
-                    </label>
-                    <select
-                      value={locationFilter}
-                      onChange={(e) => setLocationFilter(e.target.value)}
-                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                    >
-                      <option value="all">{t('events.anyLocation')}</option>
-                      <option value="online">{t('events.online')}</option>
-                      <option value="in-person">{t('events.inPerson')}</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      🔄 {t('events.sortBy')}
-                    </label>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
-                    >
-                      <option value="date">{t('events.dateSoonest')}</option>
-                      <option value="name">{t('events.nameAZ')}</option>
-                      <option value="popularity">{t('events.mostPopular')}</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Active Filters Summary */}
-            {hasActiveFilters && (
-              <div className="mt-6 animate-fade-in">
-                <div className="flex flex-wrap gap-3">
-                  {searchTerm && (
-                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      🔍 "{searchTerm}"
-                      <button
-                        onClick={() => setSearchTerm('')}
-                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  )}
-                  {dateFilter !== 'all' && (
-                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      📅 {t(`events.${dateFilter}`)}
-                      <button
-                        onClick={() => setDateFilter('all')}
-                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  )}
-                  {categoryFilter !== 'all' && (
-                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      🏷️ {t(`events.${categoryFilter}`)}
-                      <button
-                        onClick={() => setCategoryFilter('all')}
-                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  )}
-                  {locationFilter !== 'all' && (
-                    <span className="inline-flex items-center px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded-full text-sm font-medium shadow-sm transition-all duration-200 hover:scale-105">
-                      📍 {t(`events.${locationFilter === 'in-person' ? 'inPerson' : locationFilter}`)}
-                      <button
-                        onClick={() => setLocationFilter('all')}
-                        className="ml-2 hover:text-primary-600 dark:hover:text-primary-300 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="animate-fade-in-up">
+          <FilterBar
+            filters={{
+              searchTerm,
+              dateFilter,
+              categoryFilter,
+              locationFilter,
+              sortBy,
+            }}
+            onFilterChange={handleFilterChange}
+            onClearAll={clearFilters}
+          />
         </div>
 
         {/* Results Header */}

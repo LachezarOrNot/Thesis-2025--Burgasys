@@ -41,6 +41,7 @@
     "searchPlaceholder": "Search events, topics, locations, or categories...",
     "filters": "Filters",
     "filterEvents": "Filter Events",
+    "filterSubtitle": "Search by name, location, or category",
     "clearAll": "Clear All",
     "hideFilters": "Hide Filters",
     "activeFilters": "Active Filters",
@@ -457,6 +458,189 @@
       "rejectionPlaceholder": "Provide a reason for rejection...",
       "confirmRejection": "Confirm Rejection",
       "approveUser": "Approve User"
+    },
+    "users": {
+      "subtitle": "Manage and monitor all registered users in the system",
+      "header": {
+        "refresh": "Refresh",
+        "export": "Export Data"
+      },
+      "stats": {
+        "totalUsers": "Total Users",
+        "activeUsers": "Active Users",
+        "pendingApproval": "Pending Approval",
+        "students": "Students",
+        "organizationsLabel": "{{count}} organizations",
+        "last30Days": "last 30 days",
+        "ofTotal": "of total"
+      },
+      "charts": {
+        "roleDistribution": "Role Distribution",
+        "registrationTrend": "Registration Trend",
+        "activity": "User Activity",
+        "topOrganizations": "Top Organizations",
+        "systemOverview": "System Overview",
+        "systemHealthGood": "Good",
+        "period": {
+          "all": "All Time",
+          "days30": "Last 30 Days",
+          "days90": "Last 90 Days",
+          "year": "Last Year"
+        },
+        "trendType": {
+          "monthly": "Monthly",
+          "weekly": "Weekly",
+          "daily": "Daily"
+        },
+        "activityLabels": {
+          "activeToday": "Active Today",
+          "activeWeek": "Active Week",
+          "activeMonth": "Active Month",
+          "inactive": "Inactive"
+        },
+        "tooltips": {
+          "users": "users",
+          "registrations": "Registrations",
+          "count": "Count"
+        }
+      },
+      "filters": {
+        "searchPlaceholder": "Search users by name, email, or ID...",
+        "roles": {
+          "all": "All Roles",
+          "admin": "Admin",
+          "student": "Student",
+          "school": "School",
+          "firm": "Firm",
+          "university": "University",
+          "user": "User"
+        },
+        "status": {
+          "all": "All Status",
+          "active": "Active",
+          "inactive": "Inactive",
+          "approved": "Approved",
+          "pending": "Pending",
+          "rejected": "Rejected"
+        },
+        "dateRange": {
+          "all": "All Time",
+          "today": "Today",
+          "week": "Last Week",
+          "month": "Last Month",
+          "year": "Last Year"
+        },
+        "sort": {
+          "newest": "Newest First",
+          "oldest": "Oldest First",
+          "name": "Name A-Z",
+          "email": "Email A-Z"
+        },
+        "pageSize": {
+          "perPage": "{{count}} per page"
+        }
+      },
+      "bulk": {
+        "usersSelected": "{{count}} users selected",
+        "actions": "Bulk Actions",
+        "clearSelection": "Clear selection",
+        "approveSelected": "Approve Selected",
+        "rejectSelected": "Reject Selected",
+        "activateSelected": "Activate Selected",
+        "deactivateSelected": "Deactivate Selected",
+        "deleteSelected": "Delete Selected"
+      },
+      "table": {
+        "user": "User",
+        "role": "Role",
+        "joined": "Joined",
+        "status": "Status",
+        "organization": "Organization",
+        "actions": "Actions",
+        "emptyTitle": "No users found",
+        "emptySearch": "Try adjusting your search or filters",
+        "emptyNoUsers": "No users in the system"
+      },
+      "pagination": {
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "users": "users",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "system": {
+        "noOrgsWithMembers": "No organizations with members yet",
+        "organizationFallback": "Organization",
+        "members": "{{count}} member",
+        "members_plural": "{{count}} members",
+        "shareOfUsers": "{{percent}}% of affiliated users",
+        "pendingApprovals": "Pending Approvals",
+        "systemHealth": "System Health"
+      },
+      "details": {
+        "editTitle": "Edit User",
+        "viewTitle": "User Details",
+        "userId": "User ID",
+        "accountStatus": "Account Status",
+        "status": "Status",
+        "approval": "Approval",
+        "approvalNone": "Not Requested",
+        "approvalPending": "Pending",
+        "approvalApproved": "Approved",
+        "created": "Created",
+        "lastUpdated": "Last Updated",
+        "contactAndDetails": "Contact & Details",
+        "displayName": "Display Name",
+        "email": "Email",
+        "phoneNumber": "Phone Number",
+        "phonePlaceholder": "+1 (555) 123-4567",
+        "studentId": "Student ID (if applicable)",
+        "studentIdLabel": "Student ID",
+        "studentIdPlaceholder": "STU123456",
+        "bio": "Bio",
+        "bioPlaceholder": "User bio...",
+        "phoneLabel": "Phone",
+        "phoneNotProvided": "Not provided",
+        "organization": "Organization",
+        "role": "Role",
+        "affiliatedOrganization": "Affiliated Organization",
+        "affiliationNone": "None",
+        "affiliationLabel": "Affiliation",
+        "affiliationUnknown": "Unknown Organization",
+        "affiliationNotAffiliated": "Not affiliated",
+        "userType": "User Type",
+        "cancel": "Cancel",
+        "save": "Save Changes",
+        "saving": "Saving..."
+      },
+      "statusLabels": {
+        "approved": "Approved",
+        "inactive": "Inactive",
+        "active": "Active",
+        "pending": "Pending",
+        "basic": "Basic"
+      },
+      "toasts": {
+        "updateSuccess": "User updated successfully",
+        "updateError": "Failed to update user",
+        "loadError": "Failed to load data",
+        "bulkNoneSelected": "No users selected",
+        "bulkApproved": "{{count}} users approved",
+        "bulkRejected": "{{count}} users rejected",
+        "bulkActivated": "{{count}} users activated",
+        "bulkDeactivated": "{{count}} users deactivated",
+        "bulkDeleted": "{{count}} users deleted",
+        "bulkFailed": "Failed to perform action",
+        "approveSuccess": "User {{name}} approved",
+        "approveError": "Failed to approve user",
+        "deleteConfirm": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+        "deleteBulkConfirm": "Are you sure you want to delete {{count}} users?",
+        "deleteSuccess": "User {{name}} deleted",
+        "deleteError": "Failed to delete user",
+        "exportSuccess": "Exported {{count}} users to CSV",
+        "exportError": "Failed to export data"
+      }
     },
     "accessDenied": {
       "title": "Access Denied",

@@ -353,7 +353,190 @@
       "title": "Доступ запрещен",
       "message": "Вам нужны права администратора для доступа к этой странице."
     },
-    "loading": "Загрузка админ панели..."
+    "loading": "Загрузка админ панели...",
+    "users": {
+      "subtitle": "Управляйте и отслеживайте всех зарегистрированных пользователей системы",
+      "header": {
+        "refresh": "Обновить",
+        "export": "Экспортировать данные"
+      },
+      "stats": {
+        "totalUsers": "Всего пользователей",
+        "activeUsers": "Активные пользователи",
+        "pendingApproval": "Ожидают одобрения",
+        "students": "Студенты",
+        "organizationsLabel": "{{count}} организаций",
+        "last30Days": "за последние 30 дней",
+        "ofTotal": "от общего числа"
+      },
+      "charts": {
+        "roleDistribution": "Распределение по ролям",
+        "registrationTrend": "Тренд регистраций",
+        "activity": "Активность пользователей",
+        "topOrganizations": "Топ организаций",
+        "systemOverview": "Общий обзор системы",
+        "systemHealthGood": "Хорошее",
+        "period": {
+          "all": "За всё время",
+          "days30": "Последние 30 дней",
+          "days90": "Последние 90 дней",
+          "year": "За последний год"
+        },
+        "trendType": {
+          "monthly": "По месяцам",
+          "weekly": "По неделям",
+          "daily": "По дням"
+        },
+        "activityLabels": {
+          "activeToday": "Активны сегодня",
+          "activeWeek": "Активны на этой неделе",
+          "activeMonth": "Активны в этом месяце",
+          "inactive": "Неактивны"
+        },
+        "tooltips": {
+          "users": "пользователи",
+          "registrations": "Регистрации",
+          "count": "Количество"
+        }
+      },
+      "filters": {
+        "searchPlaceholder": "Поиск пользователей по имени, email или ID...",
+        "roles": {
+          "all": "Все роли",
+          "admin": "Администратор",
+          "student": "Студент",
+          "school": "Школа",
+          "firm": "Компания",
+          "university": "Университет",
+          "user": "Пользователь"
+        },
+        "status": {
+          "all": "Все статусы",
+          "active": "Активные",
+          "inactive": "Неактивные",
+          "approved": "Одобренные",
+          "pending": "Ожидающие",
+          "rejected": "Отклонённые"
+        },
+        "dateRange": {
+          "all": "За всё время",
+          "today": "Сегодня",
+          "week": "Последняя неделя",
+          "month": "Последний месяц",
+          "year": "Последний год"
+        },
+        "sort": {
+          "newest": "Сначала новые",
+          "oldest": "Сначала старые",
+          "name": "Имя A–Я",
+          "email": "Email A–Я"
+        },
+        "pageSize": {
+          "perPage": "{{count}} на страницу"
+        }
+      },
+      "bulk": {
+        "usersSelected": "Выбрано пользователей: {{count}}",
+        "actions": "Массовые действия",
+        "clearSelection": "Очистить выбор",
+        "approveSelected": "Одобрить выбранных",
+        "rejectSelected": "Отклонить выбранных",
+        "activateSelected": "Активировать выбранных",
+        "deactivateSelected": "Деактивировать выбранных",
+        "deleteSelected": "Удалить выбранных"
+      },
+      "table": {
+        "user": "Пользователь",
+        "role": "Роль",
+        "joined": "Дата регистрации",
+        "status": "Статус",
+        "organization": "Организация",
+        "actions": "Действия",
+        "emptyTitle": "Пользователи не найдены",
+        "emptySearch": "Попробуйте изменить параметры поиска или фильтры",
+        "emptyNoUsers": "В системе ещё нет пользователей"
+      },
+      "pagination": {
+        "showing": "Показано",
+        "to": "по",
+        "of": "из",
+        "users": "пользователей",
+        "previous": "Назад",
+        "next": "Вперёд"
+      },
+      "system": {
+        "noOrgsWithMembers": "Пока нет организаций с участниками",
+        "organizationFallback": "Организация",
+        "members": "{{count}} участник",
+        "members_plural": "{{count}} участников",
+        "shareOfUsers": "{{percent}}% привязанных пользователей",
+        "pendingApprovals": "Ожидающие одобрения",
+        "systemHealth": "Состояние системы"
+      },
+      "details": {
+        "editTitle": "Редактирование пользователя",
+        "viewTitle": "Информация о пользователе",
+        "userId": "ID пользователя",
+        "accountStatus": "Статус аккаунта",
+        "status": "Статус",
+        "approval": "Одобрение",
+        "approvalNone": "Нет запроса",
+        "approvalPending": "Ожидает",
+        "approvalApproved": "Одобрен",
+        "created": "Создан",
+        "lastUpdated": "Последнее обновление",
+        "contactAndDetails": "Контакты и детали",
+        "displayName": "Отображаемое имя",
+        "email": "Email",
+        "phoneNumber": "Номер телефона",
+        "phonePlaceholder": "+7 999 123‑45‑67",
+        "studentId": "Студенческий номер (если есть)",
+        "studentIdLabel": "Студенческий номер",
+        "studentIdPlaceholder": "STU123456",
+        "bio": "Биография",
+        "bioPlaceholder": "Краткое описание пользователя...",
+        "phoneLabel": "Телефон",
+        "phoneNotProvided": "Не указан",
+        "organization": "Организация",
+        "role": "Роль",
+        "affiliatedOrganization": "Связанная организация",
+        "affiliationNone": "Нет",
+        "affiliationLabel": "Связь",
+        "affiliationUnknown": "Неизвестная организация",
+        "affiliationNotAffiliated": "Нет связанной организации",
+        "userType": "Тип пользователя",
+        "cancel": "Отмена",
+        "save": "Сохранить изменения",
+        "saving": "Сохранение..."
+      },
+      "statusLabels": {
+        "approved": "Одобрен",
+        "inactive": "Неактивен",
+        "active": "Активен",
+        "pending": "Ожидает",
+        "basic": "Базовый"
+      },
+      "toasts": {
+        "updateSuccess": "Пользователь успешно обновлён",
+        "updateError": "Не удалось обновить пользователя",
+        "loadError": "Не удалось загрузить данные",
+        "bulkNoneSelected": "Не выбрано ни одного пользователя",
+        "bulkApproved": "Одобрено пользователей: {{count}}",
+        "bulkRejected": "Отклонено пользователей: {{count}}",
+        "bulkActivated": "Активировано пользователей: {{count}}",
+        "bulkDeactivated": "Деактивировано пользователей: {{count}}",
+        "bulkDeleted": "Удалено пользователей: {{count}}",
+        "bulkFailed": "Не удалось выполнить действие",
+        "approveSuccess": "Пользователь {{name}} одобрен",
+        "approveError": "Не удалось одобрить пользователя",
+        "deleteConfirm": "Вы уверены, что хотите удалить {{name}}? Это действие нельзя отменить.",
+        "deleteBulkConfirm": "Вы уверены, что хотите удалить {{count}} пользователей?",
+        "deleteSuccess": "Пользователь {{name}} удалён",
+        "deleteError": "Не удалось удалить пользователя",
+        "exportSuccess": "Экспортировано {{count}} пользователей в CSV",
+        "exportError": "Не удалось экспортировать данные"
+      }
+    }
   },
   "auth": {
     "signIn": "Вход в аккаунт",
@@ -479,6 +662,7 @@
     "searchPlaceholder": "Поиск мероприятий, тем, мест или категорий...",
     "filters": "Фильтры",
     "filterEvents": "Фильтровать мероприятия",
+    "filterSubtitle": "Поиск по названию, месту или категории",
     "clearAll": "Очистить все",
     "hideFilters": "Скрыть фильтры",
     "activeFilters": "Активные фильтры",

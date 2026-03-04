@@ -125,7 +125,12 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   onLocationNameChange,
   locationName,
 }) => {
-  const [position, setPosition] = useState<[number, number]>([latitude || 51.505, longitude || -0.09]);
+  // Default center: Burgas, Bulgaria
+  const defaultCenter: [number, number] = [42.5048, 27.4626];
+  const [position, setPosition] = useState<[number, number]>([
+    latitude || defaultCenter[0],
+    longitude || defaultCenter[1],
+  ]);
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
     latitude && longitude ? [latitude, longitude] : null
   );

@@ -41,6 +41,7 @@
     "searchPlaceholder": "Veranstaltungen, Themen, Orte oder Kategorien suchen...",
     "filters": "Filter",
     "filterEvents": "Veranstaltungen filtern",
+    "filterSubtitle": "Suche nach Name, Ort oder Kategorie",
     "clearAll": "Alle löschen",
     "hideFilters": "Filter ausblenden",
     "activeFilters": "Aktive Filter",
@@ -457,6 +458,189 @@
       "rejectionPlaceholder": "Geben Sie einen Ablehnungsgrund an...",
       "confirmRejection": "Ablehnung bestätigen",
       "approveUser": "Benutzer genehmigen"
+    },
+    "users": {
+      "subtitle": "Verwalten und überwachen Sie alle registrierten Benutzer im System",
+      "header": {
+        "refresh": "Aktualisieren",
+        "export": "Daten exportieren"
+      },
+      "stats": {
+        "totalUsers": "Gesamtzahl Benutzer",
+        "activeUsers": "Aktive Benutzer",
+        "pendingApproval": "Ausstehende Genehmigung",
+        "students": "Studierende",
+        "organizationsLabel": "{{count}} Organisationen",
+        "last30Days": "letzte 30 Tage",
+        "ofTotal": "vom Gesamtwert"
+      },
+      "charts": {
+        "roleDistribution": "Rollenverteilung",
+        "registrationTrend": "Registrierungstrend",
+        "activity": "Benutzeraktivität",
+        "topOrganizations": "Top-Organisationen",
+        "systemOverview": "Systemübersicht",
+        "systemHealthGood": "Gut",
+        "period": {
+          "all": "Gesamter Zeitraum",
+          "days30": "Letzte 30 Tage",
+          "days90": "Letzte 90 Tage",
+          "year": "Letztes Jahr"
+        },
+        "trendType": {
+          "monthly": "Monatlich",
+          "weekly": "Wöchentlich",
+          "daily": "Täglich"
+        },
+        "activityLabels": {
+          "activeToday": "Heute aktiv",
+          "activeWeek": "Diese Woche aktiv",
+          "activeMonth": "Diesen Monat aktiv",
+          "inactive": "Inaktiv"
+        },
+        "tooltips": {
+          "users": "Benutzer",
+          "registrations": "Registrierungen",
+          "count": "Anzahl"
+        }
+      },
+      "filters": {
+        "searchPlaceholder": "Benutzer nach Name, E-Mail oder ID suchen...",
+        "roles": {
+          "all": "Alle Rollen",
+          "admin": "Admin",
+          "student": "Student",
+          "school": "Schule",
+          "firm": "Unternehmen",
+          "university": "Universität",
+          "user": "Benutzer"
+        },
+        "status": {
+          "all": "Alle Status",
+          "active": "Aktiv",
+          "inactive": "Inaktiv",
+          "approved": "Genehmigt",
+          "pending": "Ausstehend",
+          "rejected": "Abgelehnt"
+        },
+        "dateRange": {
+          "all": "Gesamter Zeitraum",
+          "today": "Heute",
+          "week": "Letzte Woche",
+          "month": "Letzter Monat",
+          "year": "Letztes Jahr"
+        },
+        "sort": {
+          "newest": "Neueste zuerst",
+          "oldest": "Älteste zuerst",
+          "name": "Name A–Z",
+          "email": "E‑Mail A–Z"
+        },
+        "pageSize": {
+          "perPage": "{{count}} pro Seite"
+        }
+      },
+      "bulk": {
+        "usersSelected": "{{count}} Benutzer ausgewählt",
+        "actions": "Sammelaktionen",
+        "clearSelection": "Auswahl aufheben",
+        "approveSelected": "Ausgewählte genehmigen",
+        "rejectSelected": "Ausgewählte ablehnen",
+        "activateSelected": "Ausgewählte aktivieren",
+        "deactivateSelected": "Ausgewählte deaktivieren",
+        "deleteSelected": "Ausgewählte löschen"
+      },
+      "table": {
+        "user": "Benutzer",
+        "role": "Rolle",
+        "joined": "Registriert am",
+        "status": "Status",
+        "organization": "Organisation",
+        "actions": "Aktionen",
+        "emptyTitle": "Keine Benutzer gefunden",
+        "emptySearch": "Versuchen Sie, Suche oder Filter anzupassen",
+        "emptyNoUsers": "Es sind noch keine Benutzer im System vorhanden"
+      },
+      "pagination": {
+        "showing": "Angezeigt",
+        "to": "bis",
+        "of": "von",
+        "users": "Benutzern",
+        "previous": "Zurück",
+        "next": "Weiter"
+      },
+      "system": {
+        "noOrgsWithMembers": "Noch keine Organisationen mit Mitgliedern",
+        "organizationFallback": "Organisation",
+        "members": "{{count}} Mitglied",
+        "members_plural": "{{count}} Mitglieder",
+        "shareOfUsers": "{{percent}}% der zugeordneten Benutzer",
+        "pendingApprovals": "Ausstehende Genehmigungen",
+        "systemHealth": "Systemzustand"
+      },
+      "details": {
+        "editTitle": "Benutzer bearbeiten",
+        "viewTitle": "Benutzerdetails",
+        "userId": "Benutzer-ID",
+        "accountStatus": "Kontostatus",
+        "status": "Status",
+        "approval": "Genehmigung",
+        "approvalNone": "Keine Anfrage",
+        "approvalPending": "Ausstehend",
+        "approvalApproved": "Genehmigt",
+        "created": "Erstellt",
+        "lastUpdated": "Zuletzt aktualisiert",
+        "contactAndDetails": "Kontakt & Details",
+        "displayName": "Anzeigename",
+        "email": "E‑Mail",
+        "phoneNumber": "Telefonnummer",
+        "phonePlaceholder": "+49 160 1234567",
+        "studentId": "Matrikelnummer (falls zutreffend)",
+        "studentIdLabel": "Matrikelnummer",
+        "studentIdPlaceholder": "STU123456",
+        "bio": "Biografie",
+        "bioPlaceholder": "Kurzbeschreibung des Benutzers...",
+        "phoneLabel": "Telefon",
+        "phoneNotProvided": "Nicht angegeben",
+        "organization": "Organisation",
+        "role": "Rolle",
+        "affiliatedOrganization": "Zugehörige Organisation",
+        "affiliationNone": "Keine",
+        "affiliationLabel": "Zugehörigkeit",
+        "affiliationUnknown": "Unbekannte Organisation",
+        "affiliationNotAffiliated": "Keine zugehörige Organisation",
+        "userType": "Benutzertyp",
+        "cancel": "Abbrechen",
+        "save": "Änderungen speichern",
+        "saving": "Speichern..."
+      },
+      "statusLabels": {
+        "approved": "Genehmigt",
+        "inactive": "Inaktiv",
+        "active": "Aktiv",
+        "pending": "Ausstehend",
+        "basic": "Basis"
+      },
+      "toasts": {
+        "updateSuccess": "Benutzer wurde erfolgreich aktualisiert",
+        "updateError": "Benutzer konnte nicht aktualisiert werden",
+        "loadError": "Daten konnten nicht geladen werden",
+        "bulkNoneSelected": "Keine Benutzer ausgewählt",
+        "bulkApproved": "{{count}} Benutzer wurden genehmigt",
+        "bulkRejected": "{{count}} Benutzer wurden abgelehnt",
+        "bulkActivated": "{{count}} Benutzer wurden aktiviert",
+        "bulkDeactivated": "{{count}} Benutzer wurden deaktiviert",
+        "bulkDeleted": "{{count}} Benutzer wurden gelöscht",
+        "bulkFailed": "Aktion konnte nicht ausgeführt werden",
+        "approveSuccess": "Benutzer {{name}} wurde genehmigt",
+        "approveError": "Benutzer konnte nicht genehmigt werden",
+        "deleteConfirm": "Sind Sie sicher, dass Sie {{name}} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "deleteBulkConfirm": "Sind Sie sicher, dass Sie {{count}} Benutzer löschen möchten?",
+        "deleteSuccess": "Benutzer {{name}} wurde gelöscht",
+        "deleteError": "Benutzer konnte nicht gelöscht werden",
+        "exportSuccess": "{{count}} Benutzer wurden als CSV exportiert",
+        "exportError": "Daten konnten nicht exportiert werden"
+      }
     },
     "accessDenied": {
       "title": "Zugriff verweigert",

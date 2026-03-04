@@ -41,6 +41,7 @@
     "searchPlaceholder": "Търсене на събития, теми, локации или категории...",
     "filters": "Филтри",
     "filterEvents": "Филтриране на събития",
+    "filterSubtitle": "Търсене по име, място или категория",
     "clearAll": "Изчисти всички",
     "hideFilters": "Скрий филтрите",
     "activeFilters": "Активни филтри",
@@ -457,6 +458,189 @@
       "rejectionPlaceholder": "Посочете причина за отхвърляне...",
       "confirmRejection": "Потвърди отхвърляне",
       "approveUser": "Одобри потребител"
+    },
+    "users": {
+      "subtitle": "Управлявайте и следете всички регистрирани потребители в системата",
+      "header": {
+        "refresh": "Опресни",
+        "export": "Експортирай данни"
+      },
+      "stats": {
+        "totalUsers": "Общ брой потребители",
+        "activeUsers": "Активни потребители",
+        "pendingApproval": "Чакащи одобрение",
+        "students": "Студенти",
+        "organizationsLabel": "{{count}} организации",
+        "last30Days": "последните 30 дни",
+        "ofTotal": "от общия брой"
+      },
+      "charts": {
+        "roleDistribution": "Разпределение по роли",
+        "registrationTrend": "Тренд на регистрациите",
+        "activity": "Потребителска активност",
+        "topOrganizations": "Топ организации",
+        "systemOverview": "Общ преглед на системата",
+        "systemHealthGood": "Добро",
+        "period": {
+          "all": "Цяло време",
+          "days30": "Последните 30 дни",
+          "days90": "Последните 90 дни",
+          "year": "Последната година"
+        },
+        "trendType": {
+          "monthly": "Месечно",
+          "weekly": "Седмично",
+          "daily": "Дневно"
+        },
+        "activityLabels": {
+          "activeToday": "Активни днес",
+          "activeWeek": "Активни тази седмица",
+          "activeMonth": "Активни този месец",
+          "inactive": "Неактивни"
+        },
+        "tooltips": {
+          "users": "потребители",
+          "registrations": "Регистрации",
+          "count": "Брой"
+        }
+      },
+      "filters": {
+        "searchPlaceholder": "Търсене на потребители по име, имейл или ID...",
+        "roles": {
+          "all": "Всички роли",
+          "admin": "Админ",
+          "student": "Студент",
+          "school": "Училище",
+          "firm": "Фирма",
+          "university": "Университет",
+          "user": "Потребител"
+        },
+        "status": {
+          "all": "Всички статуси",
+          "active": "Активни",
+          "inactive": "Неактивни",
+          "approved": "Одобрени",
+          "pending": "Чакащи",
+          "rejected": "Отхвърлени"
+        },
+        "dateRange": {
+          "all": "Цяло време",
+          "today": "Днес",
+          "week": "Последната седмица",
+          "month": "Последният месец",
+          "year": "Последната година"
+        },
+        "sort": {
+          "newest": "Най-нови първо",
+          "oldest": "Най-стари първо",
+          "name": "Име A–Я",
+          "email": "Имейл A–Я"
+        },
+        "pageSize": {
+          "perPage": "{{count}} на страница"
+        }
+      },
+      "bulk": {
+        "usersSelected": "Избрани са {{count}} потребители",
+        "actions": "Масови действия",
+        "clearSelection": "Изчисти избора",
+        "approveSelected": "Одобри избраните",
+        "rejectSelected": "Отхвърли избраните",
+        "activateSelected": "Активирай избраните",
+        "deactivateSelected": "Деактивирай избраните",
+        "deleteSelected": "Изтрий избраните"
+      },
+      "table": {
+        "user": "Потребител",
+        "role": "Роля",
+        "joined": "Регистриран",
+        "status": "Статус",
+        "organization": "Организация",
+        "actions": "Действия",
+        "emptyTitle": "Няма намерени потребители",
+        "emptySearch": "Опитайте да промените търсенето или филтрите",
+        "emptyNoUsers": "Няма потребители в системата"
+      },
+      "pagination": {
+        "showing": "Показани",
+        "to": "до",
+        "of": "от",
+        "users": "потребители",
+        "previous": "Назад",
+        "next": "Напред"
+      },
+      "system": {
+        "noOrgsWithMembers": "Все още няма организации с членове",
+        "organizationFallback": "Организация",
+        "members": "{{count}} член",
+        "members_plural": "{{count}} члена",
+        "shareOfUsers": "{{percent}}% от свързаните потребители",
+        "pendingApprovals": "Чакащи одобрения",
+        "systemHealth": "Състояние на системата"
+      },
+      "details": {
+        "editTitle": "Редактиране на потребител",
+        "viewTitle": "Детайли за потребител",
+        "userId": "ID на потребител",
+        "accountStatus": "Статус на акаунта",
+        "status": "Статус",
+        "approval": "Одобрение",
+        "approvalNone": "Няма заявка",
+        "approvalPending": "Чакащо",
+        "approvalApproved": "Одобрено",
+        "created": "Създаден",
+        "lastUpdated": "Последно обновен",
+        "contactAndDetails": "Контакт и детайли",
+        "displayName": "Показвано име",
+        "email": "Имейл",
+        "phoneNumber": "Телефонен номер",
+        "phonePlaceholder": "+359 88 123 4567",
+        "studentId": "Факултетен номер (ако е приложимо)",
+        "studentIdLabel": "Факултетен номер",
+        "studentIdPlaceholder": "STU123456",
+        "bio": "Биография",
+        "bioPlaceholder": "Кратко описание на потребителя...",
+        "phoneLabel": "Телефон",
+        "phoneNotProvided": "Не е посочен",
+        "organization": "Организация",
+        "role": "Роля",
+        "affiliatedOrganization": "Свързана организация",
+        "affiliationNone": "Няма",
+        "affiliationLabel": "Свързаност",
+        "affiliationUnknown": "Неизвестна организация",
+        "affiliationNotAffiliated": "Няма свързана организация",
+        "userType": "Тип потребител",
+        "cancel": "Отказ",
+        "save": "Запази промените",
+        "saving": "Запазване..."
+      },
+      "statusLabels": {
+        "approved": "Одобрен",
+        "inactive": "Неактивен",
+        "active": "Активен",
+        "pending": "Чакащ",
+        "basic": "Базов"
+      },
+      "toasts": {
+        "updateSuccess": "Потребителят беше обновен успешно",
+        "updateError": "Неуспешно обновяване на потребителя",
+        "loadError": "Неуспешно зареждане на данните",
+        "bulkNoneSelected": "Няма избрани потребители",
+        "bulkApproved": "{{count}} потребители са одобрени",
+        "bulkRejected": "{{count}} потребители са отхвърлени",
+        "bulkActivated": "{{count}} потребители са активирани",
+        "bulkDeactivated": "{{count}} потребители са деактивирани",
+        "bulkDeleted": "{{count}} потребители са изтрити",
+        "bulkFailed": "Неуспешно изпълнение на действието",
+        "approveSuccess": "Потребител {{name}} беше одобрен",
+        "approveError": "Неуспешно одобряване на потребител",
+        "deleteConfirm": "Сигурни ли сте, че искате да изтриете {{name}}? Това действие не може да бъде отменено.",
+        "deleteBulkConfirm": "Сигурни ли сте, че искате да изтриете {{count}} потребители?",
+        "deleteSuccess": "Потребител {{name}} беше изтрит",
+        "deleteError": "Неуспешно изтриване на потребител",
+        "exportSuccess": "Експортирани са {{count}} потребители в CSV",
+        "exportError": "Неуспешен експорт на данните"
+      }
     },
     "accessDenied": {
       "title": "Достъп отказан",
