@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -32,6 +32,7 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
@@ -50,6 +51,8 @@ const Profile: React.FC = () => {
     new: false,
     confirm: false
   });
+
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calculate disabled states
   const isDeleteButtonDisabled = loading;
@@ -190,6 +193,78 @@ const Profile: React.FC = () => {
     setSuccess('');
   };
 
+  const handleAvatarFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError(t('profile.avatar.invalidType'));
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(t('profile.avatar.tooLarge'));
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      setAvatarUploading(true);
+      setError('');
+      setSuccess('');
+
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        try {
+          const base64 = reader.result as string;
+          await updateUserProfile({ photoURL: base64 });
+          setSuccess(t('profile.avatar.updated'));
+        } catch (err) {
+          console.error('Error updating avatar:', err);
+          setError(t('profile.avatar.updateFailed'));
+        } finally {
+          setAvatarUploading(false);
+          event.target.value = '';
+        }
+      };
+
+      reader.onerror = () => {
+        console.error('Error reading avatar file');
+        setError(t('profile.avatar.updateFailed'));
+        setAvatarUploading(false);
+        event.target.value = '';
+      };
+
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Error preparing avatar upload:', err);
+      setError(t('profile.avatar.updateFailed'));
+      setAvatarUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!user?.photoURL) return;
+    try {
+      setAvatarUploading(true);
+      setError('');
+      setSuccess('');
+
+      await updateUserProfile({ photoURL: undefined });
+      setSuccess(t('profile.avatar.removed'));
+    } catch (err) {
+      console.error('Error removing avatar:', err);
+      setError(t('profile.avatar.updateFailed'));
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -232,15 +307,60 @@ const Profile: React.FC = () => {
           <div className="lg:w-64 flex-shrink-0">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-10 h-10 text-white" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-primary-500 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800"
+                >
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-10 h-10 text-white" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-xs font-medium text-white px-2">
+                      {t('profile.avatar.change')}
+                    </span>
+                  </div>
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarFileChange}
+                  disabled={avatarUploading}
+                />
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {user.displayName}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
                   {t(`roles.${user.role}`)}
                 </p>
+                <div className="mt-3 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="text-xs font-medium text-primary-600 dark:text-primary-300 hover:underline disabled:opacity-50"
+                  >
+                    {t('profile.avatar.change')}
+                  </button>
+                  {user.photoURL && (
+                    <button
+                      type="button"
+                      onClick={handleAvatarRemove}
+                      disabled={avatarUploading}
+                      className="text-xs font-medium text-gray-500 dark:text-gray-400 hover:underline disabled:opacity-50"
+                    >
+                      {t('profile.avatar.remove')}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <nav className="space-y-2">

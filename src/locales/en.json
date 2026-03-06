@@ -767,7 +767,16 @@
     "enterYourPassword": "Enter your password",
     "deleting": "Deleting...",
     "inDays": "in 10 Days",
-    "now": "Now"
+    "now": "Now",
+    "avatar": {
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "updated": "Profile photo updated successfully.",
+      "removed": "Profile photo removed.",
+      "invalidType": "Please upload a valid image file.",
+      "tooLarge": "Image must be smaller than 5MB.",
+      "updateFailed": "Failed to update profile photo. Please try again."
+    }
   },
   "home": {
     "hero": {

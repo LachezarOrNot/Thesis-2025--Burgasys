@@ -61,6 +61,20 @@ const Navbar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Prevent background scroll when mobile menu is open
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200/70 dark:border-gray-800/80 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl">
       <div className="absolute inset-0 bg-gradient-to-r from-primary-500/5 via-transparent to-purple-500/5 pointer-events-none" />
@@ -379,12 +393,12 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ${
-            isMobileMenuOpen ? 'max-h-screen opacity-100 pb-4' : 'max-h-0 opacity-0'
+          className={`md:hidden fixed inset-x-0 top-16 z-40 bg-white/95 dark:bg-gray-950/95 border-t border-gray-200 dark:border-gray-800 backdrop-blur-xl transition-transform duration-300 ${
+            isMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
           }`}
         >
           {user ? (
-            <div className="flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="max-h-[calc(100vh-4rem)] overflow-y-auto flex flex-col gap-2 pt-4 pb-6">
               {/* Admin Section - Mobile */}
               {user.role === 'admin' && (
                 <>
@@ -518,7 +532,7 @@ const Navbar: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="max-h-[calc(100vh-4rem)] overflow-y-auto pt-4 pb-6">
               <Link
                 to="/auth"
                 onClick={() => setIsMobileMenuOpen(false)}

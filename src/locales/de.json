@@ -767,7 +767,16 @@
     "enterYourPassword": "Geben Sie Ihr Passwort ein",
     "deleting": "Wird gelöscht...",
     "inDays": "in 10 Tagen",
-    "now": "Jetzt"
+    "now": "Jetzt",
+    "avatar": {
+      "change": "Foto ändern",
+      "remove": "Foto entfernen",
+      "updated": "Profilfoto wurde erfolgreich aktualisiert.",
+      "removed": "Profilfoto wurde entfernt.",
+      "invalidType": "Bitte laden Sie eine gültige Bilddatei hoch.",
+      "tooLarge": "Das Bild muss kleiner als 5MB sein.",
+      "updateFailed": "Profilfoto konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+    }
   },
   "home": {
     "hero": {
