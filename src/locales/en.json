@@ -146,7 +146,8 @@
       "invalidImageType": "Please upload an image file",
       "imageTooLarge": "Logo size must be less than 2MB"
     },
-    "createSuccess": "Organization created successfully!"
+    "createSuccess": "Organization created successfully!",
+    "manageStudents": "Manage Students"
   },
   "navigation": {
     "home": "Home",
@@ -688,12 +689,27 @@
       "passwordsMismatch": "Passwords do not match.",
       "fullNameLength": "Full name must be between 1 and 35 characters.",
       "authenticationFailed": "Authentication failed",
-      "googleSignInFailed": "Google sign in failed"
+      "googleSignInFailed": "Google sign in failed",
+      "studentOrganizationRequired": "Please select your school or university.",
+      "studentOrganizationLoadFailed": "Failed to load schools and universities. Please try again."
     },
     "validation": {
       "confirmPassword": "Confirm Password",
       "confirmPasswordPlaceholder": "Re-enter your password"
-    }
+    },
+    "forgot": {
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email address and we'll send you a link to reset your password.",
+      "submit": "Send reset link",
+      "backToSignIn": "Back to sign in",
+      "success": "If an account with that email exists, a reset link has been sent.",
+      "error": "Failed to send reset email. Please try again.",
+      "link": "Forgot your password?"
+    },
+    "studentOrganization": "Your school or university",
+    "studentOrganizationPlaceholder": "Select your school or university",
+    "studentOrganizationLoading": "Loading schools and universities...",
+    "studentOrganizationNone": "No schools or universities are available yet."
   },
   "profile": {
     "noUserLoggedIn": "No User Logged In",
@@ -952,6 +968,52 @@
         "point2": "We never sell your personal data to third parties.",
         "point3": "You can contact us if you want to access or delete your data."
       }
+    }
+  },
+  "organizationStudents": {
+    "title": "Students and affiliation requests",
+    "subtitle": "Review join requests and manage students for your school or university.",
+    "organizationLabel": "Organization",
+    "loading": "Loading organization data...",
+    "noOrganizations": {
+      "title": "No schools or universities found",
+      "description": "You are not an admin of any school or university organizations yet."
+    },
+    "requests": {
+      "title": "Pending join requests",
+      "count": "{{count}} pending",
+      "empty": "There are no pending affiliation requests right now.",
+      "studentId": "Student ID: {{id}}",
+      "requestedAt": "Requested at {{date}}",
+      "reject": "Reject",
+      "approve": "Approve"
+    },
+    "students": {
+      "title": "Current students",
+      "empty": "No students are currently affiliated with this organization.",
+      "studentId": "Student ID: {{id}}",
+      "remove": "Remove",
+      "searchPlaceholder": "Search students by name, email, or student ID...",
+      "filteredCount": "{{visible}} of {{total}} students shown",
+      "totalCount": "{{count}} students",
+      "sortLabel": "Sort:",
+      "sortByName": "Name (A–Z)",
+      "sortByRecent": "Most recent",
+      "noSearchResults": "No students match your current search."
+    },
+    "errors": {
+      "loadFailed": "Failed to load organization data. Please try again.",
+      "actionFailed": "Failed to update the request. Please try again.",
+      "removeFailed": "Failed to remove student affiliation. Please try again."
+    },
+    "remove": {
+      "confirm": "Remove {{name}} from this organization? They will no longer be listed as your student."
+    },
+    "stats": {
+      "organization": "Active organization",
+      "totalStudents": "Total students",
+      "pendingRequests": "Pending requests",
+      "totalRequests": "Total requests: {{count}}"
     }
   },
   "dashboard": {

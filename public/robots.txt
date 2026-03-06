@@ -2,5 +2,5 @@ User-agent: *
 Allow: /
 
 # Sitemap location (served from Firebase Hosting)
-Sitemap: /sitemap.xml
+Sitemap: https://burgasys.web.app/sitemap.xml
 

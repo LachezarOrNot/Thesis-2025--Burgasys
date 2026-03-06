@@ -8,7 +8,6 @@ import {
   VideoOff,
   Monitor
 } from 'lucide-react';
-// IMPORTANT: Install the Agora Web SDK first:
 // npm install agora-rtc-sdk-ng
 import type {
   IAgoraRTCClient,
@@ -90,7 +89,6 @@ const VideoCall: React.FC<VideoCallProps> = ({ eventId, onClose, userName = 'Gue
     return () => {
       void leaveCallInternal();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const joinCall = async () => {

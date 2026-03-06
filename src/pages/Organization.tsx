@@ -460,7 +460,7 @@ const Organization: React.FC = () => {
                 <div className="text-sm opacity-90">{t('organizations.totalEvents', 'Total Events')}</div>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
@@ -475,6 +475,16 @@ const Organization: React.FC = () => {
                     <div className="text-sm text-gray-600 dark:text-gray-400">{t('organizations.pastEvents', 'Past Events')}</div>
                   </div>
                 </div>
+
+                {['school', 'university'].includes(organization.type) && (user?.role === 'school' || user?.role === 'university') && (
+                  <Link
+                    to="/organizations/students"
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-200 text-xs font-semibold hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                  >
+                    <Users className="w-4 h-4" />
+                    {t('organizations.manageStudents', 'Manage Students')}
+                  </Link>
+                )}
               </div>
             </div>
           </div>

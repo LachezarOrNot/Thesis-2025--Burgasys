@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { UserRole } from '../types';
+import { UserRole, Organization } from '../types';
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Building, MapPin, Phone } from 'lucide-react';
 import { databaseService } from '../services/database';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,10 @@ const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [studentOrgs, setStudentOrgs] = useState<Organization[]>([]);
+  const [studentOrgLoading, setStudentOrgLoading] = useState(false);
+  const [studentOrgError, setStudentOrgError] = useState<string | null>(null);
+  const [selectedStudentOrgId, setSelectedStudentOrgId] = useState('');
   const { t } = useTranslation();
 
   const { signUp, signIn, signInWithGoogle, user } = useAuth();
@@ -61,6 +65,10 @@ const Auth: React.FC = () => {
         const trimmedName = formData.displayName.trim();
         if (trimmedName.length === 0 || trimmedName.length > 35) {
           throw new Error(t('auth.errors.fullNameLength'));
+        }
+
+        if (formData.role === 'student' && !selectedStudentOrgId) {
+          throw new Error(t('auth.errors.studentOrganizationRequired'));
         }
 
         const requiresApproval = ['school', 'university', 'firm'].includes(formData.role);
@@ -108,6 +116,19 @@ const Auth: React.FC = () => {
           formData.role, 
           organizationInfo
         );
+
+        // If student selected an organization, create affiliation request
+        if (formData.role === 'student' && selectedStudentOrgId) {
+          try {
+            const createdUser = await databaseService.getUserByEmail(formData.email);
+            if (createdUser) {
+              await databaseService.requestAffiliation(createdUser.uid, selectedStudentOrgId, createdUser.studentId);
+            }
+          } catch (affError) {
+            console.error('Error creating affiliation request during signup:', affError);
+            // Do not block signup on this error
+          }
+        }
 
         // If organization was created, we need to update it with the user's UID
         // This will be handled in the AuthContext after user creation
@@ -157,9 +178,33 @@ const Auth: React.FC = () => {
       phone: '',
       description: ''
     });
+    setSelectedStudentOrgId('');
+    setStudentOrgs([]);
+    setStudentOrgError(null);
     setError('');
     setSuccessMessage('');
   };
+
+  // Load available schools/universities when registering as student
+  useEffect(() => {
+    if (!isLogin && formData.role === 'student' && studentOrgs.length === 0 && !studentOrgLoading) {
+      const loadStudentOrgs = async () => {
+        try {
+          setStudentOrgLoading(true);
+          setStudentOrgError(null);
+          const orgs = await databaseService.getOrganizations();
+          const filtered = orgs.filter(o => o.type === 'school' || o.type === 'university');
+          setStudentOrgs(filtered);
+        } catch (err) {
+          console.error('Error loading student organizations:', err);
+          setStudentOrgError(t('auth.errors.studentOrganizationLoadFailed'));
+        } finally {
+          setStudentOrgLoading(false);
+        }
+      };
+      loadStudentOrgs();
+    }
+  }, [isLogin, formData.role, studentOrgs.length, studentOrgLoading, t]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -228,7 +273,13 @@ const Auth: React.FC = () => {
                   id="role"
                   name="role"
                   value={formData.role}
-                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as UserRole }))}
+                  onChange={(e) => {
+                    const nextRole = e.target.value as UserRole;
+                    setFormData(prev => ({ ...prev, role: nextRole }));
+                    if (nextRole !== 'student') {
+                      setSelectedStudentOrgId('');
+                    }
+                  }}
                   className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
                 >
                   <option value="user">{t('roles.user')}</option>
@@ -238,6 +289,44 @@ const Auth: React.FC = () => {
                   <option value="university">{t('roles.university')}</option>
                 </select>
               </div>
+
+              {!isLogin && formData.role === 'student' && (
+                <div>
+                  <label htmlFor="studentOrganization" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('auth.studentOrganization')} *
+                  </label>
+                  {studentOrgLoading ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {t('auth.studentOrganizationLoading')}
+                    </p>
+                  ) : studentOrgs.length === 0 ? (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {t('auth.studentOrganizationNone')}
+                    </p>
+                  ) : (
+                    <select
+                      id="studentOrganization"
+                      name="studentOrganization"
+                      required
+                      value={selectedStudentOrgId}
+                      onChange={(e) => setSelectedStudentOrgId(e.target.value)}
+                      className="relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700"
+                    >
+                      <option value="">{t('auth.studentOrganizationPlaceholder')}</option>
+                      {studentOrgs.map(org => (
+                        <option key={org.id} value={org.id}>
+                          {org.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {studentOrgError && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                      {studentOrgError}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {isOrganizationRole && (
                 <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -374,11 +463,22 @@ const Auth: React.FC = () => {
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
-            {!isLogin && (
-              <p className="text-xs text-gray-500 mt-1">
-                {t('auth.passwordRequirement')}
-              </p>
-            )}
+            <div className="mt-1 flex items-center justify-between">
+              {!isLogin && (
+                <p className="text-xs text-gray-500">
+                  {t('auth.passwordRequirement')}
+                </p>
+              )}
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-xs font-medium text-primary-600 hover:text-primary-500"
+                >
+                  {t('auth.forgot.link')}
+                </button>
+              )}
+            </div>
           </div>
 
           {!isLogin && (

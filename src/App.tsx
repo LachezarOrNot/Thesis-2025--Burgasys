@@ -15,6 +15,7 @@ import 'leaflet/dist/leaflet.css';
 // Pages with lazy loading
 const Home = React.lazy(() => import('./pages/Home'));
 const Auth = React.lazy(() => import('./pages/Auth'));
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Events = React.lazy(() => import('./pages/Events'));
 const EventDetail = React.lazy(() => import('./pages/EventDetail'));
@@ -27,6 +28,7 @@ const UsersManagement = React.lazy(() => import('./pages/UsersManagement'));
 const AdminUserApprovals = React.lazy(() => import('./pages/AdminUserApprovals'));
 const Organization = React.lazy(() => import('./pages/Organization'));
 const CreateOrganization = React.lazy(() => import('./pages/CreateOrganization'));
+const OrganizationStudents = React.lazy(() => import('./pages/OrganizationStudents'));
 const EditEvent = React.lazy(() => import('./pages/EventEdit'));
 const MapExplorer = React.lazy(() => import('./pages/MapExplorer'));
 const Legal = React.lazy(() => import('./pages/Legal'));
@@ -66,6 +68,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
                   
                   <Route path="/events" element={
                     <ProtectedRoute>
@@ -113,6 +116,11 @@ function App() {
                   <Route path="/organizations/:id" element={
                     <ProtectedRoute>
                       <Organization />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/organizations/students" element={
+                    <ProtectedRoute>
+                      <OrganizationStudents />
                     </ProtectedRoute>
                   } />
                   <Route path="/dashboard" element={
