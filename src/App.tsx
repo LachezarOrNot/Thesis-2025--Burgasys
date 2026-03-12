@@ -7,6 +7,7 @@ import './services/i18n';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import AIAssistant from './components/AIAssistant';
 import { configureLeaflet } from './config/leafletConfig';
 
 // Import Leaflet CSS
@@ -168,6 +169,7 @@ function App() {
                 </Routes>
               </React.Suspense>
             </main>
+            <AIAssistant />
             <Footer />
           </div>
         </Router>

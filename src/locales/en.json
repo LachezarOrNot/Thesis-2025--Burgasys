@@ -149,6 +149,18 @@
     "createSuccess": "Organization created successfully!",
     "manageStudents": "Manage Students"
   },
+  "aiAssistant": {
+    "title": "Burgasys AI assistant",
+    "greetingWithName": "Hi {{name}}, how can I help?",
+    "greetingGeneric": "Hi, I am the Burgasys assistant.",
+    "helperText": "I can answer questions, explain features, and suggest events based on the current database.",
+    "picksButton": "Picks",
+    "emptyState": "Ask anything about finding events, using Burgasys, or what you can do as a student, school, or university. I'll use the upcoming events list when recommending things.",
+    "thinking": "Thinking...",
+    "inputPlaceholder": "Ask a question...",
+    "openAssistant": "Open AI assistant",
+    "quickRecommendPrompt": "Recommend a few upcoming events for me based on what you know about the platform and the events list. Explain briefly why they might be interesting."
+  },
   "navigation": {
     "home": "Home",
     "events": "Events",

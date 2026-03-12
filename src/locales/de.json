@@ -149,6 +149,18 @@
     "createSuccess": "Organisation erfolgreich erstellt!",
     "manageStudents": "Studenten verwalten"
   },
+  "aiAssistant": {
+    "title": "Burgasys KI-Assistent",
+    "greetingWithName": "Hallo {{name}}, wie kann ich helfen?",
+    "greetingGeneric": "Hallo, ich bin der Burgasys-Assistent.",
+    "helperText": "Ich kann Fragen beantworten, Funktionen erklären und Veranstaltungen auf Basis der aktuellen Datenbank vorschlagen.",
+    "picksButton": "Tipps",
+    "emptyState": "Stell Fragen zum Finden von Veranstaltungen, zur Nutzung von Burgasys oder dazu, was du als Student, Schule oder Universität tun kannst. Ich nutze die Liste der kommenden Veranstaltungen für Empfehlungen.",
+    "thinking": "Denke nach...",
+    "inputPlaceholder": "Stelle eine Frage...",
+    "openAssistant": "KI-Assistent öffnen",
+    "quickRecommendPrompt": "Empfiehl mir einige bevorstehende Veranstaltungen basierend auf dem, was du über die Plattform und die Veranstaltungsliste weißt. Erkläre kurz, warum sie interessant sein könnten."
+  },
   "navigation": {
     "home": "Startseite",
     "events": "Veranstaltungen",
