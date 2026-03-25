@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MessageCircle, X, Sparkles } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { databaseService } from '../services/database';
 import type { Event } from '../types';
@@ -94,6 +95,135 @@ const AIAssistant: React.FC = () => {
     await handleSend(t('aiAssistant.quickRecommendPrompt'));
   };
 
+  const tryHandleAssistantCreateEvent = async (
+    rawReply: string,
+  ): Promise<string> => {
+    if (!user || user.role !== 'admin') {
+      return rawReply;
+    }
+
+    const trimmed = rawReply.trim();
+    const firstBrace = trimmed.indexOf('{');
+    const lastBrace = trimmed.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace <= firstBrace) {
+      return rawReply;
+    }
+
+    const jsonSlice = trimmed.slice(firstBrace, lastBrace + 1);
+
+    try {
+      const payload = JSON.parse(jsonSlice) as {
+        action?: string;
+        name?: string;
+        description?: string;
+        location?: string;
+        start_datetime?: string;
+        end_datetime?: string;
+        capacity?: number;
+        tags?: string[];
+        allow_registration?: boolean;
+      };
+
+      if (payload.action !== 'create_event') {
+        return rawReply;
+      }
+
+      const missing: string[] = [];
+      if (!payload.name) missing.push('name');
+      if (!payload.location) missing.push('location');
+      if (!payload.start_datetime) missing.push('start_datetime');
+      if (!payload.end_datetime) missing.push('end_datetime');
+
+      if (missing.length > 0) {
+        toast.error(
+          t(
+            'eventCreate.errors.general',
+            'Failed to create event. Some required fields are missing.',
+          ),
+        );
+        return `I tried to create the event automatically, but these fields were missing: ${missing.join(
+          ', ',
+        )}. Please provide the event name, location, start date/time, and end date/time (YYYY-MM-DDTHH:MM) so I can create it.`;
+      }
+
+      const datetimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+      if (
+        !datetimePattern.test(payload.start_datetime!) ||
+        !datetimePattern.test(payload.end_datetime!)
+      ) {
+        toast.error(t('eventCreate.errors.invalidDate'));
+        return 'I could not create the event because the date/time format was invalid. Please use the format YYYY-MM-DDTHH:MM, for example 2026-05-21T18:30.';
+      }
+
+      const startStr = payload.start_datetime as string;
+      const endStr = payload.end_datetime as string;
+      const startDate = new Date(startStr);
+      const endDate = new Date(endStr);
+
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        toast.error(t('eventCreate.errors.invalidDate'));
+        return 'I could not create the event because the start or end date is invalid. Please check the values and try again.';
+      }
+
+      if (startDate >= endDate) {
+        toast.error(t('eventCreate.errors.dateValidation'));
+        return 'I could not create the event because the end time must be after the start time. Please adjust the times and try again.';
+      }
+
+      const now = new Date();
+      if (startDate.getTime() < now.getTime() - 5 * 60 * 1000) {
+        toast.error(t('eventCreate.errors.dateInPast'));
+        return 'I could not create the event because the start time is in the past. Please choose a future time and try again.';
+      }
+
+      const capacityValue =
+        typeof payload.capacity === 'number' && Number.isFinite(payload.capacity)
+          ? payload.capacity
+          : null;
+
+      const tagsArray = Array.isArray(payload.tags)
+        ? payload.tags.map((tag) => String(tag)).filter((tag) => tag.trim().length > 0)
+        : [];
+
+      const name = payload.name as string;
+      const location = payload.location as string;
+
+      const eventData = {
+        name: name.trim(),
+        subtitle: null,
+        description: (payload.description ?? '').trim(),
+        location: location.trim(),
+        lat: 0,
+        lng: 0,
+        start_datetime: startDate,
+        end_datetime: endDate,
+        capacity: capacityValue,
+        tags: tagsArray,
+        images: [],
+        organiser_org_id: '',
+        createdBy: user.uid,
+        status: 'published',
+        allow_registration:
+          payload.allow_registration === undefined
+            ? true
+            : Boolean(payload.allow_registration),
+        registeredUsers: [],
+        waitlist: [],
+      };
+
+      await databaseService.createEvent(eventData as any);
+
+      toast.success(t('eventCreate.success.event'));
+
+      return t('eventCreate.success.event');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to handle assistant event creation JSON:', err);
+      return rawReply;
+    }
+  };
+
   const handleSend = async (overrideInput?: string) => {
     const trimmed = (overrideInput ?? input).trim();
     if (!trimmed || loading) return;
@@ -113,11 +243,14 @@ const AIAssistant: React.FC = () => {
       const reply = await askAssistant(trimmed, {
         eventsContext,
         history: [...messages, newUserMessage],
+        userRole: user?.role,
       });
+
+      const maybeModifiedReply = await tryHandleAssistantCreateEvent(reply);
 
       const assistantMessage: AssistantMessage = {
         role: 'assistant',
-        content: reply,
+        content: maybeModifiedReply,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);

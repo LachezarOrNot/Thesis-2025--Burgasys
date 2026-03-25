@@ -20,156 +20,186 @@ const Footer: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <footer className="relative overflow-hidden bg-black text-gray-300 py-14">
-      {/* Animated gradient background */}
-      <motion.div
-        animate={{
-          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-          opacity: [0.2, 0.35, 0.2],
+    <footer className="relative overflow-hidden bg-[#080810] text-gray-400">
+      {/* Noise texture overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.035] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px",
         }}
-        transition={{
-          duration: 18,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        className="absolute inset-0 bg-gradient-to-r from-blue-700 via-purple-600 to-indigo-700 bg-[length:300%_300%] blur-[120px]"
       />
 
-      <div className="relative container mx-auto px-6">
-        {/* Main horizontal layout */}
-        <div className="flex flex-col md:flex-row items-start justify-between gap-12 md:gap-24">
-          {/* 1️⃣ Brand Section */}
+      {/* Top glowing accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/60 to-transparent" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-purple-400/80 blur-sm" />
+
+      {/* Ambient glow pools */}
+      <div className="absolute top-0 left-1/4 w-96 h-64 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-80 h-64 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="relative container mx-auto px-6 md:px-10 pt-14 pb-8">
+
+        {/* Main grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 mb-12">
+
+          {/* 1️⃣ Brand Section — spans 5 cols */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="flex-1 max-w-sm"
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="md:col-span-5 pr-0 md:pr-8"
           >
-            <div className="flex items-center space-x-2 mb-4">
-              <Sparkles className="h-7 w-7 text-purple-400 animate-pulse" />
-              <span className="text-2xl font-bold text-white">Burgasys</span>
+            {/* Logo */}
+            <div className="flex items-center space-x-2.5 mb-5">
+              <div className="relative">
+                <div className="absolute inset-0 bg-purple-500/40 rounded-full blur-md" />
+                <Sparkles className="relative h-6 w-6 text-purple-300" />
+              </div>
+              <span
+                className="text-2xl font-bold text-white tracking-tight"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: "-0.02em" }}
+              >
+                Burgasys
+              </span>
             </div>
 
-            <p className="text-gray-400 mb-5 leading-relaxed">
+            <p className="text-gray-500 mb-6 leading-relaxed text-sm max-w-xs"
+               style={{ fontFamily: "'DM Sans', sans-serif" }}>
               {t('footer.brand.description')}
             </p>
 
-            <div className="flex items-center gap-6 text-sm text-gray-400">
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-blue-400" />
+            {/* Contact pills */}
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/[0.04] border border-white/[0.07] rounded-full px-3.5 py-1.5 hover:border-blue-500/40 hover:text-blue-300 transition-all duration-300">
+                <MapPin className="h-3.5 w-3.5 text-blue-400/80" />
                 <span>{t('footer.brand.location')}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4 text-purple-400" />
+              <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/[0.04] border border-white/[0.07] rounded-full px-3.5 py-1.5 hover:border-purple-500/40 hover:text-purple-300 transition-all duration-300">
+                <Mail className="h-3.5 w-3.5 text-purple-400/80" />
                 <span>{t('footer.brand.email')}</span>
               </div>
             </div>
           </motion.div>
 
-          {/* 2️⃣ Explore Section */}
+          {/* Vertical divider */}
+          <div className="hidden md:block md:col-span-1">
+            <div className="h-full w-px bg-gradient-to-b from-transparent via-white/10 to-transparent mx-auto" />
+          </div>
+
+          {/* 2️⃣ Explore Section — spans 3 cols */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex-1"
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="md:col-span-3"
           >
-            <h3 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">
+            <h3
+              className="text-[10px] font-semibold text-gray-500 mb-5 uppercase tracking-[0.2em]"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
               {t('footer.explore.title')}
             </h3>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link
-                  to="/events"
-                  className="group flex items-center space-x-2 hover:text-blue-400 transition-all duration-300"
-                >
-                  <CalendarDays className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>{t('footer.explore.upcomingEvents')}</span>
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/calendar"
-                  className="group flex items-center space-x-2 hover:text-purple-400 transition-all duration-300"
-                >
-                  <Calendar className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>{t('footer.explore.eventCalendar')}</span>
-                </Link>
-              </li>
-              {!user && (
-                <li>
+            <ul className="space-y-3.5">
+              {[
+                { to: "/events", icon: CalendarDays, label: t('footer.explore.upcomingEvents'), color: "group-hover:text-blue-400", iconColor: "group-hover:text-blue-400 text-gray-600" },
+                { to: "/calendar", icon: Calendar, label: t('footer.explore.eventCalendar'), color: "group-hover:text-purple-400", iconColor: "group-hover:text-purple-400 text-gray-600" },
+                ...(!user ? [{ to: "/auth", icon: LogIn, label: t('footer.explore.signIn'), color: "group-hover:text-indigo-400", iconColor: "group-hover:text-indigo-400 text-gray-600" }] : []),
+              ].map(({ to, icon: Icon, label, color, iconColor }) => (
+                <li key={to}>
                   <Link
-                    to="/auth"
-                    className="group flex items-center space-x-2 hover:text-indigo-400 transition-all duration-300"
+                    to={to}
+                    className={`group flex items-center gap-3 text-sm text-gray-500 ${color} transition-all duration-300`}
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
                   >
-                    <LogIn className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                    <span>{t('footer.explore.signIn')}</span>
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.06] group-hover:border-white/[0.15] transition-all duration-300">
+                      <Icon className={`h-3.5 w-3.5 ${iconColor} transition-colors duration-300`} />
+                    </span>
+                    <span>{label}</span>
                   </Link>
                 </li>
-              )}
+              ))}
             </ul>
           </motion.div>
 
-          {/* 3️⃣ Connect Section */}
+          {/* 3️⃣ Connect Section — spans 3 cols */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="flex-1 md:text-right"
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="md:col-span-3"
           >
-            <h3 className="text-lg font-semibold text-white mb-4 uppercase tracking-wide">
+            <h3
+              className="text-[10px] font-semibold text-gray-500 mb-5 uppercase tracking-[0.2em]"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
               {t('footer.connect.title')}
             </h3>
-            <div className="flex md:justify-end justify-center items-center space-x-5 mb-6">
-              <a
-                href="#"
-                className="hover:text-blue-400 hover:scale-110 transition-all duration-300"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="hover:text-purple-400 hover:scale-110 transition-all duration-300"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="hover:text-indigo-400 hover:scale-110 transition-all duration-300"
-              >
-                <Linkedin className="h-5 w-5" />
-              </a>
+
+            {/* Social icons */}
+            <div className="flex items-center gap-3 mb-5">
+              {[
+                { icon: Twitter, color: "hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/10" },
+                { icon: Instagram, color: "hover:border-purple-500/50 hover:text-purple-400 hover:bg-purple-500/10" },
+                { icon: Linkedin, color: "hover:border-indigo-500/50 hover:text-indigo-400 hover:bg-indigo-500/10" },
+              ].map(({ icon: Icon, color }, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className={`flex items-center justify-center w-9 h-9 rounded-xl border border-white/[0.08] text-gray-500 ${color} transition-all duration-300`}
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
 
-            <p className="text-gray-500 text-sm leading-relaxed md:max-w-xs md:ml-auto">
+            <p
+              className="text-gray-600 text-xs leading-relaxed"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
               {t('footer.connect.description')}
             </p>
           </motion.div>
         </div>
 
-        {/* Footer bottom */}
+        {/* Bottom bar */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="mt-14 border-t border-gray-800 pt-6 text-center text-xs sm:text-sm text-gray-500"
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4"
         >
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
-            <p>
-              {t('footer.copyright', { year: new Date().getFullYear() })}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-gray-400">
-              <Link to="/legal" className="hover:text-gray-200 transition-colors duration-200">
-                {t('footer.legal.legal', 'Legal information')}
-              </Link>
-              <span className="hidden sm:inline-block text-gray-600">•</span>
-              <Link to="/terms" className="hover:text-gray-200 transition-colors duration-200">
-                {t('footer.legal.terms', 'Terms of service')}
-              </Link>
-              <span className="hidden sm:inline-block text-gray-600">•</span>
-              <Link to="/privacy" className="hover:text-gray-200 transition-colors duration-200">
-                {t('footer.legal.privacy', 'Privacy policy')}
-              </Link>
-            </div>
+          <p
+            className="text-[11px] text-gray-600"
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          >
+            {t('footer.copyright', { year: new Date().getFullYear() })}
+          </p>
+
+          <div className="flex items-center gap-1">
+            {[
+              { to: "/legal", label: t('footer.legal.legal', 'Legal information') },
+              { to: "/terms", label: t('footer.legal.terms', 'Terms of service') },
+              { to: "/privacy", label: t('footer.legal.privacy', 'Privacy policy') },
+            ].map(({ to, label }, i, arr) => (
+              <React.Fragment key={to}>
+                <Link
+                  to={to}
+                  className="text-[11px] text-gray-600 hover:text-gray-300 transition-colors duration-200 px-2"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  {label}
+                </Link>
+                {i < arr.length - 1 && (
+                  <span className="text-gray-700 text-[10px]">·</span>
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </motion.div>
       </div>

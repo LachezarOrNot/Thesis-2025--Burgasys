@@ -63,6 +63,7 @@ const EventDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [isRegistered, setIsRegistered] = useState(false);
+  const [unregistering, setUnregistering] = useState(false);
 
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -128,6 +129,28 @@ const EventDetail: React.FC = () => {
       console.error('Error registering for event:', error);
       setRegistrationStatus('error');
       alert(error.message || 'Failed to register for event');
+    }
+  };
+
+  const handleUnregister = async () => {
+    if (!event || !user) {
+      navigate('/login');
+      return;
+    }
+
+    setUnregistering(true);
+    try {
+      await databaseService.unregisterFromEvent(event.id, user.uid);
+      setIsRegistered(false);
+      setActiveTab('details');
+      setToastMessage(t('notifications.unregistrationSuccess', 'Successfully unregistered from event'));
+      setShowToast(true);
+      await loadEvent();
+    } catch (error: any) {
+      console.error('Error unregistering from event:', error);
+      alert(error.message || 'Failed to unregister from event');
+    } finally {
+      setUnregistering(false);
     }
   };
 
@@ -553,6 +576,16 @@ const EventDetail: React.FC = () => {
                           'See you at the event. Check the Discussion tab for updates.'
                         )}
                       </p>
+                      <button
+                        type="button"
+                        onClick={handleUnregister}
+                        disabled={unregistering}
+                        className="mt-4 inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold border border-red-300 dark:border-red-700 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {unregistering
+                          ? t('common.loading', 'Loading...')
+                          : t('eventDetail.unregister', 'Unregister')}
+                      </button>
                     </div>
                   ) : isPastEvent ? (
                     <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center mb-4">

@@ -894,6 +894,38 @@ private safeDateConvert(date: any): Date {
     }
   }
 
+  async unregisterFromEvent(eventId: string, userUid: string): Promise<void> {
+    try {
+      const existing = await this.getUserEventRegistration(eventId, userUid);
+      if (!existing) {
+        throw new Error('You are not registered for this event');
+      }
+
+      // Delete the registration document(s) for this user+event
+      const registrationQuery = query(
+        collection(db, 'eventRegistrations'),
+        where('eventId', '==', eventId),
+        where('userUid', '==', userUid),
+      );
+      const registrationSnap = await getDocs(registrationQuery);
+      const deletes = registrationSnap.docs.map((d) => deleteDoc(d.ref));
+      await Promise.all(deletes);
+
+      // Remove user from event registeredUsers array
+      const event = await this.getEvent(eventId);
+      const updatedRegisteredUsers =
+        event?.registeredUsers?.filter((uid) => uid !== userUid) || [];
+
+      const eventRef = doc(db, 'events', eventId);
+      await updateDoc(eventRef, {
+        registeredUsers: updatedRegisteredUsers,
+      });
+    } catch (error) {
+      console.error('Error unregistering from event:', error);
+      throw error;
+    }
+  }
+
   // FIXED: Chat message methods with proper image handling
   async sendChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<ChatMessage> {
     const messageId = uuidv4();
