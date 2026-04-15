@@ -2,6 +2,17 @@ import { toast } from 'react-hot-toast';
 
 const GEMINI_API_KEY = (import.meta as any).env
   .VITE_GEMINI_API_KEY as string | undefined;
+const GEMINI_PRIMARY_MODEL = ((import.meta as any).env.VITE_GEMINI_MODEL ||
+  'gemini-2.5-flash') as string;
+const GEMINI_FALLBACK_MODELS = (
+  ((import.meta as any).env.VITE_GEMINI_FALLBACK_MODELS as string | undefined) ||
+  'gemini-2.5-flash-lite,gemini-2.0-flash'
+)
+  .split(',')
+  .map((m) => m.trim())
+  .filter(Boolean);
+const MAX_RETRIES_PER_MODEL = 3;
+const BASE_RETRY_DELAY_MS = 1200;
 
 if (!GEMINI_API_KEY) {
   // eslint-disable-next-line no-console
@@ -73,30 +84,81 @@ export async function askAssistant(
       28000,
     );
 
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=' +
-      encodeURIComponent(GEMINI_API_KEY),
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: fullPrompt }],
-          },
-        ],
-      }),
-    },
+  const modelsToTry = [GEMINI_PRIMARY_MODEL, ...GEMINI_FALLBACK_MODELS].filter(
+    (value, index, arr) => arr.indexOf(value) === index,
   );
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
+  const isTransientStatus = (status: number) =>
+    [429, 500, 502, 503, 504].includes(status);
+
+  const sleep = (ms: number) =>
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, ms);
+    });
+
+  const callModel = async (model: string) =>
+    fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        model,
+      )}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: fullPrompt }],
+            },
+          ],
+        }),
+      },
+    );
+
+  let lastErrorText = '';
+  let lastStatus: number | null = null;
+  let response: Response | null = null;
+
+  for (const model of modelsToTry) {
+    for (let attempt = 0; attempt < MAX_RETRIES_PER_MODEL; attempt += 1) {
+      response = await callModel(model);
+
+      if (response.ok) {
+        break;
+      }
+
+      lastStatus = response.status;
+      lastErrorText = await response.text().catch(() => '');
+
+      const canRetry =
+        isTransientStatus(response.status) &&
+        attempt < MAX_RETRIES_PER_MODEL - 1;
+
+      if (!canRetry) {
+        break;
+      }
+
+      const jitter = Math.floor(Math.random() * 300);
+      const delayMs = BASE_RETRY_DELAY_MS * 2 ** attempt + jitter;
+      await sleep(delayMs);
+    }
+
+    if (response?.ok) {
+      break;
+    }
+  }
+
+  if (!response || !response.ok) {
     // eslint-disable-next-line no-console
-    console.error('Gemini API error:', response.status, errorText);
-    toast.error('The AI assistant could not respond right now.');
-    throw new Error(`Gemini API error: ${response.status}`);
+    console.error('Gemini API error:', lastStatus, lastErrorText);
+    const busyMessage =
+      lastStatus === 503
+        ? 'The AI assistant is currently busy. Please try again in a few seconds.'
+        : 'The AI assistant could not respond right now.';
+    toast.error(busyMessage);
+    throw new Error(`Gemini API error: ${lastStatus ?? 'unknown'}`);
   }
 
   const data: any = await response.json();

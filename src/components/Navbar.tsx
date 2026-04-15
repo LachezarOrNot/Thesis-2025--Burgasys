@@ -33,6 +33,12 @@ const Navbar: React.FC = () => {
     currentPath.startsWith('/map') ||
     currentPath.startsWith('/past-events');
   const isInOrganizationsSection = currentPath.startsWith('/organizations');
+  const canCreateOrganizationRole = !!user && ['school', 'university', 'firm'].includes(user.role);
+  const alreadyHasOrganization = !!(
+    user &&
+    ((user as any).affiliatedOrganizationId || (user as any).organizationId)
+  );
+  const shouldShowCreateOrganization = canCreateOrganizationRole && !alreadyHasOrganization;
 
   const handleSignOut = async () => {
     try {
@@ -225,7 +231,7 @@ const Navbar: React.FC = () => {
                       </div>
                     </Link>
                     
-                    {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
+                    {shouldShowCreateOrganization && (
                       <Link
                         to="/organizations/create"
                         onClick={() => setIsOrganizationsOpen(false)}
@@ -485,7 +491,7 @@ const Navbar: React.FC = () => {
                 {t('navbar.organizationsDropdown.browseOrganizations')}
               </Link>
 
-              {user && ['admin', 'school', 'university', 'firm'].includes(user.role) && (
+              {shouldShowCreateOrganization && (
                 <Link
                   to="/organizations/create"
                   onClick={() => setIsMobileMenuOpen(false)}

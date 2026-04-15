@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { MessageCircle, X, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Sparkles, Bot } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { databaseService } from '../services/database';
@@ -8,6 +8,24 @@ import { askAssistant, AssistantMessage } from '../services/aiAssistant';
 import { useTranslation } from 'react-i18next';
 
 const MAX_EVENTS_IN_CONTEXT = 12;
+
+interface PendingEventCreationPayload {
+  action: 'create_event';
+  name: string;
+  description?: string;
+  location: string;
+  start_datetime: string;
+  end_datetime: string;
+  capacity?: number;
+  tags?: string[];
+  allow_registration?: boolean;
+}
+
+interface ResolvedLocation {
+  address: string;
+  lat: number;
+  lng: number;
+}
 
 const AIAssistant: React.FC = () => {
   const { user } = useAuth();
@@ -18,6 +36,9 @@ const AIAssistant: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<Event[] | null>(null);
   const [eventsLoaded, setEventsLoaded] = useState(false);
+  const [pendingEventCreation, setPendingEventCreation] =
+    useState<PendingEventCreationPayload | null>(null);
+  const [pastedCoverImage, setPastedCoverImage] = useState<string | null>(null);
 
   // Load a slice of upcoming events once the widget is opened
   useEffect(() => {
@@ -95,11 +116,11 @@ const AIAssistant: React.FC = () => {
     await handleSend(t('aiAssistant.quickRecommendPrompt'));
   };
 
-  const tryHandleAssistantCreateEvent = async (
+  const tryParseAssistantCreateEvent = (
     rawReply: string,
-  ): Promise<string> => {
+  ): PendingEventCreationPayload | null => {
     if (!user || user.role !== 'admin') {
-      return rawReply;
+      return null;
     }
 
     const trimmed = rawReply.trim();
@@ -107,27 +128,83 @@ const AIAssistant: React.FC = () => {
     const lastBrace = trimmed.lastIndexOf('}');
 
     if (firstBrace === -1 || lastBrace <= firstBrace) {
-      return rawReply;
+      return null;
     }
 
     const jsonSlice = trimmed.slice(firstBrace, lastBrace + 1);
 
     try {
-      const payload = JSON.parse(jsonSlice) as {
-        action?: string;
-        name?: string;
-        description?: string;
-        location?: string;
-        start_datetime?: string;
-        end_datetime?: string;
-        capacity?: number;
-        tags?: string[];
-        allow_registration?: boolean;
-      };
+      const payload = JSON.parse(jsonSlice) as PendingEventCreationPayload;
 
       if (payload.action !== 'create_event') {
-        return rawReply;
+        return null;
       }
+
+      return payload;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse assistant event creation JSON:', err);
+      return null;
+    }
+  };
+
+  const createEventFromPendingPayload = async (
+    payload: PendingEventCreationPayload,
+  ): Promise<string> => {
+    if (!user) {
+      return 'You need to be logged in to create an event.';
+    }
+
+    try {
+      const resolveLocation = async (inputLocation: string): Promise<ResolvedLocation | null> => {
+        const cleaned = inputLocation.trim();
+        if (!cleaned) return null;
+
+        // Bias lookup to Burgas, Bulgaria for abstract phrases like "кметство бургас".
+        const query = cleaned.toLowerCase().includes('бургас')
+          ? cleaned
+          : `${cleaned}, Бургас, България`;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+              query,
+            )}&limit=1&addressdetails=1`,
+            {
+              headers: {
+                Accept: 'application/json',
+              },
+            },
+          );
+
+          if (!response.ok) return null;
+
+          const results = (await response.json()) as Array<{
+            display_name?: string;
+            lat?: string;
+            lon?: string;
+          }>;
+
+          const best = results[0];
+          if (!best?.display_name || !best?.lat || !best?.lon) {
+            return null;
+          }
+
+          const lat = Number.parseFloat(best.lat);
+          const lng = Number.parseFloat(best.lon);
+          if (Number.isNaN(lat) || Number.isNaN(lng)) {
+            return null;
+          }
+
+          return {
+            address: best.display_name,
+            lat,
+            lng,
+          };
+        } catch {
+          return null;
+        }
+      };
 
       const missing: string[] = [];
       if (!payload.name) missing.push('name');
@@ -142,9 +219,9 @@ const AIAssistant: React.FC = () => {
             'Failed to create event. Some required fields are missing.',
           ),
         );
-        return `I tried to create the event automatically, but these fields were missing: ${missing.join(
+        return `I prepared an event draft, but these fields are still missing: ${missing.join(
           ', ',
-        )}. Please provide the event name, location, start date/time, and end date/time (YYYY-MM-DDTHH:MM) so I can create it.`;
+        )}. Please provide the event name, location, start date/time, and end date/time (YYYY-MM-DDTHH:MM).`;
       }
 
       const datetimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -188,19 +265,20 @@ const AIAssistant: React.FC = () => {
 
       const name = payload.name as string;
       const location = payload.location as string;
+      const resolvedLocation = await resolveLocation(location);
 
       const eventData = {
         name: name.trim(),
         subtitle: null,
         description: (payload.description ?? '').trim(),
-        location: location.trim(),
-        lat: 0,
-        lng: 0,
+        location: (resolvedLocation?.address || location).trim(),
+        lat: resolvedLocation?.lat || 0,
+        lng: resolvedLocation?.lng || 0,
         start_datetime: startDate,
         end_datetime: endDate,
         capacity: capacityValue,
         tags: tagsArray,
-        images: [],
+        images: pastedCoverImage ? [pastedCoverImage] : [],
         organiser_org_id: '',
         createdBy: user.uid,
         status: 'published',
@@ -215,12 +293,60 @@ const AIAssistant: React.FC = () => {
       await databaseService.createEvent(eventData as any);
 
       toast.success(t('eventCreate.success.event'));
+      setPendingEventCreation(null);
+      setPastedCoverImage(null);
 
-      return t('eventCreate.success.event');
+      if (resolvedLocation) {
+        return `${t('eventCreate.success.event')} Location resolved to: ${resolvedLocation.address}`;
+      }
+
+      return `${t('eventCreate.success.event')} I kept the provided location text because I could not resolve a more specific address automatically.`;
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('Failed to handle assistant event creation JSON:', err);
-      return rawReply;
+      console.error('Failed to create event from assistant payload:', err);
+      return t(
+        'eventCreate.errors.general',
+        'Failed to create event. Please check the details and try again.',
+      );
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const handleInputPaste = async (
+    e: React.ClipboardEvent<HTMLTextAreaElement>,
+  ) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imageItem = items.find((item) => item.type.startsWith('image/'));
+
+    if (!imageItem) return;
+
+    const file = imageItem.getAsFile();
+    if (!file) return;
+
+    e.preventDefault();
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Pasted image is too large. Please keep it under 2MB.');
+      return;
+    }
+
+    try {
+      const base64 = await fileToBase64(file);
+      setPastedCoverImage(base64);
+      toast.success(
+        'Image pasted. It will be used as event cover when you confirm event creation.',
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to process pasted image:', err);
+      toast.error('Could not process pasted image.');
     }
   };
 
@@ -240,17 +366,95 @@ const AIAssistant: React.FC = () => {
 
     setLoading(true);
     try {
+      if (pendingEventCreation) {
+        const normalized = trimmed.toLowerCase();
+        const confirmWords = [
+          'confirm',
+          'yes',
+          'y',
+          'create it',
+          'go ahead',
+          'approve',
+        ];
+        const cancelWords = ['cancel', 'no', 'n', 'stop', 'abort'];
+
+        const isConfirm = confirmWords.some((word) =>
+          normalized.includes(word),
+        );
+        const isCancel = cancelWords.some((word) => normalized.includes(word));
+
+        if (isConfirm) {
+          const result = await createEventFromPendingPayload(
+            pendingEventCreation,
+          );
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: result,
+            },
+          ]);
+          return;
+        }
+
+        if (isCancel) {
+          setPendingEventCreation(null);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                'Event creation cancelled. You can provide updated event details at any time and I will prepare a new draft.',
+            },
+          ]);
+          return;
+        }
+      }
+
       const reply = await askAssistant(trimmed, {
         eventsContext,
         history: [...messages, newUserMessage],
         userRole: user?.role,
       });
 
-      const maybeModifiedReply = await tryHandleAssistantCreateEvent(reply);
+      const parsedPayload = tryParseAssistantCreateEvent(reply);
+      if (parsedPayload) {
+        setPendingEventCreation(parsedPayload);
+        const summary = `I prepared this event draft:
+Name: ${parsedPayload.name}
+Location: ${parsedPayload.location}
+Start: ${parsedPayload.start_datetime}
+End: ${parsedPayload.end_datetime}
+Description: ${parsedPayload.description || 'N/A'}
+Capacity: ${
+          typeof parsedPayload.capacity === 'number'
+            ? parsedPayload.capacity
+            : 'N/A'
+        }
+Tags: ${
+          parsedPayload.tags && parsedPayload.tags.length > 0
+            ? parsedPayload.tags.join(', ')
+            : 'none'
+        }
+Registration: ${
+          parsedPayload.allow_registration === false ? 'disabled' : 'enabled'
+        }
+
+Reply with "confirm" to create it, "cancel" to stop, or send corrections and I will update the draft.`;
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: summary,
+          },
+        ]);
+        return;
+      }
 
       const assistantMessage: AssistantMessage = {
         role: 'assistant',
-        content: maybeModifiedReply,
+        content: reply,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -345,19 +549,45 @@ const AIAssistant: React.FC = () => {
               }}
               className="border-t border-gray-100/80 dark:border-gray-800/80 bg-white/95 dark:bg-gray-950/95 px-3 py-2.5 flex items-end gap-2.5"
             >
-              <textarea
-                rows={1}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={t('aiAssistant.inputPlaceholder')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                className="flex-1 resize-none text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 px-3 py-2 text-gray-900 dark:text-gray-50 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-transparent max-h-24"
-              />
+              <div className="flex-1 space-y-2">
+                {pastedCoverImage && (
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/70 p-2 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <img
+                        src={pastedCoverImage}
+                        alt="Pasted event cover preview"
+                        className="w-10 h-10 rounded object-cover shrink-0"
+                      />
+                      <p className="text-[11px] text-gray-600 dark:text-gray-300 truncate">
+                        Cover image attached from clipboard
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPastedCoverImage(null)}
+                      className="text-[11px] px-2 py-1 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-100"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                <textarea
+                  rows={1}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={`${t('aiAssistant.inputPlaceholder')} (You can paste an image for event cover)`}
+                  onPaste={(e) => {
+                    void handleInputPaste(e);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  className="w-full resize-none text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/80 px-3 py-2 text-gray-900 dark:text-gray-50 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/60 focus:border-transparent max-h-24"
+                />
+              </div>
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
@@ -376,7 +606,7 @@ const AIAssistant: React.FC = () => {
         className="pointer-events-auto inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-primary-500 via-primary-500 to-primary-600 hover:from-primary-500 hover:via-primary-600 hover:to-primary-700 text-white shadow-[0_14px_30px_rgba(15,23,42,0.45)] w-12 h-12 focus:outline-none focus:ring-2 focus:ring-primary-400/80 focus:ring-offset-2 focus:ring-offset-transparent transition-transform hover:-translate-y-0.5 active:translate-y-0"
         aria-label={t('aiAssistant.openAssistant')}
       >
-        <MessageCircle className="w-6 h-6" />
+        <Bot className="w-6 h-6" />
       </button>
     </div>
   );
