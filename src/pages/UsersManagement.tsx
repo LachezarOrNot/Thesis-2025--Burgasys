@@ -1087,13 +1087,15 @@ const AdminUsersManagement: React.FC = () => {
                 <CheckCircle className="h-5 w-5" />
               </button>
             )}
-            <button
-              onClick={() => deleteUser(user)}
-              className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-              title="Delete User"
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
+            {user.role !== 'admin' && (
+              <button
+                onClick={() => deleteUser(user)}
+                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                title="Delete User"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            )}
           </div>
         </td>
       </tr>

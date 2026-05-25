@@ -6,20 +6,16 @@ import { databaseService } from '../services/database';
 import type { Event } from '../types';
 import { askAssistant, AssistantMessage } from '../services/aiAssistant';
 import { useTranslation } from 'react-i18next';
+import {
+  parseAssistantCreateEventPayload,
+  validateEventDateTimes,
+  getMissingEventFields,
+  type AssistantCreateEventPayload,
+} from '../utils/aiEventPayload';
 
 const MAX_EVENTS_IN_CONTEXT = 12;
 
-interface PendingEventCreationPayload {
-  action: 'create_event';
-  name: string;
-  description?: string;
-  location: string;
-  start_datetime: string;
-  end_datetime: string;
-  capacity?: number;
-  tags?: string[];
-  allow_registration?: boolean;
-}
+type PendingEventCreationPayload = AssistantCreateEventPayload;
 
 interface ResolvedLocation {
   address: string;
@@ -35,27 +31,24 @@ const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<Event[] | null>(null);
-  const [eventsLoaded, setEventsLoaded] = useState(false);
   const [pendingEventCreation, setPendingEventCreation] =
     useState<PendingEventCreationPayload | null>(null);
   const [pastedCoverImage, setPastedCoverImage] = useState<string | null>(null);
 
-  // Load a slice of upcoming events once the widget is opened
   useEffect(() => {
-    if (!isOpen || eventsLoaded) return;
+    if (!isOpen) return;
 
-    let cancelled = false;
-
-    const loadEvents = async () => {
-      try {
-        const all = await databaseService.getEvents({ status: 'published' });
-        if (cancelled) return;
-
+    const unsubscribe = databaseService.subscribeToEvents(
+      { status: 'published' },
+      (all) => {
         const upcoming = all
           .filter((e) => {
             try {
-              const start = new Date(e.start_datetime as any);
-              return !isNaN(start.getTime()) && start.getTime() >= Date.now() - 24 * 60 * 60 * 1000;
+              const start = new Date(e.start_datetime as Date);
+              return (
+                !Number.isNaN(start.getTime()) &&
+                start.getTime() >= Date.now() - 24 * 60 * 60 * 1000
+              );
             } catch {
               return true;
             }
@@ -63,22 +56,14 @@ const AIAssistant: React.FC = () => {
           .slice(0, MAX_EVENTS_IN_CONTEXT);
 
         setEvents(upcoming);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to load events for AI assistant:', err);
-      } finally {
-        if (!cancelled) {
-          setEventsLoaded(true);
-        }
-      }
-    };
+      },
+      (err) => {
+        console.error('Failed to subscribe to events for AI assistant:', err);
+      },
+    );
 
-    loadEvents();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, eventsLoaded]);
+    return () => unsubscribe();
+  }, [isOpen]);
 
   const eventsContext = useMemo(() => {
     if (!events || events.length === 0) return '';
@@ -118,35 +103,8 @@ const AIAssistant: React.FC = () => {
 
   const tryParseAssistantCreateEvent = (
     rawReply: string,
-  ): PendingEventCreationPayload | null => {
-    if (!user || user.role !== 'admin') {
-      return null;
-    }
-
-    const trimmed = rawReply.trim();
-    const firstBrace = trimmed.indexOf('{');
-    const lastBrace = trimmed.lastIndexOf('}');
-
-    if (firstBrace === -1 || lastBrace <= firstBrace) {
-      return null;
-    }
-
-    const jsonSlice = trimmed.slice(firstBrace, lastBrace + 1);
-
-    try {
-      const payload = JSON.parse(jsonSlice) as PendingEventCreationPayload;
-
-      if (payload.action !== 'create_event') {
-        return null;
-      }
-
-      return payload;
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to parse assistant event creation JSON:', err);
-      return null;
-    }
-  };
+  ): PendingEventCreationPayload | null =>
+    parseAssistantCreateEventPayload(rawReply, user?.role === 'admin');
 
   const createEventFromPendingPayload = async (
     payload: PendingEventCreationPayload,
@@ -206,11 +164,7 @@ const AIAssistant: React.FC = () => {
         }
       };
 
-      const missing: string[] = [];
-      if (!payload.name) missing.push('name');
-      if (!payload.location) missing.push('location');
-      if (!payload.start_datetime) missing.push('start_datetime');
-      if (!payload.end_datetime) missing.push('end_datetime');
+      const missing = getMissingEventFields(payload);
 
       if (missing.length > 0) {
         toast.error(
@@ -224,35 +178,35 @@ const AIAssistant: React.FC = () => {
         )}. Please provide the event name, location, start date/time, and end date/time (YYYY-MM-DDTHH:MM).`;
       }
 
-      const datetimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
-      if (
-        !datetimePattern.test(payload.start_datetime!) ||
-        !datetimePattern.test(payload.end_datetime!)
-      ) {
+      const dateError = validateEventDateTimes(
+        payload.start_datetime,
+        payload.end_datetime,
+      );
+
+      if (dateError === 'invalid_format') {
         toast.error(t('eventCreate.errors.invalidDate'));
         return 'I could not create the event because the date/time format was invalid. Please use the format YYYY-MM-DDTHH:MM, for example 2026-05-21T18:30.';
       }
 
-      const startStr = payload.start_datetime as string;
-      const endStr = payload.end_datetime as string;
-      const startDate = new Date(startStr);
-      const endDate = new Date(endStr);
-
-      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      if (dateError === 'invalid_date') {
         toast.error(t('eventCreate.errors.invalidDate'));
         return 'I could not create the event because the start or end date is invalid. Please check the values and try again.';
       }
 
-      if (startDate >= endDate) {
+      if (dateError === 'end_before_start') {
         toast.error(t('eventCreate.errors.dateValidation'));
         return 'I could not create the event because the end time must be after the start time. Please adjust the times and try again.';
       }
 
-      const now = new Date();
-      if (startDate.getTime() < now.getTime() - 5 * 60 * 1000) {
+      if (dateError === 'start_in_past') {
         toast.error(t('eventCreate.errors.dateInPast'));
         return 'I could not create the event because the start time is in the past. Please choose a future time and try again.';
       }
+
+      const startStr = payload.start_datetime;
+      const endStr = payload.end_datetime;
+      const startDate = new Date(startStr);
+      const endDate = new Date(endStr);
 
       const capacityValue =
         typeof payload.capacity === 'number' && Number.isFinite(payload.capacity)

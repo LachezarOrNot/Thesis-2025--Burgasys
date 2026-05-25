@@ -75,9 +75,17 @@ const MapExplorer: React.FC = () => {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    loadEvents();
-    
-    // Get user's current location
+    setLoading(true);
+
+    const unsubscribe = databaseService.subscribeToEvents(undefined, (allEvents) => {
+      const eventsWithLocation = allEvents.filter(
+        (event) => event.lat && event.lng && event.lat !== 0 && event.lng !== 0,
+      );
+      setEvents(eventsWithLocation);
+      setFilteredEvents(eventsWithLocation);
+      setLoading(false);
+    });
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -85,31 +93,16 @@ const MapExplorer: React.FC = () => {
         },
         (error) => {
           console.log('Geolocation error:', error.message);
-        }
+        },
       );
     }
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     filterEvents();
   }, [events, searchQuery, selectedStatus]);
-
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      const allEvents = await databaseService.getEvents();
-      // Filter events that have valid coordinates
-      const eventsWithLocation = allEvents.filter(event => 
-        event.lat && event.lng && event.lat !== 0 && event.lng !== 0
-      );
-      setEvents(eventsWithLocation);
-      setFilteredEvents(eventsWithLocation);
-    } catch (error) {
-      console.error('Error loading events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterEvents = () => {
     let filtered = [...events];
@@ -456,7 +449,7 @@ const MapExplorer: React.FC = () => {
                   {t('navigation.createEvent')}
                 </button>
                 <button
-                  onClick={loadEvents}
+                  onClick={filterEvents}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium"
                 >
                   {t('mapExplorer.refresh')}

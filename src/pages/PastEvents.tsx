@@ -11,24 +11,19 @@ const PastEvents: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadPastEvents();
-  }, []);
+    setLoading(true);
 
-  const loadPastEvents = async () => {
-    try {
-      setLoading(true);
-      // Get all events and filter for finished ones
-      const allEvents = await databaseService.getEvents();
-      const pastEvents = allEvents.filter(event => 
-        event.status === 'finished' || new Date(event.end_datetime) < new Date()
+    const unsubscribe = databaseService.subscribeToEvents(undefined, (allEvents) => {
+      const pastEvents = allEvents.filter(
+        (event) =>
+          event.status === 'finished' || new Date(event.end_datetime) < new Date(),
       );
       setEvents(pastEvents);
-    } catch (error) {
-      console.error('Error loading past events:', error);
-    } finally {
       setLoading(false);
-    }
-  };
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   if (loading) {
     return <LoadingSpinner />;

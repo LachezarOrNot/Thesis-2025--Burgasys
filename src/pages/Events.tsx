@@ -28,15 +28,33 @@ const Events: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
-    loadEvents();
-    
-    // Set up interval to check for finished events every 5 minutes
+    setLoading(true);
+    setError('');
+
+    void databaseService.checkAndUpdateFinishedEvents();
+
+    const unsubscribe = databaseService.subscribeToEvents(
+      { status: 'published' },
+      (eventsData) => {
+        setEvents(eventsData);
+        setLoading(false);
+        setError('');
+      },
+      () => {
+        setError(t('events.errorLoading'));
+        setLoading(false);
+      },
+    );
+
     const intervalId = setInterval(() => {
-      checkAndUpdateFinishedEvents();
-    }, 5 * 60 * 1000); // 5 minutes
-    
-    return () => clearInterval(intervalId);
-  }, []);
+      void databaseService.checkAndUpdateFinishedEvents();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      unsubscribe();
+      clearInterval(intervalId);
+    };
+  }, [t]);
 
   useEffect(() => {
     if (location.state?.search) {
@@ -53,96 +71,9 @@ const Events: React.FC = () => {
     applyFilters();
   }, [events, searchTerm, dateFilter, categoryFilter, locationFilter, sortBy]);
 
-  const checkAndUpdateFinishedEvents = async () => {
-    try {
-      const now = new Date();
-      const eventsToUpdate = events.filter(event => {
-        try {
-          const endDate = new Date(event.end_datetime);
-          return event.status === 'published' && endDate < now;
-        } catch {
-          return false;
-        }
-      });
-
-      if (eventsToUpdate.length > 0) {
-        console.log(`Found ${eventsToUpdate.length} events to mark as finished`);
-        
-        // Update each event
-        const updatePromises = eventsToUpdate.map(event => 
-          databaseService.updateEvent(event.id, {
-            status: 'finished',
-            updatedAt: new Date()
-          })
-        );
-        
-        await Promise.all(updatePromises);
-        
-        // Refresh events list
-        await loadEvents();
-      }
-    } catch (error) {
-      console.error('Error checking finished events:', error);
-    }
-  };
-
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      // First, check and update any events that should be marked as finished
-      await checkForFinishedEvents();
-      
-      // Then load published events
-      const eventsData = await databaseService.getEvents({ 
-        status: 'published' 
-      });
-      setEvents(eventsData);
-      
-    } catch (error) {
-      console.error('Error loading events:', error);
-      setError(t('events.errorLoading'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkForFinishedEvents = async () => {
-    try {
-      const now = new Date();
-      
-      // Get all published events
-      const allPublishedEvents = await databaseService.getEvents({ 
-        status: 'published' 
-      });
-      
-      // Find events that should be finished
-      const eventsToUpdate = allPublishedEvents.filter(event => {
-        try {
-          const endDate = new Date(event.end_datetime);
-          return endDate < now;
-        } catch {
-          return false;
-        }
-      });
-
-      if (eventsToUpdate.length > 0) {
-        console.log(`Updating ${eventsToUpdate.length} events to finished status`);
-        
-        // Update each event
-        const updatePromises = eventsToUpdate.map(event => 
-          databaseService.updateEvent(event.id, {
-            status: 'finished',
-            updatedAt: new Date()
-          })
-        );
-        
-        await Promise.all(updatePromises);
-      }
-    } catch (error) {
-      console.error('Error checking for finished events:', error);
-    }
+  const retryLoad = () => {
+    setError('');
+    void databaseService.checkAndUpdateFinishedEvents();
   };
 
   const applyFilters = () => {
@@ -283,7 +214,7 @@ const Events: React.FC = () => {
             </h2>
             <p className="text-red-700 dark:text-red-300 mb-6 text-lg">{error}</p>
             <button
-              onClick={loadEvents}
+              onClick={retryLoad}
               className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               {t('events.tryAgain')}

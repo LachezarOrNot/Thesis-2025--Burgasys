@@ -69,10 +69,46 @@ const EventDetail: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      loadEvent();
-    }
+    if (!id) return;
+
+    setLoading(true);
+
+    const unsubscribe = databaseService.subscribeToEvent(id, (eventData) => {
+      setEvent(eventData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [id]);
+
+  useEffect(() => {
+    if (!event?.organiser_org_id) {
+      setOrganizerName(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadOrganizer = async () => {
+      try {
+        const org = await databaseService.getOrganization(event.organiser_org_id);
+        if (!cancelled) {
+          setOrganizerName(org?.name || null);
+        }
+      } catch (orgError) {
+        console.error('Error loading organizer:', orgError);
+        if (!cancelled) {
+          setOrganizerName(null);
+        }
+      }
+    };
+
+    loadOrganizer();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [event?.organiser_org_id]);
 
   useEffect(() => {
     if (location.state?.toast?.message) {
@@ -88,31 +124,6 @@ const EventDetail: React.FC = () => {
     }
   }, [event, user]);
 
-  const loadEvent = async () => {
-    try {
-      setLoading(true);
-      const eventData = await databaseService.getEvent(id!);
-      setEvent(eventData);
-
-      // Load organizer name if organization is linked
-      if (eventData?.organiser_org_id) {
-        try {
-          const org = await databaseService.getOrganization(eventData.organiser_org_id);
-          setOrganizerName(org?.name || null);
-        } catch (orgError) {
-          console.error('Error loading organizer:', orgError);
-          setOrganizerName(null);
-        }
-      } else {
-        setOrganizerName(null);
-      }
-    } catch (error) {
-      console.error('Error loading event:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleRegister = async () => {
     if (!event || !user) {
       navigate('/login');
@@ -124,7 +135,6 @@ const EventDetail: React.FC = () => {
       await databaseService.registerForEvent(event.id, user.uid);
       setRegistrationStatus('success');
       setIsRegistered(true);
-      loadEvent();
     } catch (error: any) {
       console.error('Error registering for event:', error);
       setRegistrationStatus('error');
@@ -145,7 +155,6 @@ const EventDetail: React.FC = () => {
       setActiveTab('details');
       setToastMessage(t('notifications.unregistrationSuccess', 'Successfully unregistered from event'));
       setShowToast(true);
-      await loadEvent();
     } catch (error: any) {
       console.error('Error unregistering from event:', error);
       alert(error.message || 'Failed to unregister from event');

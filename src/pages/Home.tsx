@@ -18,23 +18,23 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadEvents();
     setIsVisible(true);
-  }, []);
+    setLoading(true);
 
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      const eventsData = await databaseService.getEvents({ 
-        status: 'published' 
-      });
-      setEvents(eventsData);
-    } catch (error) {
-      console.error('Error loading events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const unsubscribe = databaseService.subscribeToEvents(
+      { status: 'published' },
+      (eventsData) => {
+        setEvents(eventsData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error loading events:', error);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const featuredEvents = events
     .filter(event => new Date(event.start_datetime) > new Date())
@@ -75,10 +75,19 @@ const Home: React.FC = () => {
     return value.toString();
   };
 
+  const uniqueLocations = new Set<string>();
+  events.forEach(event => {
+    const normalizedLocation = event.location?.trim().toLowerCase();
+    if (normalizedLocation) {
+      uniqueLocations.add(normalizedLocation);
+    }
+  });
+  const activeLocations = uniqueLocations.size;
+
   const stats = [
-    { icon: Calendar, label: t('home.stats.events'), value: events.length, color: 'from-blue-500 to-cyan-500' },
-    { icon: Users, label: t('home.stats.participants'), value: '10K+', color: 'from-purple-500 to-pink-500' },
-    { icon: MapPin, label: t('home.stats.locations'), value: '50+', color: 'from-orange-500 to-red-500' },
+    { icon: Calendar, label: t('home.stats.events'), value: formatStatNumber(events.length), color: 'from-blue-500 to-cyan-500' },
+    { icon: Users, label: t('home.stats.participants'), value: formatStatNumber(activeParticipants), color: 'from-purple-500 to-pink-500' },
+    { icon: MapPin, label: t('home.stats.locations'), value: formatStatNumber(activeLocations), color: 'from-orange-500 to-red-500' },
   ];
 
   const features = [

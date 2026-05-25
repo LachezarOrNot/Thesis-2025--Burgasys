@@ -33,26 +33,31 @@ const Calendar: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
   useEffect(() => {
-    loadEvents();
-  }, []);
+    setLoading(true);
+    setError('');
+
+    const unsubscribe = databaseService.subscribeToEvents(
+      { status: 'published' },
+      (eventsData) => {
+        setEvents(eventsData);
+        setLoading(false);
+        setError('');
+      },
+      () => {
+        setError(t('events.errorLoading') || 'Failed to load events. Please try again.');
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [t]);
 
   useEffect(() => {
     applyFilters();
   }, [events, dateFilter, locationFilter]);
 
-  const loadEvents = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      // Load all published events; date-based filtering is handled client-side
-      const eventsData = await databaseService.getEvents({ status: 'published' });
-      setEvents(eventsData);
-    } catch (error) {
-      console.error('Error loading events:', error);
-      setError(t('events.errorLoading') || 'Failed to load events. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const retryLoad = () => {
+    setError('');
   };
 
   const applyFilters = () => {
@@ -162,7 +167,7 @@ const Calendar: React.FC = () => {
             </h2>
             <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
             <button
-              onClick={loadEvents}
+              onClick={retryLoad}
               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               {t('events.tryAgain')}

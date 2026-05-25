@@ -29,134 +29,117 @@ import {
    UserApprovalRequest 
 } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  safeDateConvert,
+  prepareDataForFirestore,
+  convertFromFirestore,
+} from '../utils/firestoreHelpers';
+import { resolveRegistrationStatus } from '../utils/eventRegistration';
+
+export type EventListFilters = {
+  status?: EventStatus;
+  organiser_org_id?: string;
+  search?: string;
+  tags?: string[];
+};
 
 class DatabaseService {
-  
- // FIXED: Safe date conversion utility
-private safeDateConvert(date: any): Date {
-  // Return current date only if date is null/undefined
-  if (date == null) return new Date();
-  
-  // If it's already a Date object, return it directly
-  if (date instanceof Date) {
-    return isNaN(date.getTime()) ? new Date() : date;
-  }
-  
-  // If it's a Firestore timestamp with toDate method, convert it
-  if (date.toDate && typeof date.toDate === 'function') {
-    return date.toDate();
+
+  private mapEventFromDoc(id: string, data: DocumentData): Event {
+    const convertedData = convertFromFirestore(data);
+    return {
+      ...convertedData,
+      id,
+      start_datetime: safeDateConvert(convertedData.start_datetime),
+      end_datetime: safeDateConvert(convertedData.end_datetime),
+      createdAt: safeDateConvert(convertedData.createdAt),
+      updatedAt: safeDateConvert(convertedData.updatedAt),
+    } as Event;
   }
 
-  if (typeof date === 'object' && typeof date.seconds === 'number') {
-  console.log('🔍 Converting seconds:', date.seconds);
-  const converted = new Date(date.seconds * 1000);
-  console.log('🔍 Converted date object:', converted);
-  console.log('🔍 Time:', converted.getHours(), ':', converted.getMinutes());
-  return converted;
-}
-  
-  // ✅ CRITICAL FIX: Handle serialized Firestore Timestamp (object with seconds)
-  if (typeof date === 'object' && typeof date.seconds === 'number') {
-    console.log('Converting Firestore timestamp:', date.seconds);
-    const converted = new Date(date.seconds * 1000);
-    console.log('Converted to:', converted);
-    return converted;
-  }
-  
-  // For strings or numbers, try to parse
-  if (typeof date === 'string' || typeof date === 'number') {
-    try {
-      const parsed = new Date(date);
-      return isNaN(parsed.getTime()) ? new Date() : parsed;
-    } catch {
-      console.warn('Failed to parse date:', date);
-      return new Date();
-    }
-  }
-  
-  // If we get here, it's an unrecognized format
-  console.warn('Unrecognized date format, returning current date:', date);
-  return new Date();
-}
+  private applyEventListFilters(events: Event[], filters?: EventListFilters): Event[] {
+    let result = [...events];
 
-  // Helper function to remove undefined values for Firestore by converting them to null
-  private prepareDataForFirestore(data: any): any {
-    if (data === undefined) return null;
-    if (data === null) return null;
-    
-    if (Array.isArray(data)) {
-      return data.map(item => this.prepareDataForFirestore(item));
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(
+        (event) =>
+          event.name?.toLowerCase().includes(searchLower) ||
+          event.description?.toLowerCase().includes(searchLower) ||
+          event.tags?.some((tag) => tag.toLowerCase().includes(searchLower)) ||
+          event.location?.toLowerCase().includes(searchLower),
+      );
     }
-    
-    if (data && typeof data === 'object' && !(data instanceof Date)) {
-      const cleaned: any = {};
-      Object.keys(data).forEach(key => {
-        const value = this.prepareDataForFirestore(data[key]);
-        cleaned[key] = value;
-      });
-      return cleaned;
+
+    if (filters?.tags && filters.tags.length > 0) {
+      result = result.filter(
+        (event) =>
+          event.tags && filters.tags!.some((tag) => event.tags.includes(tag)),
+      );
     }
-    
-    return data;
+
+    return result.sort((a, b) => {
+      try {
+        return (
+          safeDateConvert(a.start_datetime).getTime() -
+          safeDateConvert(b.start_datetime).getTime()
+        );
+      } catch {
+        return 0;
+      }
+    });
   }
 
-  // Helper function to convert Firestore data back to our TypeScript types
-  private convertFromFirestore(data: any): any {
-    if (data === null) return undefined;
-    
-    if (Array.isArray(data)) {
-      return data.map(item => this.convertFromFirestore(item));
+  private buildEventsQuery(filters?: EventListFilters) {
+    let eventsQuery = query(collection(db, 'events'));
+
+    if (filters?.status) {
+      eventsQuery = query(eventsQuery, where('status', '==', filters.status));
     }
-    
-    if (data && typeof data === 'object' && !(data instanceof Date)) {
-      const converted: any = {};
-      Object.keys(data).forEach(key => {
-        const value = this.convertFromFirestore(data[key]);
-        converted[key] = value;
-      });
-      return converted;
+
+    if (filters?.organiser_org_id) {
+      eventsQuery = query(
+        eventsQuery,
+        where('organiser_org_id', '==', filters.organiser_org_id),
+      );
     }
-    
-    return data;
+
+    return eventsQuery;
   }
 
-  // NEW METHOD: Check and update finished events
+  // Marks published events whose end_datetime has passed as finished.
+  // Uses status-only query (no composite index); filters end date in memory.
   async checkAndUpdateFinishedEvents(): Promise<{ updated: number }> {
     try {
       const now = new Date();
-      console.log('🔍 Checking for finished events at:', now.toISOString());
-      
-      // Query events that are published and have passed their end date
+
       const eventsQuery = query(
         collection(db, 'events'),
         where('status', '==', 'published'),
-        where('end_datetime', '<', now)
       );
-      
+
       const eventsSnap = await getDocs(eventsQuery);
-      
-      if (eventsSnap.empty) {
-        console.log('✅ No events need to be marked as finished');
-        return { updated: 0 };
-      }
-      
+
       const batch = writeBatch(db);
       let updatedCount = 0;
-      
-      eventsSnap.forEach((doc) => {
-        batch.update(doc.ref, {
+
+      eventsSnap.forEach((eventDoc) => {
+        const endDate = safeDateConvert(eventDoc.data().end_datetime);
+        if (endDate >= now) return;
+
+        batch.update(eventDoc.ref, {
           status: 'finished',
-          updatedAt: now
+          updatedAt: now,
         });
         updatedCount++;
-        console.log(`🔄 Marking event as finished: ${doc.id}`);
       });
-      
+
+      if (updatedCount === 0) {
+        return { updated: 0 };
+      }
+
       await batch.commit();
-      console.log(`✅ Updated ${updatedCount} events to finished status`);
-      
       return { updated: updatedCount };
-      
     } catch (error) {
       console.error('❌ Error updating finished events:', error);
       return { updated: 0 };
@@ -171,7 +154,7 @@ private safeDateConvert(date: any): Date {
       updatedAt: new Date()
     };
     
-    const preparedUser = this.prepareDataForFirestore(user);
+    const preparedUser = prepareDataForFirestore(user);
     await setDoc(userRef, preparedUser);
     return user;
   }
@@ -183,11 +166,11 @@ private safeDateConvert(date: any): Date {
       
       if (userSnap.exists()) {
         const data = userSnap.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
+          createdAt: safeDateConvert(convertedData.createdAt),
+          updatedAt: safeDateConvert(convertedData.updatedAt)
         } as User;
       }
       return null;
@@ -204,11 +187,11 @@ private safeDateConvert(date: any): Date {
       
       return usersSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
+          createdAt: safeDateConvert(convertedData.createdAt),
+          updatedAt: safeDateConvert(convertedData.updatedAt)
         } as User;
       });
     } catch (error) {
@@ -219,7 +202,7 @@ private safeDateConvert(date: any): Date {
 
   async updateUser(uid: string, updates: Partial<User>): Promise<void> {
     const userRef = doc(db, 'users', uid);
-    const preparedUpdates = this.prepareDataForFirestore({
+    const preparedUpdates = prepareDataForFirestore({
       ...updates,
       updatedAt: new Date()
     });
@@ -237,7 +220,7 @@ private safeDateConvert(date: any): Date {
       submittedAt: new Date()
     };
     
-    const preparedRequest = this.prepareDataForFirestore(approvalRequest);
+    const preparedRequest = prepareDataForFirestore(approvalRequest);
     await setDoc(requestRef, preparedRequest);
     return approvalRequest;
   }
@@ -258,11 +241,11 @@ private safeDateConvert(date: any): Date {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          submittedAt: this.safeDateConvert(convertedData.submittedAt),
-          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
+          submittedAt: safeDateConvert(convertedData.submittedAt),
+          reviewedAt: convertedData.reviewedAt ? safeDateConvert(convertedData.reviewedAt) : undefined
         } as UserApprovalRequest;
       });
     } catch (error) {
@@ -300,7 +283,7 @@ private safeDateConvert(date: any): Date {
       }
     }
     
-    const preparedUpdates = this.prepareDataForFirestore({
+    const preparedUpdates = prepareDataForFirestore({
       ...updates,
       reviewedAt: updates.status !== 'pending' ? new Date() : undefined
     });
@@ -321,11 +304,11 @@ private safeDateConvert(date: any): Date {
       if (userSnap.empty) return null;
       
       const data = userSnap.docs[0].data();
-      const convertedData = this.convertFromFirestore(data);
+      const convertedData = convertFromFirestore(data);
       return {
         ...convertedData,
-        createdAt: this.safeDateConvert(convertedData.createdAt),
-        updatedAt: this.safeDateConvert(convertedData.updatedAt)
+        createdAt: safeDateConvert(convertedData.createdAt),
+        updatedAt: safeDateConvert(convertedData.updatedAt)
       } as User;
     } catch (error) {
       console.error('Error getting user by email:', error);
@@ -343,7 +326,7 @@ private safeDateConvert(date: any): Date {
       updatedAt: new Date()
     };
     
-    const preparedOrg = this.prepareDataForFirestore(organization);
+    const preparedOrg = prepareDataForFirestore(organization);
     await setDoc(orgRef, preparedOrg);
     return organization;
   }
@@ -355,11 +338,11 @@ private safeDateConvert(date: any): Date {
       
       if (orgSnap.exists()) {
         const data = orgSnap.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
+          createdAt: safeDateConvert(convertedData.createdAt),
+          updatedAt: safeDateConvert(convertedData.updatedAt)
         } as Organization;
       }
       return null;
@@ -376,11 +359,11 @@ private safeDateConvert(date: any): Date {
       
       return orgsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
+          createdAt: safeDateConvert(convertedData.createdAt),
+          updatedAt: safeDateConvert(convertedData.updatedAt)
         } as Organization;
       });
     } catch (error) {
@@ -391,7 +374,7 @@ private safeDateConvert(date: any): Date {
 
   async updateOrganization(orgId: string, updates: Partial<Organization>): Promise<void> {
     const orgRef = doc(db, 'organizations', orgId);
-    const preparedUpdates = this.prepareDataForFirestore({
+    const preparedUpdates = prepareDataForFirestore({
       ...updates,
       updatedAt: new Date()
     });
@@ -428,7 +411,7 @@ private safeDateConvert(date: any): Date {
       requestedAt: new Date()
     };
     
-    const preparedRequest = this.prepareDataForFirestore(request);
+    const preparedRequest = prepareDataForFirestore(request);
     await setDoc(requestRef, preparedRequest);
     return request;
   }
@@ -443,11 +426,11 @@ private safeDateConvert(date: any): Date {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          requestedAt: this.safeDateConvert(convertedData.requestedAt),
-          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
+          requestedAt: safeDateConvert(convertedData.requestedAt),
+          reviewedAt: convertedData.reviewedAt ? safeDateConvert(convertedData.reviewedAt) : undefined
         } as AffiliationRequest;
       });
     } catch (error) {
@@ -472,11 +455,11 @@ private safeDateConvert(date: any): Date {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          requestedAt: this.safeDateConvert(convertedData.requestedAt),
-          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
+          requestedAt: safeDateConvert(convertedData.requestedAt),
+          reviewedAt: convertedData.reviewedAt ? safeDateConvert(convertedData.reviewedAt) : undefined
         } as AffiliationRequest;
       });
     } catch (error) {
@@ -509,7 +492,7 @@ private safeDateConvert(date: any): Date {
       }
     }
     
-    const preparedUpdates = this.prepareDataForFirestore({
+    const preparedUpdates = prepareDataForFirestore({
       ...updates,
       reviewedAt: updates.status !== 'pending' ? new Date() : undefined
     });
@@ -527,11 +510,11 @@ private safeDateConvert(date: any): Date {
       const orgsSnap = await getDocs(orgsQuery);
       return orgsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
+          createdAt: safeDateConvert(convertedData.createdAt),
+          updatedAt: safeDateConvert(convertedData.updatedAt)
         } as Organization;
       });
     } catch (error) {
@@ -564,7 +547,7 @@ private safeDateConvert(date: any): Date {
       submittedAt: new Date()
     };
     
-    const preparedRequest = this.prepareDataForFirestore(eventRequest);
+    const preparedRequest = prepareDataForFirestore(eventRequest);
     await setDoc(requestRef, preparedRequest);
     return eventRequest;
   }
@@ -585,11 +568,11 @@ private safeDateConvert(date: any): Date {
       const requestsSnap = await getDocs(requestsQuery);
       return requestsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          submittedAt: this.safeDateConvert(convertedData.submittedAt),
-          reviewedAt: convertedData.reviewedAt ? this.safeDateConvert(convertedData.reviewedAt) : undefined
+          submittedAt: safeDateConvert(convertedData.submittedAt),
+          reviewedAt: convertedData.reviewedAt ? safeDateConvert(convertedData.reviewedAt) : undefined
         } as EventCreationRequest;
       });
     } catch (error) {
@@ -600,7 +583,7 @@ private safeDateConvert(date: any): Date {
 
   async updateEventRequest(requestId: string, updates: Partial<EventCreationRequest>): Promise<void> {
     const requestRef = doc(db, 'eventCreationRequests', requestId);
-    const preparedUpdates = this.prepareDataForFirestore({
+    const preparedUpdates = prepareDataForFirestore({
       ...updates,
       reviewedAt: updates.status !== 'pending' ? new Date() : undefined
     });
@@ -659,7 +642,7 @@ private safeDateConvert(date: any): Date {
       console.log('start_datetime:', event.start_datetime);
       console.log('end_datetime:', event.end_datetime);
 
-      const preparedEvent = this.prepareDataForFirestore(event);
+      const preparedEvent = prepareDataForFirestore(event);
       await setDoc(eventRef, preparedEvent);
       return event;
     } catch (error) {
@@ -672,31 +655,9 @@ private safeDateConvert(date: any): Date {
     try {
       const eventRef = doc(db, 'events', eventId);
       const eventSnap = await getDoc(eventRef);
-      
+
       if (eventSnap.exists()) {
-        const data = eventSnap.data();
-        const convertedData = this.convertFromFirestore(data);
-        
-        console.log('🔴 DATABASE SERVICE - GETTING EVENT DATES:');
-        console.log('Raw start_datetime from Firestore:', convertedData.start_datetime);
-        console.log('Raw end_datetime from Firestore:', convertedData.end_datetime);
-        console.log('Type of start_datetime:', typeof convertedData.start_datetime);
-        console.log('Type of end_datetime:', typeof convertedData.end_datetime);
-
-        const event = {
-          ...convertedData,
-          // FIXED: Use safe conversion but log what's happening
-          start_datetime: this.safeDateConvert(convertedData.start_datetime),
-          end_datetime: this.safeDateConvert(convertedData.end_datetime),
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
-        } as Event;
-
-        console.log('🔴 AFTER CONVERSION:');
-        console.log('start_datetime:', event.start_datetime);
-        console.log('end_datetime:', event.end_datetime);
-
-        return event;
+        return this.mapEventFromDoc(eventSnap.id, eventSnap.data());
       }
       return null;
     } catch (error) {
@@ -705,66 +666,60 @@ private safeDateConvert(date: any): Date {
     }
   }
 
-  async getEvents(filters?: {
-    status?: EventStatus;
-    organiser_org_id?: string;
-    search?: string;
-    tags?: string[];
-  }): Promise<Event[]> {
-    try {
-      let eventsQuery = query(collection(db, 'events'));
-      
-      if (filters?.status) {
-        eventsQuery = query(eventsQuery, where('status', '==', filters.status));
-      }
-      
-      if (filters?.organiser_org_id) {
-        eventsQuery = query(eventsQuery, where('organiser_org_id', '==', filters.organiser_org_id));
-      }
-      
-      const eventsSnap = await getDocs(eventsQuery);
-      let events = eventsSnap.docs.map(doc => {
-        const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
-        return {
-          ...convertedData,
-          id: doc.id,
-          start_datetime: this.safeDateConvert(convertedData.start_datetime),
-          end_datetime: this.safeDateConvert(convertedData.end_datetime),
-          createdAt: this.safeDateConvert(convertedData.createdAt),
-          updatedAt: this.safeDateConvert(convertedData.updatedAt)
-        } as Event;
-      });
-      
-      // Apply client-side filters
-      if (filters?.search) {
-        const searchLower = filters.search.toLowerCase();
-        events = events.filter(event => 
-          event.name?.toLowerCase().includes(searchLower) ||
-          event.description?.toLowerCase().includes(searchLower) ||
-          event.tags?.some(tag => tag.toLowerCase().includes(searchLower)) ||
-          event.location?.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      if (filters?.tags && filters.tags.length > 0) {
-        events = events.filter(event =>
-          event.tags && filters.tags!.some(tag => event.tags.includes(tag))
-        );
-      }
-      
-      // Safe sorting
-      return events.sort((a, b) => {
-        try {
-          return this.safeDateConvert(a.start_datetime).getTime() - this.safeDateConvert(b.start_datetime).getTime();
-        } catch {
-          return 0;
+  subscribeToEvent(
+    eventId: string,
+    callback: (event: Event | null) => void,
+  ): () => void {
+    const eventRef = doc(db, 'events', eventId);
+
+    return onSnapshot(
+      eventRef,
+      (eventSnap) => {
+        if (!eventSnap.exists()) {
+          callback(null);
+          return;
         }
-      });
+        callback(this.mapEventFromDoc(eventSnap.id, eventSnap.data()));
+      },
+      (error) => {
+        console.error('Error subscribing to event:', error);
+        callback(null);
+      },
+    );
+  }
+
+  async getEvents(filters?: EventListFilters): Promise<Event[]> {
+    try {
+      const eventsSnap = await getDocs(this.buildEventsQuery(filters));
+      const events = eventsSnap.docs.map((eventDoc) =>
+        this.mapEventFromDoc(eventDoc.id, eventDoc.data()),
+      );
+      return this.applyEventListFilters(events, filters);
     } catch (error) {
       console.error('Error getting events:', error);
       return [];
     }
+  }
+
+  subscribeToEvents(
+    filters: EventListFilters | undefined,
+    callback: (events: Event[]) => void,
+    onError?: (error: Error) => void,
+  ): () => void {
+    return onSnapshot(
+      this.buildEventsQuery(filters),
+      (snapshot) => {
+        const events = snapshot.docs.map((eventDoc) =>
+          this.mapEventFromDoc(eventDoc.id, eventDoc.data()),
+        );
+        callback(this.applyEventListFilters(events, filters));
+      },
+      (error) => {
+        console.error('Error subscribing to events:', error);
+        onError?.(error);
+        callback([]);
+      },
+    );
   }
 
   async updateEvent(eventId: string, updates: Partial<Event>): Promise<void> {
@@ -787,7 +742,7 @@ private safeDateConvert(date: any): Date {
       processedUpdates.subtitle = processedUpdates.subtitle || undefined;
     }
     
-    const preparedUpdates = this.prepareDataForFirestore({
+    const preparedUpdates = prepareDataForFirestore({
       ...processedUpdates,
       updatedAt: new Date()
     });
@@ -819,10 +774,7 @@ private safeDateConvert(date: any): Date {
       const registrations = await this.getEventRegistrations(eventId);
       const registeredCount = registrations.filter(r => r.status === 'registered').length;
       
-      let status: 'registered' | 'waitlisted' = 'registered';
-      if (event.capacity && registeredCount >= event.capacity) {
-        status = 'waitlisted';
-      }
+      const status = resolveRegistrationStatus(event.capacity, registeredCount);
       
       const registration: EventRegistration = {
         id: registrationId,
@@ -833,7 +785,7 @@ private safeDateConvert(date: any): Date {
         registeredAt: new Date()
       };
       
-      const preparedRegistration = this.prepareDataForFirestore(registration);
+      const preparedRegistration = prepareDataForFirestore(registration);
       await setDoc(registrationRef, preparedRegistration);
       
       // Update event's registered users
@@ -859,10 +811,10 @@ private safeDateConvert(date: any): Date {
       const registrationsSnap = await getDocs(registrationsQuery);
       return registrationsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          registeredAt: this.safeDateConvert(convertedData.registeredAt)
+          registeredAt: safeDateConvert(convertedData.registeredAt)
         } as EventRegistration;
       });
     } catch (error) {
@@ -883,10 +835,10 @@ private safeDateConvert(date: any): Date {
       if (registrationSnap.empty) return null;
       
       const data = registrationSnap.docs[0].data();
-      const convertedData = this.convertFromFirestore(data);
+      const convertedData = convertFromFirestore(data);
       return {
         ...convertedData,
-        registeredAt: this.safeDateConvert(convertedData.registeredAt)
+        registeredAt: safeDateConvert(convertedData.registeredAt)
       } as EventRegistration;
     } catch (error) {
       console.error('Error getting user registration:', error);
@@ -947,7 +899,7 @@ private safeDateConvert(date: any): Date {
       timestamp: chatMessage.timestamp
     });
     
-    const preparedMessage = this.prepareDataForFirestore(chatMessage);
+    const preparedMessage = prepareDataForFirestore(chatMessage);
     
     try {
       await setDoc(messageRef, preparedMessage);
@@ -973,7 +925,7 @@ private safeDateConvert(date: any): Date {
       delete updateData.image;
     }
     
-    const preparedUpdates = this.prepareDataForFirestore(updateData);
+    const preparedUpdates = prepareDataForFirestore(updateData);
     
     try {
       await updateDoc(messageRef, preparedUpdates);
@@ -1004,7 +956,7 @@ private safeDateConvert(date: any): Date {
     return onSnapshot(messagesQuery, (snapshot) => {
       const messages = snapshot.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         
         console.log('🔴 RECEIVED CHAT MESSAGE:', {
           id: doc.id,
@@ -1016,8 +968,8 @@ private safeDateConvert(date: any): Date {
         return {
           ...convertedData,
           id: doc.id,
-          timestamp: this.safeDateConvert(convertedData.timestamp),
-          editedAt: convertedData.editedAt ? this.safeDateConvert(convertedData.editedAt) : undefined
+          timestamp: safeDateConvert(convertedData.timestamp),
+          editedAt: convertedData.editedAt ? safeDateConvert(convertedData.editedAt) : undefined
         } as ChatMessage;
       });
       
@@ -1038,7 +990,7 @@ private safeDateConvert(date: any): Date {
       createdAt: new Date()
     };
     
-    const preparedNotification = this.prepareDataForFirestore(newNotification);
+    const preparedNotification = prepareDataForFirestore(newNotification);
     await setDoc(notificationRef, preparedNotification);
     return newNotification;
   }
@@ -1054,10 +1006,10 @@ private safeDateConvert(date: any): Date {
       const notificationsSnap = await getDocs(notificationsQuery);
       return notificationsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
           ...convertedData,
-          createdAt: this.safeDateConvert(convertedData.createdAt)
+          createdAt: safeDateConvert(convertedData.createdAt)
         } as Notification;
       });
     } catch (error) {
@@ -1105,7 +1057,7 @@ private safeDateConvert(date: any): Date {
         status: 'scheduled'
       };
       
-      const preparedDeletion = this.prepareDataForFirestore(scheduledDeletion);
+      const preparedDeletion = prepareDataForFirestore(scheduledDeletion);
       await setDoc(scheduledDeletionRef, preparedDeletion);
       
       console.log(`User ${userId} scheduled for deletion on ${deletionDate}`);
@@ -1139,10 +1091,10 @@ private safeDateConvert(date: any): Date {
       const deletionsSnap = await getDocs(deletionsQuery);
       return deletionsSnap.docs.map(doc => {
         const data = doc.data();
-        const convertedData = this.convertFromFirestore(data);
+        const convertedData = convertFromFirestore(data);
         return {
-          userId: convertedData.userId,
-          deletionDate: this.safeDateConvert(convertedData.deletionDate)
+          userId: String(convertedData.userId),
+          deletionDate: safeDateConvert(convertedData.deletionDate),
         };
       });
     } catch (error) {

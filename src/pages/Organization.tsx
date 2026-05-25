@@ -37,6 +37,17 @@ const Organization: React.FC = () => {
     }
   }, [id, isAdmin, user, navigate]);
 
+  useEffect(() => {
+    if (!id || viewMode !== 'single') return;
+
+    const unsubscribe = databaseService.subscribeToEvents(
+      { organiser_org_id: id },
+      (events) => setOrganizationEvents(events),
+    );
+
+    return () => unsubscribe();
+  }, [id, viewMode]);
+
   const loadOrganizationData = async (orgId: string) => {
     try {
       setLoading(true);
@@ -57,9 +68,6 @@ const Organization: React.FC = () => {
       }
 
       setOrganization(orgData);
-
-      const events = await databaseService.getEvents({ organiser_org_id: orgId });
-      setOrganizationEvents(events);
 
     } catch (error) {
       setError(t('organizations.loadError', 'Failed to load organization data. Please try again.'));

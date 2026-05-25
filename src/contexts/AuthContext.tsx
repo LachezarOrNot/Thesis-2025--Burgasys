@@ -14,6 +14,7 @@ import {
 import { auth, googleProvider } from '../services/firebase';
 import { databaseService } from '../services/database';
 import { User, UserRole } from '../types';
+import { roleRequiresApproval } from '../utils/authHelpers';
 
 interface AuthContextType {
   user: User | null;
@@ -106,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await firebaseUpdateProfile(firebaseUser, { displayName });
       
       // Check if this role requires approval
-      const requiresApproval = ['school', 'university', 'firm'].includes(role);
+      const requiresApproval = roleRequiresApproval(role);
       
       let organizationId = undefined;
       
