@@ -33,13 +33,3 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 VITE_AGORA_APP_ID=...
 
-Архитектура
-src/
-├── components/       # UI компоненти
-├── contexts/         # AuthContext, ThemeContext
-├── pages/            # Маршрутизирани страници
-├── services/
-│   └── database.ts   # Единна точка за Firestore операции
-├── types/            # TypeScript дефиниции
-└── i18n/             # Преводи (bg, en, de, ru, uk)
-Data flow: Компонент → database.ts → Firebase → onSnapshot → UI
